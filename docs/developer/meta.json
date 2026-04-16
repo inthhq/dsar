@@ -1,4 +1,8 @@
 {
 	"title": "Developer",
+	"nav": {
+		"sidebar": "section",
+		"label": "Developer"
+	},
 	"pages": ["cli", "sdk-and-runtime", "tsdoc"]
 }

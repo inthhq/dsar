@@ -1,4 +1,8 @@
 {
 	"title": "Storage",
+	"nav": {
+		"sidebar": "section",
+		"label": "Storage"
+	},
 	"pages": ["s3", "filesystem", "vercel-blob"]
 }

@@ -1,16 +1,20 @@
 {
 	"title": "Architecture",
+	"nav": {
+		"sidebar": "section",
+		"label": "Architecture"
+	},
 	"pages": [
 		"backend-runtime-core",
-		"auth-model",
 		"tenant-safe-persistence",
+		"auth-model",
+		"adapter-contracts",
+		"workspace-validation",
 		"api-contract-surface",
 		"contracts-and-versioning",
 		"policy-pack-spec",
 		"policy-versioning-and-upgrades",
-		"adapter-contracts",
 		"monorepo-packages",
-		"workspace-validation",
 		"error-codes"
 	]
 }

@@ -32,7 +32,8 @@
 	"scripts": {
 		"build": "turbo run build",
 		"changeset": "changeset",
-		"check": "ultracite check && bun run check:error-docs && bun run check:tsdoc",
+		"check": "ultracite check && bun run check:docs-alpha-warning && bun run check:error-docs && bun run check:tsdoc",
+		"check:docs-alpha-warning": "bun ./scripts/sync-docs-alpha-warning.ts",
 		"check:error-docs": "bun ./scripts/check-error-doc-coverage.ts",
 		"check:tsdoc": "bun ./scripts/check-tsdoc-coverage.ts",
 		"check:workspace": "turbo run check",
@@ -40,6 +41,7 @@
 		"ci:publish": "bunx changeset tag && bun publish",
 		"ci:version": "bun changeset version",
 		"dev": "turbo run dev",
+		"docs:sync-alpha-warning": "bun ./scripts/sync-docs-alpha-warning.ts --write",
 		"dsar": "bun ./packages/dsar/src/bin.ts",
 		"fix": "ultracite fix",
 		"format": "turbo run format",

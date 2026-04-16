@@ -1,20 +1,21 @@
 {
 	"title": "API Reference",
+	"nav": {
+		"sidebar": "section",
+		"label": "API Reference"
+	},
 	"pages": [
-		"--- Runtime ---",
 		"init",
 		"status",
-		"policies",
-		"webhooks",
-		"--- Request Lifecycle ---",
 		"requests",
 		"verification",
 		"manifest",
 		"delivery",
-		"appeals",
-		"audit",
-		"--- Scope ---",
 		"subjects",
-		"retention"
+		"appeals",
+		"retention",
+		"policies",
+		"audit",
+		"webhooks"
 	]
 }

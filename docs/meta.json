@@ -3,15 +3,15 @@
 		"getting-started",
 		"request-lifecycle",
 		"examples-and-deployment",
-		"storage",
-		"persistence",
-		"inbound",
+		"package-build-metrics",
 		"api",
 		"architecture",
-		"integrations",
 		"developer",
-		"testing",
 		"errors",
-		"package-build-metrics"
+		"inbound",
+		"integrations",
+		"persistence",
+		"storage",
+		"testing"
 	]
 }
