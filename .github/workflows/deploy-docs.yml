@@ -4,13 +4,13 @@ on:
   pull_request_target:
     types: [opened, synchronize, reopened, closed]
     paths:
-      - 'docs/**'
-      - 'packages/**'
-      - 'changelog/**'
+      - "docs/**"
+      - "packages/**"
+      - "changelog/**"
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Deployment environment'
+        description: "Deployment environment"
         required: false
         type: choice
         options:
@@ -18,7 +18,7 @@ on:
           - staging
           - preview
       pr_number:
-        description: 'PR number for preview deployment (required if environment is preview)'
+        description: "PR number for preview deployment (required if environment is preview)"
         required: false
         type: string
 permissions: {}
@@ -35,7 +35,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger docs preview
+        id: trigger_preview
         uses: peter-evans/repository-dispatch@v3
+        continue-on-error: true
         with:
           token: ${{ secrets.DOCS_DEPLOY_TOKEN }}
           repository: ${{ secrets.DOCS_REPO }}
@@ -51,9 +53,15 @@ jobs:
 
       - name: Summary
         run: |
-          echo "### Docs Preview Triggered" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "A preview deployment has been triggered. Watch for a comment on this PR with the preview URL." >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.trigger_preview.outcome }}" = "success" ]; then
+            echo "### Docs Preview Triggered" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "A preview deployment has been triggered. Watch for a comment on this PR with the preview URL." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### Docs Preview Skipped" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Preview dispatch failed or is not configured for this repository. Core CI can still pass without the external docs preview." >> $GITHUB_STEP_SUMMARY
+          fi
 
   notify-close:
     name: Notify PR Closed
@@ -98,13 +106,13 @@ jobs:
               core.setFailed('PR number is required for preview deployment');
               return;
             }
-            
+
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: parseInt(prNumber)
             });
-            
+
             core.setOutput('pr_number', pr.number);
             core.setOutput('branch', pr.head.ref);
             core.setOutput('sha', pr.head.sha);

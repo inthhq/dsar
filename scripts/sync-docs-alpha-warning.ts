@@ -10,7 +10,8 @@ const sharedWarningPath = path.resolve(
 );
 const writeMode = process.argv.includes("--write");
 
-const normalizeNewlines = (value: string): string => value.replace(/\r\n/gu, "\n");
+const normalizeNewlines = (value: string): string =>
+	value.replaceAll("\r\n", "\n");
 
 const toPosixPath = (value: string): string => value.split(path.sep).join("/");
 
@@ -24,7 +25,7 @@ const collectMarkdownFiles = async (directory: string): Promise<string[]> => {
 	const localPaths = entries
 		.filter((entry) => entry.isFile() && entry.name.endsWith(".mdx"))
 		.map((entry) => path.join(directory, entry.name));
-	return [...localPaths, ...nestedPaths.flat()].sort();
+	return [...localPaths, ...nestedPaths.flat()].toSorted();
 };
 
 const buildWarningImport = (filePath: string): string => {
@@ -50,7 +51,7 @@ const replaceWarningBlock = (
 			"Expected markdown document to start with an MDX frontmatter block."
 		);
 	}
-	const frontmatter = matched[1];
+	const [, frontmatter] = matched;
 	const rest = normalized.slice(matched[0].length).replace(/^\n+/u, "");
 	return `${frontmatter}\n${warningImport}\n\n${rest}`;
 };
@@ -89,7 +90,9 @@ if (writeMode) {
 	console.log("[check:docs-alpha-warning] Docs alpha warning is in sync.");
 	process.exitCode = 0;
 } else {
-	console.error("[check:docs-alpha-warning] Docs missing the synced alpha warning:");
+	console.error(
+		"[check:docs-alpha-warning] Docs missing the synced alpha warning:"
+	);
 	for (const filePath of mismatches) {
 		console.error(`- ${filePath}`);
 	}
