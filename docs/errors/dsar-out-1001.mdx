@@ -1,0 +1,46 @@
+---
+title: "DSAR-OUT-1001: OUTBOUND_RESEND_CONFIG_INVALID"
+description: "The outbound Resend adapter configuration failed validation. The adapter cannot initialize with the provided settings."
+lastModified: 2026-04-16
+---
+
+## Meaning
+
+The outbound Resend adapter configuration failed validation. The adapter cannot initialize with the provided settings.
+
+## Probable Causes
+
+- Missing or empty `apiKey` in the Resend adapter configuration.
+- Invalid `from` email address format.
+- Unsupported or malformed configuration values passed during adapter setup.
+
+## How to Fix
+
+1. Inspect `error.details.parseError` for the specific validation failure.
+   Example (`error.details.parseError`) for a validation failure:
+   ```json
+   {
+   	"parseError": {
+   		"path": ["from"],
+   		"message": "Invalid email address format"
+   	}
+   }
+   ```
+   This is a sample parse payload you may see when config schema validation fails.
+2. Verify all required configuration fields are set (`apiKey`, `from`).
+3. Ensure email addresses conform to RFC 5322 format.
+4. Check environment variables that feed into the adapter configuration.
+
+## Retryable
+
+No. The configuration must be corrected before the adapter can initialize.
+
+## Minimal Trigger Example
+
+```ts
+// Triggers DSAR-OUT-1001: missing API key
+createResendAdapter({ apiKey: "", from: "noreply@example.com" });
+
+// Triggers DSAR-OUT-1001: invalid sender format
+createResendAdapter({ apiKey: "re_valid_key", from: "invalid-email" });
+```

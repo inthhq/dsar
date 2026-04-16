@@ -1,0 +1,19 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"display": "Effect.TS",
+	"extends": "./base.json",
+	"compilerOptions": {
+		"rootDir": "${configDir}/src",
+		"outDir": "${configDir}/dist",
+		"paths": {
+			"#src": ["${configDir}/src/index.ts"],
+			"#src/*": ["${configDir}/src/*"]
+		},
+		"plugins": [
+			{
+				"name": "@effect/language-service"
+			}
+		]
+	},
+	"include": ["${configDir}/src"]
+}

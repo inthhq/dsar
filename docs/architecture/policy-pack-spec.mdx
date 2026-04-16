@@ -1,0 +1,133 @@
+---
+title: "Policy Pack Specification"
+description: "This document defines the schema and evaluator contract for @dsar/policy-engine."
+lastModified: 2026-04-16
+---
+
+This document defines the schema and evaluator contract for `@dsar/policy-engine`.
+
+## Policy pack schema
+
+Policy packs are versioned, machine-readable contracts with deterministic sections:
+
+- `packId`, `version`, `jurisdiction`, `effectiveAt`
+- `sections.clock`
+- `sections.representation`
+- `sections.verification`
+- `sections.response`
+- `sections.delivery`
+- `sections.appeals`
+- `sections.retention`
+- `sections.audit`
+
+### Clock section
+
+Required fields:
+
+- `start`: `"receipt" | "verification_complete"`
+- `verificationEffect`: `"stop_clock" | "no_stop_clock"`
+- `clarificationEffect`: `"stop_clock" | "no_stop_clock"`
+- `ackRequired`: `boolean`
+- `ackDeadlineBusinessDays?`: `number`
+- `responseDeadlineDays`: `number`
+- `extension`: `{ enabled, maxAdditionalDays, requiresJustification }`
+- `rules`: deterministic override rules with `id`, `precedence`, `when`, `apply`
+
+Rule precedence is deterministic:
+
+1. sort by `precedence` descending
+2. tie-break by `id` ascending
+3. apply merged rule overrides from lowest to highest precedence so highest precedence wins
+
+## Evaluator interface
+
+`evaluatePolicy(input)` returns an Effect program with deterministic output.
+
+Input envelope includes:
+
+- policy pack payload
+- jurisdiction + policy version
+- request type and requestor type
+- authority evidence signal
+- timeline context (`receivedAt`, `now`, pauses, extensions)
+- actor/context signals (`isComplex`, `requiresVerification`)
+
+Output envelope includes:
+
+- `decision`: actionable booleans (verification required, appeal eligibility, etc.)
+- `clock`: base/final deadlines and applied pause/extension contributions
+- `requiredActions`
+- `requiredNotices`
+- `matchedRuleIds`
+- `explainabilityTrace`
+
+## Explainability trace contract
+
+Every decision includes machine-readable trace entries with:
+
+- `code` (`clock.base`, `clock.rule.applied`, `clock.pause.applied`, `clock.extension.applied`, `clock.final`)
+- `message`
+- optional `details` payload
+
+This enables replay and clock explain APIs to show exactly how due dates were produced.
+
+## Fixture matrix
+
+Current fixture coverage:
+
+- `uk-access`
+- `eu-clarification-pause`
+- `us-no-stop-verification`
+- `edge-repeated-clarifications`
+- `edge-extension-near-deadline`
+- `edge-partial-refusal-precedence`
+- `policy-packs/uk-deadline-baseline`
+- `policy-packs/eu-clarification-vs-verification`
+- `policy-packs/us-extension-cap`
+- `policy-packs/us-co-high-risk-verification`
+- `policy-packs/us-va-refusal-appeal`
+
+These vectors validate:
+
+- deterministic outputs
+- precedence behavior
+- stop-clock / no-stop-clock behavior
+- extension cap handling
+- explainability trace shape and stable ordering
+
+## Launch catalog and known gaps
+
+First-party launch coverage includes:
+
+- UK baseline pack (`uk`)
+- EU baseline pack (`eu`)
+- Initial US set: baseline US (`us`), California (`us-ca`), Virginia (`us-va`), Colorado (`us-co`)
+
+Known gaps:
+
+- Additional US state packs are not yet implemented in the launch catalog.
+- State-specific refusal categories and exemptions remain future additions.
+
+## Jurisdiction hard-gate contract
+
+Request intake now requires a top-level `jurisdiction` and resolves an active policy via:
+
+1. workspace/tenant scoped pin (if present)
+2. latest available pack for the same jurisdiction
+3. hard-fail with `POLICY_JURISDICTION_UNMAPPED` when no mapping exists
+
+The hard-fail envelope includes structured guidance so clients can route users/admins:
+
+- `subject_contact_admin`
+- `admin_register_policy_pack`
+- `admin_activate_policy_pack`
+
+## Custom policy lifecycle events
+
+Custom policy authoring and activation emit dedicated policy audit events:
+
+- `custom_policy_registered`
+- `custom_policy_activated`
+- `custom_policy_deactivated`
+
+These events are emitted by `@dsar/policy-packs` services and consumed by backend policy routes.

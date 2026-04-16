@@ -1,0 +1,105 @@
+{
+	"name": "dsar",
+	"version": "0.0.5",
+	"private": false,
+	"description": "Data Subject Access Request framework — umbrella package with subpath exports.",
+	"license": "Apache-2.0",
+	"bin": {
+		"dsar": "./dist/bin.mjs"
+	},
+	"files": [
+		"dist",
+		"docs",
+		"LICENSE",
+		"README.md"
+	],
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.mts",
+			"import": "./dist/index.mjs"
+		},
+		"./backend": {
+			"types": "./dist/backend.d.mts",
+			"import": "./dist/backend.mjs"
+		},
+		"./core": {
+			"types": "./dist/core.d.mts",
+			"import": "./dist/core.mjs"
+		},
+		"./cli": {
+			"types": "./dist/cli.d.mts",
+			"import": "./dist/cli.mjs"
+		},
+		"./node-sdk": {
+			"types": "./dist/node-sdk.d.mts",
+			"import": "./dist/node-sdk.mjs"
+		},
+		"./persistence-pg": {
+			"types": "./dist/persistence-pg.d.mts",
+			"import": "./dist/persistence-pg.mjs"
+		},
+		"./persistence-sqlite": {
+			"types": "./dist/persistence-sqlite.d.mts",
+			"import": "./dist/persistence-sqlite.mjs"
+		},
+		"./storage-filesystem": {
+			"types": "./dist/storage-filesystem.d.mts",
+			"import": "./dist/storage-filesystem.mjs"
+		},
+		"./storage-s3": {
+			"types": "./dist/storage-s3.d.mts",
+			"import": "./dist/storage-s3.mjs"
+		},
+		"./storage-vercel-blob": {
+			"types": "./dist/storage-vercel-blob.d.mts",
+			"import": "./dist/storage-vercel-blob.mjs"
+		},
+		"./inbound-resend": {
+			"types": "./dist/inbound-resend.d.mts",
+			"import": "./dist/inbound-resend.mjs"
+		},
+		"./inbound-slack": {
+			"types": "./dist/inbound-slack.d.mts",
+			"import": "./dist/inbound-slack.mjs"
+		},
+		"./outbound-resend": {
+			"types": "./dist/outbound-resend.d.mts",
+			"import": "./dist/outbound-resend.mjs"
+		},
+		"./auth-unkey": {
+			"types": "./dist/auth-unkey.d.mts",
+			"import": "./dist/auth-unkey.mjs"
+		}
+	},
+	"scripts": {
+		"build": "tsdown",
+		"typecheck": "tsgo --noEmit"
+	},
+	"dependencies": {
+		"@dsar/auth-unkey": "workspace:*",
+		"@dsar/backend": "workspace:*",
+		"@dsar/cli": "workspace:*",
+		"@dsar/core": "workspace:*",
+		"@dsar/inbound-resend": "workspace:*",
+		"@dsar/inbound-slack": "workspace:*",
+		"@dsar/node-sdk": "workspace:*",
+		"@dsar/outbound-resend": "workspace:*",
+		"@dsar/persistence-pg": "workspace:*",
+		"@dsar/persistence-sqlite": "workspace:*",
+		"@dsar/storage-filesystem": "workspace:*",
+		"@dsar/storage-s3": "workspace:*",
+		"@dsar/storage-vercel-blob": "workspace:*",
+		"@effect/platform-node": "catalog:effect",
+		"dotenv": "17.3.1"
+	},
+	"devDependencies": {
+		"@dsar/typescript-config": "workspace:*",
+		"@types/node": "catalog:types",
+		"tsdown": "catalog:utils",
+		"typescript": "catalog:utils"
+	},
+	"peerDependencies": {
+		"effect": "catalog:effect"
+	}
+}

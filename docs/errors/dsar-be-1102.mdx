@@ -1,0 +1,31 @@
+---
+title: "DSAR-BE-1102: REQUEST_ROUTE_PARAM_MISSING"
+description: "A route parameter required by server-side handler logic is absent."
+lastModified: 2026-04-16
+---
+
+## Meaning
+
+A route parameter required by server-side handler logic is absent.
+
+## Probable Causes
+
+- Route path does not match the expected parameterized shape.
+- Client generated URL omitted a required segment.
+
+## How to Fix
+
+1. Verify URL includes all required path parameters.
+2. Use SDK route helpers to build paths instead of string concatenation.
+
+## Retryable
+
+No. Retry with corrected route path.
+
+## Minimal Trigger Example
+
+```http
+GET /api/v1/requests//timeline HTTP/1.1
+Host: localhost:4086
+Authorization: Bearer test-token
+```

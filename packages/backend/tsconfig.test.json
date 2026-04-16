@@ -1,0 +1,11 @@
+{
+	"extends": "@dsar/typescript-config/base-test.json",
+	"compilerOptions": {
+		"rootDir": ".",
+		"paths": {
+			"#src": ["./src/index.ts"],
+			"#src/*": ["./src/*"]
+		}
+	},
+	"include": ["src", "test"]
+}

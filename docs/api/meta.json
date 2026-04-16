@@ -1,0 +1,20 @@
+{
+	"title": "API Reference",
+	"pages": [
+		"--- Runtime ---",
+		"init",
+		"status",
+		"policies",
+		"webhooks",
+		"--- Request Lifecycle ---",
+		"requests",
+		"verification",
+		"manifest",
+		"delivery",
+		"appeals",
+		"audit",
+		"--- Scope ---",
+		"subjects",
+		"retention"
+	]
+}

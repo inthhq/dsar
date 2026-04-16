@@ -1,0 +1,34 @@
+---
+title: "DSAR-BE-1207: MANIFEST_ARTIFACT_DOWNLOAD_FAILED"
+description: "Download of a fulfilment manifest artifact from storage failed. The requested file could not be retrieved."
+lastModified: 2026-04-16
+---
+
+## Meaning
+
+Download of a fulfilment manifest artifact from storage failed. The requested file could not be retrieved.
+
+## Probable Causes
+
+- The artifact (identified by `artifactId`) does not exist in storage.
+- The artifact's storage key does not belong to the target request (cross-request access denied).
+- The storage adapter is not configured (running with "stub" storage).
+- The storage adapter encountered a read error (network timeout, permission denied).
+
+## How to Fix
+
+1. Verify the `artifactId` is correct. The request query parameter uses `artifactId` to find an artifact entry in the manifest's `artifacts` array, then the server uses that artifact's `storageKey` for the actual storage lookup.
+2. Ensure the resolved artifact storage key belongs to the correct request ID.
+3. Check storage connectivity and permissions if the adapter is correctly configured.
+
+## Retryable
+
+Yes — if the storage adapter was temporarily unavailable, retrying the download may succeed.
+
+## Minimal Trigger Example
+
+```http
+GET /api/v1/requests/req-123/manifest/artifact/download?artifactId=art-1 HTTP/1.1
+Host: localhost:4086
+Authorization: Bearer test-token
+```

@@ -1,0 +1,31 @@
+---
+title: "Init API"
+description: "Initialize the DSAR runtime context."
+lastModified: 2026-04-16
+---
+
+## POST /init
+
+Initialize the DSAR runtime context.
+
+This is a public endpoint and does not require bearer authentication in the
+generated HTTP contract.
+
+**Request body:** None required.
+
+**Response:**
+
+```json
+{
+	"initialized": true
+}
+```
+
+Use this endpoint when your deployment or smoke tests expect an explicit
+runtime-bootstrap step before traffic begins.
+
+Related surfaces:
+
+- Node SDK: `client.system.init()`
+- CLI: `dsar init`
+- Generated docs: `GET /docs`

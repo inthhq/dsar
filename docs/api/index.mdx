@@ -1,0 +1,40 @@
+---
+title: "API Reference"
+description: "These pages describe the DSAR HTTP surface exposed by @dsar/backend."
+lastModified: 2026-04-16
+---
+
+These pages describe the DSAR HTTP surface exposed by `@dsar/backend`.
+
+## Runtime and System
+
+- [Init API](./init.md) for `POST /init`
+- [Status API](./status.md) for `GET /status`
+- [Policies API](./policies.md) for policy discovery and upgrade lifecycle
+- [Webhooks API](./webhooks.md) for inbound Resend and Slack entrypoints
+
+## Request Lifecycle
+
+- [Core Request API](./requests.md) for intake, queue/detail reads, legal-clock
+  explainability, clarifications, authority, notifications, and other lifecycle
+  controls
+- [Verification API](./verification.md) for verification cases and evidence
+- [Manifest API](./manifest.md) for fulfilment manifest reads, validation, and
+  artifact operations
+- [Delivery API](./delivery.md) for delivery preparation, step-up, callback, and
+  download flows
+- [Appeals API](./appeals.md) for request appeal handling
+- [Audit API](./audit.md) for immutable audit export and verification
+
+## Tenant and Subject Scope
+
+- [Subjects API](./subjects.md) for `GET /subjects/:subjectId`
+- [Retention API](./retention.md) for tenant retention policy reads and writes
+
+## Cross-Cutting Guides
+
+- [Request Lifecycle](../request-lifecycle.md) for an end-to-end workflow view
+- [Auth Model](../architecture/auth-model.md) for subject, operator, and
+  service principal behavior
+- [API Contract Surface](../architecture/api-contract-surface.md) for generated
+  OpenAPI and `/docs`

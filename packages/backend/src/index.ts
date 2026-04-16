@@ -1,0 +1,45 @@
+export {
+	applyPolicyUpgrade,
+	approvePolicyUpgrade,
+	proposePolicyUpgrade,
+} from "./routes/policies/handlers";
+export { dsarInstance } from "./core";
+export { createOpenApiSpec, makeDsarHttpApi } from "./http-api";
+export { Persistence, runtimeReposFromPersistence } from "./persistence";
+export {
+	AdapterRegistryTag,
+	makeAdapterRegistry,
+	makeAdapterRegistryLayer,
+	normalizeAdapterError,
+	toAdapterFailureEvent,
+} from "./adapters";
+export type {
+	ApplyUpgradeRequest,
+	ApproveUpgradeRequest,
+	ProposeUpgradeRequest,
+} from "./routes/policies/handlers";
+export type { DsarInstance } from "./core";
+export type {
+	AdapterContractBase,
+	AdapterDiagnostics,
+	AdapterErrorCategory,
+	AdapterHealth,
+	AdapterOperationalEvent,
+	AnyAdapterContract,
+	InboundAdapterContract,
+	NotificationAdapterContract,
+	NotificationDispatchInput,
+	NotificationDispatchResult,
+	StorageArtifactReference,
+	StorageAdapterContract,
+	StorageObjectMetadata,
+} from "./adapters";
+export type { AdapterModule, CoreModule } from "./layers";
+export type {
+	AuthenticatedRequestIdentity,
+	DsarConfigOptions,
+	DsarInstanceOptions,
+	RequestPrincipalKind,
+	RuntimeAuthConfig,
+} from "./types/runtime";
+export type { ErrorEnvelope, SuccessEnvelope } from "./types/envelope";

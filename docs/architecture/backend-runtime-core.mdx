@@ -1,0 +1,60 @@
+---
+title: "Backend Runtime Core (`dsarInstance`)"
+description: "This document captures T05 runtime boundaries, route surface, and error contract for integrators."
+lastModified: 2026-04-16
+---
+
+This document captures T05 runtime boundaries, route surface, and error contract for integrators.
+
+## Runtime usage
+
+- Factory: `dsarInstance(options)`
+- Primary boundary: `handler(request) => Promise<Response>`
+- Mounting: any fetch-compatible runtime (Workers, Bun, Node adapters)
+- Runtime internals: `@effect/platform` web handler boundary via `HttpApp.toWebHandler`
+- Runtime repo integration: `runtimeReposFromPersistence()` bridges `@dsar/persistence` into `RuntimeServicesTag`
+
+## Route module map and ownership
+
+- `packages/backend/src/routes/init.ts` - runtime initialization surface
+- `packages/backend/src/routes/requests.ts` - request lifecycle and capability-upgrade route categories (stubbed in T05)
+- `packages/backend/src/routes/subjects.ts` - subject lookup placeholder surface
+- `packages/backend/src/routes/policies.ts` - policy upgrade placeholder surface
+- `packages/backend/src/routes/status.ts` - health/status surface
+
+Representative capability-upgrade paths mounted in T05:
+
+- `/requests/:id/clock/explain`
+- `/requests/:id/verification/*`
+- `/requests/:id/fulfilment/callback`
+- `/requests/:id/appeals*`
+- `/tenants/:tenantId/retention`
+- `/requests/:id/audit/export`
+
+## Error envelope contract
+
+All errors follow:
+
+- `ok: false`
+- `error.id: string` (stable backend identifier, `DSAR-BE-xxxx`)
+- `error.code: string` (deterministic boundary code, e.g. `AUTH_ACTOR_CONTEXT_MISSING`, `REQUEST_VALIDATION_FAILED`, `REQUEST_ROUTE_NOT_FOUND`)
+- `error.docsUrl: string` (canonical link to error catalog entry)
+- `error.message: string`
+- `error.status: number`
+- `error.trace?: object` (safe metadata only)
+
+Canonical catalog: `docs/architecture/error-codes.md`
+
+## Base path behavior
+
+- `options.basePath` normalizes trailing slashes.
+- Incoming request paths are stripped against `basePath` before route matching.
+- Non-matching base path requests return normalized `REQUEST_ROUTE_NOT_FOUND`.
+- Matching requests continue through shared auth/context handling and normalized envelope conversion.
+
+## Contract and docs endpoints (T06)
+
+- Runtime exposes generated OpenAPI at `/spec.json`.
+- Runtime exposes interactive docs at `/docs`.
+- Both endpoints honor `basePath` mounting, e.g. `/api/v1/spec.json` and `/api/v1/docs`.
+- Spec generation is driven from `packages/backend/src/http-api/api.ts` HttpApi contracts.

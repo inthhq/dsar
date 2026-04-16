@@ -1,0 +1,68 @@
+{
+	"name": "@dsar/core",
+	"version": "0.0.5",
+	"private": true,
+	"description": "Mode-aware DSAR core client runtime.",
+	"license": "Apache-2.0",
+	"files": [
+		"src"
+	],
+	"type": "module",
+	"imports": {
+		"#src": "./src/index.ts",
+		"#src/*": "./src/*"
+	},
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"import": "./src/index.ts"
+		},
+		"./test-fixtures/chat-memory-state": {
+			"types": "./src/test-fixtures/chat-memory-state.ts",
+			"import": "./src/test-fixtures/chat-memory-state.ts"
+		},
+		"./chat": {
+			"types": "./src/chat.ts",
+			"import": "./src/chat.ts"
+		},
+		"./client": {
+			"types": "./src/client.ts",
+			"import": "./src/client.ts"
+		},
+		"./config": {
+			"types": "./src/config.ts",
+			"import": "./src/config.ts"
+		},
+		"./registry": {
+			"types": "./src/registry.ts",
+			"import": "./src/registry.ts"
+		},
+		"./service": {
+			"types": "./src/service.ts",
+			"import": "./src/service.ts"
+		}
+	},
+	"scripts": {
+		"format": "oxfmt --check src test package.json tsconfig.json README.md",
+		"lint": "oxlint .",
+		"test": "vitest run",
+		"typecheck": "tsgo --noEmit"
+	},
+	"dependencies": {
+		"@dsar/guards": "workspace:*",
+		"@dsar/internals-error-codes": "workspace:*",
+		"@dsar/node-sdk": "workspace:*",
+		"@dsar/persistence": "workspace:*",
+		"@dsar/schema": "workspace:*",
+		"chat": "^4.18.0",
+		"effect": "catalog:effect"
+	},
+	"devDependencies": {
+		"@dsar/typescript-config": "workspace:*",
+		"@effect/language-service": "catalog:effect",
+		"@effect/vitest": "catalog:effect",
+		"@types/node": "catalog:types",
+		"typescript": "catalog:utils",
+		"vitest": "catalog:utils"
+	}
+}

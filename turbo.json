@@ -1,0 +1,61 @@
+{
+	"$schema": "https://turborepo.dev/schema.v2.json",
+	"ui": "tui",
+	"tasks": {
+		"build": {
+			"dependsOn": ["^build"],
+			"inputs": ["$TURBO_DEFAULT$", ".env*"],
+			"outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+		},
+		"typecheck": {
+			"dependsOn": ["^build"],
+			"inputs": [
+				"$TURBO_DEFAULT$",
+				"**/tsconfig.json",
+				"**/tsconfig.base.json"
+			],
+			"outputs": []
+		},
+		"test": {
+			"dependsOn": ["^build"],
+			"inputs": ["$TURBO_DEFAULT$"],
+			"outputs": ["coverage/**"]
+		},
+		"lint": {
+			"inputs": ["$TURBO_DEFAULT$", "**/biome.jsonc", "**/biome.json"],
+			"outputs": []
+		},
+		"format": {
+			"inputs": ["$TURBO_DEFAULT$", "**/biome.jsonc", "**/biome.json"],
+			"outputs": []
+		},
+		"dev": {
+			"dependsOn": ["^build"],
+			"cache": false,
+			"persistent": true
+		},
+		"check": {
+			"dependsOn": ["^build"],
+			"inputs": ["$TURBO_DEFAULT$"],
+			"outputs": [],
+			"cache": false
+		},
+		"start": {
+			"dependsOn": ["^build"],
+			"cache": false,
+			"persistent": true
+		},
+		"smoke": {
+			"dependsOn": ["^build"],
+			"inputs": ["$TURBO_DEFAULT$"],
+			"outputs": [],
+			"cache": false
+		},
+		"kitchen-sink": {
+			"dependsOn": ["^build"],
+			"inputs": ["$TURBO_DEFAULT$"],
+			"outputs": [],
+			"cache": false
+		}
+	}
+}

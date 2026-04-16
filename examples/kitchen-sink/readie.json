@@ -1,0 +1,17 @@
+{
+	"$schema": "https://unpkg.com/readie@1.0.0/schemas/readie.schema.json",
+	"title": "Kitchen Sink Runtime Example",
+	"description": "Standalone kitchen sink workspace under examples/kitchen-sink. Starts a local DSAR runtime with SQLite persistence + filesystem storage and runs a broad API walkthrough covering core lifecycle and integration surfaces.",
+	"includeTableOfContents": true,
+	"features": [
+		".env.example - environment template",
+		"runtime.config.ts - DSAR runtime config (filesystem storage adapter)",
+		"server.ts - local Node HTTP server hosting dsarInstance(...)",
+		"kitchen-sink.ts - end-to-end API walkthrough runner",
+		"package.json - run/check/kitchen-sink scripts"
+	],
+	"quickStart": "1. Copy `.env.example` to `.env`.\n2. Start the runtime:\n\n```sh\nturbo run dev --filter=dsar-kitchen-sink-example\n```\n\n3. In another terminal, run the kitchen sink walkthrough:\n\n```sh\nturbo run kitchen-sink --filter=dsar-kitchen-sink-example\n```",
+	"usage": [
+		"Uses defaults: PORT=3021, .dsar-kitchen-sink.db, .dsar-kitchen-sink-artifacts. Runtime config wires @dsar/inbound-resend and @dsar/outbound-resend; outbound resend runs in mock-delivery mode (DSAR_OUTBOUND_RESEND_LIVE=false) by default. smoke and kitchen-sink run the same walkthrough script. Intended for local development and exploration."
+	]
+}

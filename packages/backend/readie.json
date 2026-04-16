@@ -1,0 +1,17 @@
+{
+	"$schema": "https://unpkg.com/readie@1.0.0/schemas/readie.schema.json",
+	"title": "@dsar/backend",
+	"description": "Backend runtime core for DSAR services. `dsarInstance(options)` returns handler, app metadata, and runtime context; built on @effect/platform HTTP boundary with fetch-compatible contract.",
+	"includeTableOfContents": true,
+	"features": [
+		"Route groups: /init, /requests, /subjects, /policies, /status",
+		"Error envelope: non-success responses return ok, error.code, error.message, status",
+		"Persistence wiring via runtimeReposFromPersistence + @dsar/persistence",
+		"OpenAPI + docs: GET /spec.json, GET /docs, makeDsarHttpApi, createOpenApiSpec"
+	],
+	"usage": [
+		"```ts\nimport { dsarInstance } from \"@dsar/backend\";\n\nconst runtime = dsarInstance({ basePath: \"/api/v1\" });\n\nexport default {\n\tasync fetch(request: Request): Promise<Response> {\n\t\treturn runtime.handler(request);\n\t},\n};\n```",
+		"Persistence wiring:\n\n```ts\nimport { dsarInstance, runtimeReposFromPersistence } from \"@dsar/backend\";\nimport { Effect } from \"effect\";\nimport { makeSqlitePersistenceLayer, Persistence, withTenant } from \"@dsar/persistence\";\n\nconst persistence = await Effect.runPromise(\n\tPersistence.pipe(\n\t\twithTenant(\"tenant-1\"),\n\t\tEffect.provide(makeSqlitePersistenceLayer({ filename: \":memory:\" }))\n\t)\n);\n\nconst runtime = dsarInstance({\n\trepos: runtimeReposFromPersistence(persistence),\n});\n```",
+		"OpenAPI spec and docs: `GET /spec.json`, `GET /docs` (basePath-aware)."
+	]
+}

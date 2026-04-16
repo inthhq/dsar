@@ -1,0 +1,89 @@
+{
+	"name": "us-va-refusal-appeal",
+	"input": {
+		"policyPack": {
+			"packId": "launch-us-virginia-us-va",
+			"version": "1.0.0",
+			"jurisdiction": "us-va",
+			"effectiveAt": "2026-01-01T00:00:00.000Z",
+			"sections": {
+				"clock": {
+					"start": "receipt",
+					"verificationEffect": "stop_clock",
+					"clarificationEffect": "stop_clock",
+					"ackRequired": true,
+					"ackDeadlineBusinessDays": 10,
+					"responseDeadlineDays": 45,
+					"extension": {
+						"enabled": true,
+						"maxAdditionalDays": 45,
+						"requiresJustification": true
+					},
+					"rules": []
+				},
+				"representation": {
+					"authorityEvidenceRequiredFor": [
+						"representative",
+						"authorised_agent"
+					],
+					"enableDeliveryTargeting": true
+				},
+				"verification": {
+					"requiredWhen": "when_authority_missing",
+					"allowedMethods": ["existing_auth", "email_link", "manual"],
+					"redactionSupported": true,
+					"deleteCollectedDataAfterProcessing": true
+				},
+				"response": {
+					"allowedMediaTypes": ["application/json", "text/csv"],
+					"requireManifest": true,
+					"requireDownloadableCopyForRemoteAccess": true,
+					"preferredFormatCapture": true
+				},
+				"delivery": {
+					"securityLevel": "token",
+					"tokenTtlSeconds": 86400,
+					"stepUpRequired": false,
+					"allowedChannels": ["portal", "email", "secure_remote_access"]
+				},
+				"appeals": {
+					"required": true,
+					"deadlineDays": 60,
+					"extensionDays": 30,
+					"mustBeEasyAsOriginalRequest": true,
+					"mustIncludeAGContactIfDenied": true
+				},
+				"retention": {
+					"minimums": {
+						"request_record": 730,
+						"audit_event": 730,
+						"verification_evidence": 90,
+						"fulfilment_artifact": 365,
+						"delivery_log": 365,
+						"notification_log": 365
+					},
+					"verificationDeleteAfterProcessing": true
+				},
+				"audit": {
+					"requireRuleTrace": true,
+					"requireClockExplainability": true
+				}
+			}
+		},
+		"jurisdiction": "us-va",
+		"policyVersion": "1.0.0",
+		"requestType": "access",
+		"requestorType": "subject",
+		"hasAuthorityEvidence": true,
+		"timeline": {
+			"receivedAt": "2026-11-01T00:00:00.000Z",
+			"now": "2026-11-10T00:00:00.000Z",
+			"pauses": [],
+			"extensions": []
+		},
+		"context": {
+			"isComplex": false,
+			"requiresVerification": false
+		}
+	}
+}

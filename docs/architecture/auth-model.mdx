@@ -1,0 +1,62 @@
+---
+title: "DSAR Auth Model"
+description: "DSAR now treats authentication as two separate runtime lanes:"
+lastModified: 2026-04-16
+---
+
+DSAR now treats authentication as two separate runtime lanes:
+
+## API-Key Access
+
+Use bearer auth for machine-to-machine traffic:
+
+- CLI
+- Node SDK
+- backend services
+- dashboard-to-DSAR calls
+- automation and partner integrations
+
+This lane is configured with:
+
+- `staticBearerTokens` for local development and simple self-hosting
+- `resolveBearerToken` for hosted or dynamic key verification
+
+## Trusted Host Identity
+
+Use `resolveTrustedRequestIdentity` for user-facing portals where the host app
+already owns the login session.
+
+- The host authenticates the subject or operator.
+- The host normalizes that session into DSAR's request identity shape.
+- DSAR applies tenant scoping plus route authorization.
+
+This keeps DSAR out of the business of owning dashboard or subject login flows.
+
+## Authorization Rules
+
+Authentication only proves who is calling. Authorization decides what they may
+do.
+
+- `operator` and `service` principals can use staff-only routes.
+- `subject` principals may only use subject-owned routes.
+- Subject-owned routes now enforce request ownership in the backend.
+- Protected routes fail closed when `tenantId` is missing.
+
+## Deployment Defaults
+
+Hosted managed:
+
+- host-owned dashboard login
+- host-owned subject portal login
+- DSAR API keys for machine access
+- optional `@dsar/auth-unkey` for hosted bearer verification
+
+Simple self-hosted:
+
+- one tenant-scoped `DSAR_API_TOKEN`
+- optional extra demo tokens for local dashboard/subject examples
+
+Advanced self-hosted:
+
+- custom `resolveBearerToken`
+- optional `resolveTrustedRequestIdentity`

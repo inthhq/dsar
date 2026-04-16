@@ -1,0 +1,30 @@
+import { defineConfig } from "tsdown";
+
+export default defineConfig({
+	attw: { enabled: "ci-only", profile: "esm-only" },
+	clean: true,
+	dts: true,
+	entry: {
+		"auth-unkey": "src/auth-unkey.ts",
+		backend: "src/backend.ts",
+		bin: "src/bin.ts",
+		cli: "src/cli.ts",
+		core: "src/core.ts",
+		"inbound-resend": "src/inbound-resend.ts",
+		"inbound-slack": "src/inbound-slack.ts",
+		index: "src/index.ts",
+		"node-sdk": "src/node-sdk.ts",
+		"outbound-resend": "src/outbound-resend.ts",
+		"persistence-pg": "src/persistence-pg.ts",
+		"persistence-sqlite": "src/persistence-sqlite.ts",
+		"storage-filesystem": "src/storage-filesystem.ts",
+		"storage-s3": "src/storage-s3.ts",
+		"storage-vercel-blob": "src/storage-vercel-blob.ts",
+	},
+	external: [/^@effect\//, "dotenv", "effect"],
+	failOnWarn: "ci-only",
+	fixedExtension: true,
+	format: "esm",
+	noExternal: ["@dsar/cli"],
+	publint: "ci-only",
+});

@@ -1,0 +1,31 @@
+---
+title: "DSAR-S3-1599: STORAGE_S3_UNCATALOGED_ERROR"
+description: "The runtime emitted an error code that is not present in the S3 storage catalog and fell back to uncataloged handling."
+lastModified: 2026-04-16
+---
+
+## Meaning
+
+The runtime emitted an error code that is not present in the S3 storage catalog and fell back to uncataloged handling.
+
+## Probable Causes
+
+- New error code emitted without catalog/docs entry.
+- Typo in reason code string from throw site.
+
+## How to Fix
+
+1. Add the missing code to S3 storage catalog.
+2. Add matching per-code docs markdown file.
+3. Update tests.
+
+## Retryable
+
+Yes for transient failures, but treat as a release-quality defect.
+
+## Minimal Trigger Example
+
+```ts
+const mapError = () => ({ code: "S3_NOT_IN_CATALOG" });
+const mapped = mapError(); // catalog lookup fails for this unregistered code
+```

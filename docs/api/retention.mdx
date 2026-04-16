@@ -1,0 +1,49 @@
+---
+title: "Retention Policy API"
+description: "List retention policies for a tenant."
+lastModified: 2026-04-16
+---
+
+## GET /tenants/:tenantId/retention
+
+List retention policies for a tenant.
+
+**Response (200):**
+
+```json
+[
+	{
+		"id": "ret-1",
+		"class": "request_record",
+		"minDays": 30,
+		"maxDays": 365,
+		"purgeEnabled": true,
+		"legalHoldEnabled": false,
+		"updatedAt": "2026-01-01T00:00:00.000Z"
+	}
+]
+```
+
+## PUT /tenants/:tenantId/retention
+
+Create or update a retention policy.
+
+**Request body:**
+
+- `class` (string, required): Retention class — must be one of the values listed below
+- `minDays` (number, optional): Minimum retention period (default: 30)
+- `maxDays` (number, optional): Maximum retention period (default: 365)
+- `purgeEnabled` (boolean, optional): Auto-purge toggle (default: false)
+- `legalHoldEnabled` (boolean, optional): Legal hold toggle (default: false)
+
+**Response (202):**
+The upserted retention policy record.
+
+### Retention Classes
+
+- `request_record` - DSAR request records
+- `audit_event` - Immutable audit events
+- `verification_evidence` - Identity verification artifacts
+- `fulfilment_artifact` - Response data packages
+- `delivery_log` - Delivery attempt records
+- `notification_log` - Notification generation/delivery records

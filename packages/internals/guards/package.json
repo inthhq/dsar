@@ -1,0 +1,36 @@
+{
+	"name": "@dsar/guards",
+	"version": "0.0.5",
+	"private": true,
+	"description": "Generic runtime guard and parser helpers for DSAR packages.",
+	"license": "Apache-2.0",
+	"type": "module",
+	"imports": {
+		"#src": "./src/index.ts",
+		"#src/*": "./src/*"
+	},
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"import": "./src/index.ts"
+		}
+	},
+	"scripts": {
+		"format": "oxfmt --check src package.json tsconfig.json tsdown.config.ts README.md",
+		"lint": "oxlint .",
+		"test": "vitest run --passWithNoTests",
+		"typecheck": "tsgo --noEmit"
+	},
+	"dependencies": {
+		"@dsar/internals-error-codes": "workspace:*",
+		"effect": "catalog:effect"
+	},
+	"devDependencies": {
+		"@dsar/typescript-config": "workspace:*",
+		"@effect/language-service": "catalog:effect",
+		"@effect/vitest": "catalog:effect",
+		"tsdown": "catalog:utils",
+		"typescript": "catalog:utils",
+		"vitest": "catalog:utils"
+	}
+}

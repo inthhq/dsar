@@ -1,0 +1,7 @@
+{
+	"$schema": "https://unpkg.com/readie@1.0.0/schemas/readie.schema.json",
+	"title": "DSAR",
+	"description": "DSAR monorepo: developer-first Data Subject Access Request engine.",
+	"includeTableOfContents": false,
+	"quickStart": "```sh\nbunx turbo run dev --filter=./examples/kitchen-sink\n```"
+}

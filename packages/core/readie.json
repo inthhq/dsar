@@ -1,0 +1,18 @@
+{
+	"$schema": "https://unpkg.com/readie@1.0.0/schemas/readie.schema.json",
+	"title": "@dsar/core",
+	"description": "Mode-aware DSAR client runtime. Provides one stable application-facing contract and swaps runtime behavior by mode: managed, self-hosted, custom, offline.",
+	"includeTableOfContents": true,
+	"features": [
+		"Modes: managed, self-hosted, custom, offline",
+		"Tenant AI optionality via `aiEnabled` in config",
+		"Registry/cache: `createCoreClient` reuses instances by deterministic config key"
+	],
+	"usage": [
+		"```ts\nimport { createCoreClient } from \"@dsar/core\";\n```",
+		"### managed / self-hosted\n\nUse HTTP-backed execution via `@dsar/node-sdk` with `baseUrl` (or `DSAR_API_URL`).\n\n```ts\nconst client = createCoreClient({\n\tmode: \"managed\",\n\tbaseUrl: \"https://api.example.com/api/v1\",\n\ttoken: process.env.DSAR_API_TOKEN,\n});\n\nconst status = await client.sdk.status();\nconsole.log(status.unwrap().status);\n```",
+		"### custom\n\nProvide a handler for deterministic/custom routing.\n\n```ts\nconst client = createCoreClient({\n\tmode: \"custom\",\n\thandler: async ({ path }) => {\n\t\tif (path.join(\".\") === \"status\") {\n\t\t\treturn { service: \"custom\", status: \"ok\" };\n\t\t}\n\t\treturn { status: \"stubbed\" };\n\t},\n});\n```",
+		"### offline\n\nUse deterministic local fixtures without backend dependency.\n\n```ts\nconst client = createCoreClient({\n\tmode: \"offline\",\n\tfixtures: {\n\t\tstatus: { service: \"offline\", status: \"ok\" },\n\t},\n});\n```",
+		"For tests: `import { clearCoreClientRegistry } from \"@dsar/core\"; clearCoreClientRegistry();`"
+	]
+}

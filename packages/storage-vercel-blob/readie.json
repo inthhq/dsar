@@ -1,0 +1,15 @@
+{
+	"$schema": "https://unpkg.com/readie@1.0.0/schemas/readie.schema.json",
+	"title": "@dsar/storage-vercel-blob",
+	"description": "Optional Vercel Blob-backed storage adapter for DSAR fulfillment artifacts.",
+	"includeTableOfContents": false,
+	"features": [
+		"Effect-based StorageAdapterContract implementation.",
+		"Deterministic key/reference mapping with manifest linkage metadata.",
+		"putObject, getObject, headObject, deleteObject parity with storage contract.",
+		"Normalized adapter errors and health diagnostics."
+	],
+	"usage": [
+		"```ts\nimport { dsarInstance } from \"@dsar/backend\";\nimport { makeVercelBlobStorageAdapter } from \"@dsar/storage-vercel-blob\";\n\nconst runtime = dsarInstance({\n\tadapters: {\n\t\tinbound: \"stub\",\n\t\tnotifications: \"stub\",\n\t\tstorage: makeVercelBlobStorageAdapter({\n\t\t\treadWriteToken: process.env.BLOB_READ_WRITE_TOKEN ?? \"\",\n\t\t}),\n\t},\n});\n```"
+	]
+}

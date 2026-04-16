@@ -1,0 +1,15 @@
+{
+	"$schema": "https://unpkg.com/@changesets/config@latest/schema.json",
+	"changelog": "@changesets/cli/changelog",
+	"commit": false,
+	"linked": [["dsar"]],
+	"access": "public",
+	"baseBranch": "canary",
+	"updateInternalDependencies": "patch",
+	"___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
+		"onlyUpdatePeerDependentsWhenOutOfRange": true
+	},
+	"snapshot": {
+		"useCalculatedVersion": true
+	}
+}

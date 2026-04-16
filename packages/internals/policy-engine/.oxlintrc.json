@@ -1,0 +1,14 @@
+{
+	"$schema": "../../../node_modules/oxlint/configuration_schema.json",
+	"extends": ["../../../.oxlintrc.json"],
+	"rules": {
+		"import/no-nodejs-modules": "off",
+		"import/no-relative-parent-imports": "off",
+		"jest/prefer-each": "off",
+		"max-classes-per-file": "off",
+		"max-statements": "off",
+		"oxc/no-barrel-file": "off",
+		"unicorn/no-array-reverse": "off",
+		"unicorn/no-array-sort": "off"
+	}
+}

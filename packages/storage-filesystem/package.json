@@ -1,0 +1,41 @@
+{
+	"name": "@dsar/storage-filesystem",
+	"version": "0.0.5",
+	"private": true,
+	"description": "Optional local filesystem storage adapter for DSAR artifacts.",
+	"license": "Apache-2.0",
+	"files": [
+		"src"
+	],
+	"type": "module",
+	"imports": {
+		"#src": "./src/index.ts",
+		"#src/*": "./src/*"
+	},
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"import": "./src/index.ts"
+		}
+	},
+	"scripts": {
+		"format": "oxfmt --check src test package.json tsconfig.json README.md",
+		"lint": "oxlint .",
+		"test": "vitest run",
+		"typecheck": "tsgo --noEmit"
+	},
+	"dependencies": {
+		"@dsar/backend": "workspace:*",
+		"@dsar/guards": "workspace:*",
+		"@dsar/internals-error-codes": "workspace:*",
+		"effect": "catalog:effect"
+	},
+	"devDependencies": {
+		"@dsar/typescript-config": "workspace:*",
+		"@effect/language-service": "catalog:effect",
+		"@effect/vitest": "catalog:effect",
+		"@types/node": "catalog:types",
+		"typescript": "catalog:utils",
+		"vitest": "catalog:utils"
+	}
+}

@@ -1,0 +1,10 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"display": "Effect.TS – Tests",
+	"extends": "./effect.json",
+	"compilerOptions": {
+		"rootDir": "${configDir}",
+		"noEmit": true
+	},
+	"include": ["${configDir}/src", "${configDir}/test"]
+}

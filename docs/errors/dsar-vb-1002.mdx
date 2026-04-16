@@ -1,0 +1,32 @@
+---
+title: "DSAR-VB-1002: STORAGE_VERCEL_BLOB_RETRY_EXHAUSTED"
+description: "A Vercel Blob storage operation failed after exhausting all configured retry attempts."
+lastModified: 2026-04-16
+---
+
+## Meaning
+
+A Vercel Blob storage operation failed after exhausting all configured retry attempts.
+
+## Probable Causes
+
+- Persistent transient errors (timeouts, rate limits, network issues) across all retries.
+- Vercel Blob service experiencing an extended outage.
+- Retry budget (`retryMaxAttempts`) is too low for the current error rate.
+
+## How to Fix
+
+1. Inspect `error.details.lastError.message` and `error.details.lastError.code` to identify the underlying failure class.
+2. Confirm retry metadata (`error.details.attempts` or `error.details.lastAttempt`) and `error.operation` / `error.type` so logs show exactly which operation exhausted retries.
+3. Surface these fields in logs and alerts: `lastError.message`, `lastError.code`, retry attempt count, and failed operation/type.
+4. Check Vercel status (`https://www.vercel-status.com`, or your org status page) for incidents during the failure window.
+5. If needed, tune retry settings (for example `storageAdapter.retryMaxAttempts` and `storageAdapter.retryBackoffMs`) and document expected values per environment.
+6. Verify blob endpoint reachability and validate storage adapter credentials/tokens.
+
+## Retryable
+
+Not automatically retryable until the root cause is addressed. Retries are exhausted for the current operation, but a new attempt may succeed after fixing the underlying issue.
+
+## Minimal Trigger Example
+
+A Vercel Blob `put` or `list` operation that fails with retriable errors on every attempt up to the configured maximum.

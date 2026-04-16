@@ -1,0 +1,53 @@
+---
+title: "Tenant-Safe Persistence (T07)"
+description: "This document records the T07 persistence shape, tenant ownership rules, and migration baseline."
+lastModified: 2026-04-16
+---
+
+This document records the T07 persistence shape, tenant ownership rules, and migration baseline.
+
+## Runtime model
+
+- Package: `@dsar/persistence`
+- Storage abstraction: `@effect/sql`
+- Driver packages:
+  - SQLite: `@dsar/persistence-sqlite`
+  - Postgres: `@dsar/persistence-pg`
+- Scope enforcement: mandatory `TenantContext` service
+
+## Tenant ownership map
+
+All tenant-owned records include `tenant_id` and must be queried with tenant scope:
+
+- `requests`
+- `request_clock_segments`
+- `request_timeline_events`
+- `policy_assignments`
+- `verification_evidence`
+- `fulfillment_artifacts`
+- `retention_policies`
+- `audit_events`
+
+## Repository boundary
+
+Repositories are exposed only through the `Persistence` Effect service:
+
+- requests
+- timeline
+- policyAssignments
+- verificationEvidence
+- fulfillmentArtifacts
+- retentionPolicies
+- auditEvents
+
+Direct SQL usage outside this package is out of scope by convention.
+
+## Migration manifest
+
+- `0001_initial` - creates tenant-safe tables and baseline indexes for T07 entities.
+
+## Rollback notes
+
+- Current migration strategy is forward-only for MVP.
+- Rollback in development/test is performed by dropping the SQLite file and re-applying migrations.
+- Postgres startup keeps migration execution in runtime, with advisory lock coordination to avoid concurrent migration runners.

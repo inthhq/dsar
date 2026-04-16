@@ -1,0 +1,46 @@
+---
+title: "DSAR-PS-1003: PERSISTENCE_OPERATION_UNSUPPORTED"
+description: "The persistence layer does not support the requested operation for the given entity or context."
+lastModified: 2026-04-16
+---
+
+## Meaning
+
+The persistence layer does not support the requested operation for the given entity or context.
+
+## Probable Causes
+
+- Attempted an operation that is not implemented by the current persistence adapter.
+- Called a write operation on a read-only entity or view.
+- Used a feature that requires a specific database backend not currently configured.
+
+## How to Fix
+
+1. Check `error.trace.operation` and `error.trace.reason` for specifics.
+2. Verify the persistence adapter supports the intended operation.
+3. Use an alternative approach or enable the required feature.
+
+## Retryable
+
+No. The operation is structurally unsupported and requires a code or configuration change.
+
+## Minimal Trigger Example
+
+Calling an unsupported persistence method on an entity that does not implement it.
+
+## Response Shape
+
+```json
+{
+	"errorCode": "DSAR-PS-1003",
+	"message": "Persistence operation is not supported for this entity.",
+	"entity": "audit_events",
+	"attemptedMethod": "bulkUpsert",
+	"timestamp": "2026-03-03T12:00:00.000Z",
+	"details": {
+		"adapter": "sqlite",
+		"operation": "bulkUpsert"
+	},
+	"suggestion": "Use append or switch to an adapter that supports bulk writes."
+}
+```

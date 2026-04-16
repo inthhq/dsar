@@ -1,0 +1,28 @@
+---
+title: "DSAR-IN-1599: INBOUND_RESEND_UNCATALOGED_ERROR"
+description: "The runtime emitted an error code that is not present in the inbound Resend catalog and fell back to uncataloged handling."
+lastModified: 2026-04-16
+---
+
+## Meaning
+
+The runtime emitted an error code that is not present in the inbound Resend catalog and fell back to uncataloged handling.
+
+## Probable Causes
+
+- New error code emitted without catalog/docs entry.
+- Typo in reason code string from throw site.
+
+## How to Fix
+
+1. Add the missing code to inbound Resend catalog.
+2. Add matching per-code docs markdown file.
+3. Update tests.
+
+## Retryable
+
+Yes for transient failures, but treat as a release-quality defect.
+
+## Minimal Trigger Example
+
+A mapper returns a code not defined in the inbound Resend error catalog.

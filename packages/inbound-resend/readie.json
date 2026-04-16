@@ -1,0 +1,16 @@
+{
+	"$schema": "https://unpkg.com/readie@1.0.0/schemas/readie.schema.json",
+	"title": "@dsar/inbound-resend",
+	"description": "Inbound Resend adapter for DSAR intake.",
+	"includeTableOfContents": false,
+	"features": [
+		"Resend webhook signature verification for `email.received` events.",
+		"Recipient route resolution to `{ tenantId, workspaceId?, jurisdiction }`.",
+		"Normalized inbound payload for backend request capture flow.",
+		"Optional content fetch for DSAR-intent parsing.",
+		"Normalized adapter invocation error categories with retriable hints."
+	],
+	"usage": [
+		"```ts\nimport { makeResendInboundAdapter } from \"@dsar/inbound-resend\";\n\nconst inbound = makeResendInboundAdapter({\n\twebhookSecret: process.env.RESEND_WEBHOOK_SECRET!,\n\tdefaultRoute: {\n\t\ttenantId: \"tenant-default\",\n\t\tjurisdiction: \"uk\",\n\t},\n});\n```"
+	]
+}

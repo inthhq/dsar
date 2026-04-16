@@ -1,0 +1,16 @@
+{
+	"$schema": "https://unpkg.com/readie@1.0.0/schemas/readie.schema.json",
+	"title": "@dsar/storage-s3",
+	"description": "Optional S3-backed storage adapter for DSAR fulfillment artifacts.",
+	"includeTableOfContents": false,
+	"features": [
+		"Effect-based StorageAdapterContract implementation for S3-compatible storage.",
+		"Deterministic artifact key/reference mapping for manifest linkage.",
+		"Integrity metadata (checksum, sizeBytes, contentType) for review/audit correlation.",
+		"Normalized provider error mapping using backend adapter conventions.",
+		"Health and diagnostics hooks for operational visibility."
+	],
+	"usage": [
+		"```ts\nimport { dsarInstance } from \"@dsar/backend\";\nimport { makeS3StorageAdapter } from \"@dsar/storage-s3\";\n\nconst storage = makeS3StorageAdapter({\n\tbucket: \"dsar-artifacts\",\n\tregion: \"us-east-1\",\n});\n\nconst runtime = dsarInstance({\n\tadapters: {\n\t\tinbound: \"stub\",\n\t\tnotifications: \"stub\",\n\t\tstorage,\n\t},\n});\n```"
+	]
+}

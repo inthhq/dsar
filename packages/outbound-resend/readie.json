@@ -1,0 +1,10 @@
+{
+	"$schema": "https://unpkg.com/readie@1.0.0/schemas/readie.schema.json",
+	"title": "@dsar/outbound-resend",
+	"description": "Resend-backed notification adapter implementing the DSAR notification adapter contract.",
+	"includeTableOfContents": false,
+	"installation": ["```bash\nbun add @dsar/outbound-resend\n```"],
+	"usage": [
+		"```ts\nimport { dsarInstance } from \"@dsar/backend\";\nimport { makeOutboundResendAdapter } from \"@dsar/outbound-resend\";\n\nconst outboundResend = makeOutboundResendAdapter({\n\tapiKey: process.env.RESEND_API_KEY ?? \"\",\n\tfrom: \"DSAR <no-reply@example.com>\",\n});\n\nconst runtime = dsarInstance({\n\tadapters: {\n\t\tinbound: \"stub\",\n\t\tnotifications: outboundResend,\n\t\tstorage: \"stub\",\n\t},\n});\n```"
+	]
+}

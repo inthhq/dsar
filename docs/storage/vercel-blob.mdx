@@ -1,0 +1,87 @@
+---
+title: "Vercel Blob Storage"
+description: "@dsar/storage-vercel-blob stores DSAR fulfilment artifacts in Vercel's managed blob storage service. Zero infrastructure setup when deploying on Vercel."
+lastModified: 2026-04-16
+---
+
+`@dsar/storage-vercel-blob` stores DSAR fulfilment artifacts in Vercel's managed blob storage service. Zero infrastructure setup when deploying on Vercel.
+
+## Installation
+
+| Package manager | Command                                 |
+| :-------------- | :-------------------------------------- |
+| npm             | `npm install @dsar/storage-vercel-blob` |
+| pnpm            | `pnpm add @dsar/storage-vercel-blob`    |
+| yarn            | `yarn add @dsar/storage-vercel-blob`    |
+| bun             | `bun add @dsar/storage-vercel-blob`     |
+
+## Setup
+
+```ts
+import { dsarInstance } from "@dsar/backend";
+import { makeVercelBlobStorageAdapter } from "@dsar/storage-vercel-blob";
+
+const runtime = dsarInstance({
+	adapters: {
+		inbound: "stub",
+		notifications: "stub",
+		storage: makeVercelBlobStorageAdapter({
+			prefix: "artifacts",
+			readWriteToken: process.env.BLOB_READ_WRITE_TOKEN,
+			retryMaxAttempts: 3,
+			timeoutMs: 3000,
+		}),
+	},
+});
+```
+
+## Configuration
+
+| Option               | Default                             | Description                        |
+| :------------------- | :---------------------------------- | :--------------------------------- |
+| `readWriteToken`     | `process.env.BLOB_READ_WRITE_TOKEN` | Vercel Blob read-write token       |
+| `prefix`             | `artifacts`                         | Key prefix for all stored objects  |
+| `addRandomSuffix`    | `false`                             | Append random suffix to keys       |
+| `allowOverwrite`     | `false`                             | Allow overwriting existing objects |
+| `cacheControlMaxAge` | —                                   | CDN cache-control max age          |
+| `timeoutMs`          | `10000`                             | Request timeout in milliseconds    |
+| `retryMaxAttempts`   | `3`                                 | Retry count for retriable failures |
+
+## Key Layout
+
+Default deterministic key format:
+
+```
+<prefix>/<requestId>/<manifestId>/<category>/<redaction>/<thirdParty>/<artifactName>
+```
+
+Fallback values:
+
+- missing `requestId` → `request-unknown`
+- missing `manifestId` → `manifest-unknown`
+- missing `category` → `uncategorized`
+- missing name/id → `artifact.bin`
+
+## Error and Retry Behaviour
+
+| Category     | Retriable | Examples                                 |
+| :----------- | :-------- | :--------------------------------------- |
+| `timeout`    | yes       | request abort, blob service unavailable  |
+| `rate_limit` | yes       | blob rate limiting / throttling          |
+| `network`    | yes       | fetch/socket connectivity failures       |
+| `auth`       | no        | invalid token, store suspended/not found |
+| `validation` | no        | malformed input/config                   |
+| `config`     | no        | adapter setup invalid                    |
+| `unknown`    | no        | unmatched provider errors                |
+
+## Caching and Overwrite Notes
+
+- Vercel Blob `put(...)` requires `access: "public"` and serves content through CDN cache.
+- Prefer immutable pathnames and keep `allowOverwrite` disabled unless you explicitly need mutation.
+- If overwrite is enabled, cached clients may still observe stale content until cache expiry (`cacheControlMaxAge`).
+
+## Related
+
+- [Storage Overview](/docs/storage)
+- [S3 Storage](/docs/storage/s3)
+- [Filesystem Storage](/docs/storage/filesystem)

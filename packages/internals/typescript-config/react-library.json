@@ -1,0 +1,11 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"display": "React Library",
+	"extends": "./base.json",
+	"compilerOptions": {
+		"rootDir": "${configDir}/src",
+		"outDir": "${configDir}/dist",
+		"jsx": "react-jsx"
+	},
+	"include": ["${configDir}/src"]
+}

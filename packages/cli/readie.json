@@ -1,0 +1,38 @@
+{
+	"$schema": "https://unpkg.com/readie@1.0.0/schemas/readie.schema.json",
+	"title": "@dsar/cli",
+	"description": "Command-line interface for DSAR APIs with endpoint parity coverage.",
+	"includeTableOfContents": true,
+	"installation": ["```sh\nbun add @dsar/cli\n```"],
+	"usage": [
+		"Run locally: `dsar --help`",
+		"Interactive mode (no args): `dsar` opens a wizard to choose command domain + command, prompt for params/payloads, and show review with execute/edit/cancel.",
+		"Configuration: same auth/env as Node SDK — DSAR_API_URL (required unless --api-url), DSAR_API_TOKEN (optional). Global flags: --api-url, --token, --idempotency-key, --output text|json, --json '<payload>'. --help prints help and does not start the wizard.",
+		"Output: --output text for readable; --output json for envelope { ok, data|error, meta }.",
+		"Commands mirror backend: init, status; subjects get; policies list|upgrades ...; requests ... (capture, clock explain, verification, delivery, manifest, appeals, audit); tenants retention get|put. See docs/developer/cli.md for full mapping.",
+		"npx dsar works only after package publishing; in-workspace use local install or workspace scripts."
+	],
+	"commands": [
+		{
+			"name": "dsar --help",
+			"description": "Print help (does not start interactive wizard)."
+		},
+		{
+			"name": "dsar",
+			"description": "Start interactive command wizard when no arguments provided."
+		}
+	],
+	"globalFlags": [
+		{ "flag": "--api-url <url>", "description": "API base URL override." },
+		{ "flag": "--token <token>", "description": "Bearer token for auth." },
+		{
+			"flag": "--idempotency-key <key>",
+			"description": "Idempotency key for mutations."
+		},
+		{ "flag": "--output text|json", "description": "Output format." },
+		{
+			"flag": "--json '<payload>'",
+			"description": "POST/PUT payload for JSON body."
+		}
+	]
+}

@@ -1,0 +1,28 @@
+---
+title: "DSAR-GRD-1500: GUARDS_RUNTIME_ERROR"
+description: "An unhandled guards runtime exception occurred."
+lastModified: 2026-04-16
+---
+
+## Meaning
+
+An unhandled guards runtime exception occurred.
+
+## Probable Causes
+
+- Unexpected bug in guard evaluation logic.
+- Dependency failure not mapped to a typed domain error.
+
+## How to Fix
+
+1. Inspect logs for stack trace and context.
+2. Add explicit domain error mapping for the failing boundary.
+3. Patch root cause and add regression tests.
+
+## Retryable
+
+Yes, but only when failure is transient. Persistent failures require code fix.
+
+## Minimal Trigger Example
+
+Any uncaught exception thrown during guard evaluation.

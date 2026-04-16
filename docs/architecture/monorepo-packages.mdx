@@ -1,0 +1,116 @@
+---
+title: "Monorepo Packages and Conventions"
+description: "This document defines the DSAR workspace package map, ownership, dependency rules, and conventions for adding packages. **Packages are created in their implementing tickets, not skeleton-first.** T01 establishes only the workspace and this documentation."
+lastModified: 2026-04-16
+---
+
+This document defines the DSAR workspace package map, ownership, dependency rules, and conventions for adding packages. **Packages are created in their implementing tickets, not skeleton-first.** T01 establishes only the workspace and this documentation.
+
+## Package map and ownership
+
+| Package                     | Purpose                                                                                                                                                                                                                                 |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dsar`                      | Umbrella package with subpath exports for runtime, SDK, CLI, storage, inbound, outbound, and auth helpers                                                                                                                               |
+| `@dsar/backend`             | Backend runtime, OpenAPI surface, and HTTP route groups                                                                                                                                                                                 |
+| `@dsar/core`                | Stable application-facing client contract with `managed` and `self-hosted` HTTP-backed modes, `custom` handler-driven mode, and `offline` fixture-backed mode; see [docs/developer/sdk-and-runtime.md](../developer/sdk-and-runtime.md) |
+| `@dsar/node-sdk`            | Typed server-side SDK for the DSAR HTTP API                                                                                                                                                                                             |
+| `@dsar/cli`                 | Terminal interface and parity layer over backend endpoints                                                                                                                                                                              |
+| `@dsar/auth-unkey`          | Optional Unkey-backed bearer verification for machine access credentials                                                                                                                                                                |
+| `@dsar/persistence`         | Tenant-safe persistence services and repository contracts                                                                                                                                                                               |
+| `@dsar/persistence-pg`      | PostgreSQL persistence implementation                                                                                                                                                                                                   |
+| `@dsar/persistence-sqlite`  | SQLite persistence implementation                                                                                                                                                                                                       |
+| `@dsar/storage-filesystem`  | Local filesystem artifact storage adapter                                                                                                                                                                                               |
+| `@dsar/storage-s3`          | S3-backed artifact storage adapter                                                                                                                                                                                                      |
+| `@dsar/storage-vercel-blob` | Vercel Blob artifact storage adapter                                                                                                                                                                                                    |
+| `@dsar/inbound-resend`      | Inbound Resend webhook intake adapter                                                                                                                                                                                                   |
+| `@dsar/inbound-slack`       | Inbound Slack webhook intake adapter                                                                                                                                                                                                    |
+| `@dsar/outbound-resend`     | Outbound Resend notification adapter                                                                                                                                                                                                    |
+| `@dsar/schema`              | Canonical domain model, Effect schemas, and shared TypeScript types                                                                                                                                                                     |
+| `@dsar/policy-engine`       | Policy evaluator interfaces and contracts                                                                                                                                                                                               |
+| `@dsar/policy-packs`        | Policy registry, pinning, diffing, and upgrade flows                                                                                                                                                                                    |
+
+All packages live under `packages/*` and are created when their implementing ticket ships. Do not add empty package stubs in advance.
+
+Runnable product examples live under `examples/*`, including `kitchen-sink`,
+`dashboard`, `subject-portal`, `local-storage`, and `vercel-storage`.
+
+## Effect-based packages and convention
+
+The following are implemented with [Effect](https://effect.website/): runtime, services, and (where applicable) SDK/CLI internals.
+
+- **`@dsar/backend`** — HTTP via `@effect/platform` (HttpApi, HttpServer, HttpRouter); route handlers are Effect programs.
+- **`@dsar/auth-unkey`** — Optional hosted bearer-verification helper consumed by runtime auth configuration.
+- **Lifecycle and audit** (T08, T09) — Durable workflows, audit pipeline, notification events.
+- **`@dsar/policy-engine`** — Policy evaluation as Effect services.
+- **`@dsar/persistence`** (T07) — DB and repository layer as Effect Layers.
+- **Adapter layer and all adapter packages** (T15, T15B–D) — Vendor-neutral adapters as Effect services.
+- **Internally:** `@dsar/node-sdk`, `@dsar/cli`, `@dsar/core` use Effect for internals; public API can be Promise-based with Effect run at the boundary.
+
+**Conventions:**
+
+- Run Effect at the **boundary** (e.g. `Effect.runPromise`) when exposing to Node or HTTP.
+- Provide shared dependencies (DB, adapters, config) via **Layers**; avoid global mutable state.
+- Use Effect for **typed errors** and **retries**; do not swallow errors as untyped `any`.
+- **CLI:** Use `@effect/cli` (Command, Args, Options, CliApp) for type-safe commands and help.
+- **Durable workflows:** Use `@effect/workflow` (Workflow, Activity, DurableClock, etc.) where lifecycle, fulfilment, or notifications need long-running or retriable steps.
+
+## Public API responsibility (per package)
+
+- **`@dsar/schema`** — Exports only: Effect schemas, inferred TS types, and versioned contract types. No runtime behaviour.
+- **`@dsar/policy-engine`** — Evaluator interface and policy pack types; no pack implementations.
+- **`@dsar/policy-packs`** — Registry/pinning/diff/upgrade flows and policy lifecycle audit records.
+- **`@dsar/backend`** — HTTP server, routes, and backend-only services; does not depend on UI or dashboard packages.
+- **`@dsar/auth-unkey`** — Optional helper for mapping verified Unkey keys into DSAR request identities.
+- **`@dsar/core`** — Shared engine and client logic; consumed by SDK and CLI.
+- **`@dsar/node-sdk`** — Node-facing API (Promise/async) that wraps Effect programs; exports for programmatic use.
+- **`@dsar/cli`** — CLI entrypoint and commands; uses core and SDK where appropriate.
+- **Adapters** — Vendor-neutral interfaces in the adapter layer; each adapter package implements one or more adapters.
+
+## Dependency rules
+
+- **Allowed directions**
+  - **`@dsar/schema`** may be imported by any other package (foundational).
+  - **`@dsar/policy-engine`** may be used by backend, policy-packs, core, and adapters where policy evaluation is needed.
+  - **Backend** must not import UI/dashboard or portal packages.
+  - **`@dsar/auth-unkey`** may depend on vendor SDKs but stays optional and must not become a required runtime dependency for self-hosted DSAR setups.
+  - **SDK and CLI** may depend on schema, core, and (where appropriate) backend client or types; they must not depend on UI packages.
+  - **Adapters** depend on schema and adapter contracts; they must not depend on backend HTTP or UI.
+
+- **Exports-only usage**  
+  Packages must consume each other only via **public exports** (declared in `package.json` `exports`). No deep imports into internal paths (e.g. `@dsar/schema/src/private`).
+
+- **Guardrails**  
+  When packages exist, enforce dependency direction and exports-only usage via lint rules or CI (e.g. no `backend` → UI imports, no cross-package deep imports).
+
+## No-skeleton rule
+
+Packages are **not** created in T01. Each package is created in the ticket that implements it (e.g. T02 creates `@dsar/schema`). Do not add empty `packages/*` directories or stub `package.json` files before implementation.
+
+## Package creation checklist
+
+When an implementing ticket adds a new package under `packages/<name>`, it must:
+
+1. **`package.json`** — Name (e.g. `@dsar/schema`), `version`, `type: "module"`, `exports`, and scripts: `build`, `typecheck`, `test`, `lint`, `format` as required by the root Turborepo pipeline.
+2. **`src/index.ts`** — Main entry; re-export public API only.
+3. **`tsconfig.json`** — Extends root `tsconfig.base.json` (e.g. `"extends": "../../tsconfig.base.json"`), with `include`, `compilerOptions.rootDir`/`outDir` set for that package. Use strict and ESM-compatible settings from the base.
+4. **`README.md`** — Short description, usage, and (if applicable) link to docs.
+5. **Scripts** — Implement the same task names as in root `turbo.json` (`build`, `typecheck`, `test`, `lint`, `format`) so that `turbo run build`, `turbo run typecheck`, etc. from root include the new package.
+
+After adding a package, root `turbo run typecheck` and `turbo run build` must include it and pass. No circular internal dependencies.
+
+## TypeScript base and package extension
+
+The root **`tsconfig.base.json`** defines strict, ESM/Bundler-oriented defaults. Each package extends it:
+
+```json
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"rootDir": "src",
+		"outDir": "dist"
+	},
+	"include": ["src"]
+}
+```
+
+Packages may override `include`, `exclude`, `rootDir`, and `outDir` as needed; do not relax strict or module options without an explicit reason.

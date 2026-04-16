@@ -1,0 +1,19 @@
+{
+	"name": "@dsar/typescript-config",
+	"version": "0.0.5",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./*.json": "./*.json",
+		"./vitest": "./vitest.ts",
+		"./vitest-setup": "./vitest-setup.ts"
+	},
+	"scripts": {
+		"fmt": "bun biome format --write . && bun biome check --formatter-enabled=false --linter-enabled=false --write",
+		"lint": "bun biome lint ."
+	},
+	"devDependencies": {
+		"@effect/vitest": "catalog:effect",
+		"vitest": "catalog:utils"
+	}
+}

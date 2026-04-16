@@ -1,0 +1,38 @@
+---
+title: "DSAR-PP-1001: POLICY_PACKS_CHECKSUM_FAILED"
+description: "Computing a SHA-256 checksum for a policy pack failed."
+lastModified: 2026-04-16
+---
+
+## Meaning
+
+Computing a SHA-256 checksum for a policy pack failed.
+
+## Probable Causes
+
+- The policy pack payload could not be serialized to a stable canonical form.
+- An unexpected runtime error in the hashing implementation.
+- Invalid or circular data structure in the policy pack definition.
+
+## How to Fix
+
+1. Inspect the `cause` field for the underlying error message.
+2. Verify the policy pack JSON is well-formed and serializable.
+3. Ensure the runtime environment supports the Web Crypto / Node.js crypto API.
+
+## Retryable
+
+No. The policy pack content must be valid before a checksum can be computed.
+
+## Minimal Trigger Example
+
+```ts
+const policyPack: Record<string, unknown> = {
+	id: "pack-1",
+	rules: [],
+};
+policyPack.self = policyPack; // circular reference (non-serializable)
+
+await computePolicyPackChecksum(policyPack);
+// -> throws PolicyChecksumComputationError (DSAR-PP-1001)
+```

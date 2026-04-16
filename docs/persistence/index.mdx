@@ -1,0 +1,68 @@
+---
+title: "Persistence"
+description: "DSAR uses persistence drivers to store request state, audit events, policy assignments, and all other domain records in a database. Each driver implements the same PersistenceDriver contract, so you can swap databases without changing application code."
+lastModified: 2026-04-16
+---
+
+DSAR uses persistence drivers to store request state, audit events, policy assignments, and all other domain records in a database. Each driver implements the same `PersistenceDriver` contract, so you can swap databases without changing application code.
+
+## Available Drivers
+
+| Driver                | Package                    | Best For                                                       |
+| :-------------------- | :------------------------- | :------------------------------------------------------------- |
+| [Postgres](./pg.md)   | `@dsar/persistence-pg`     | Production deployments with advisory-lock migration protection |
+| [SQLite](./sqlite.md) | `@dsar/persistence-sqlite` | Local development, testing, and lightweight deployments        |
+
+## How Persistence Works
+
+The persistence layer is tenant-scoped — every database operation runs within a tenant context. The `withTenant` helper scopes Effect programs to a specific tenant:
+
+```ts
+import { Persistence, withTenant } from "@dsar/persistence";
+import { Effect } from "effect";
+
+const program = Persistence.pipe(
+	Effect.flatMap((p) => p.requests.list()),
+	withTenant("tenant-1")
+);
+```
+
+## Domain Records
+
+The persistence layer manages these record types:
+
+| Record                       | Purpose                                   |
+| :--------------------------- | :---------------------------------------- |
+| `RequestRecord`              | DSAR request state and metadata           |
+| `AuditEventRecord`           | Tamper-evident audit trail                |
+| `ClockSegmentRecord`         | Compliance clock tracking                 |
+| `FulfillmentArtifactRecord`  | Delivery artifact references              |
+| `PolicyAssignmentRecord`     | Jurisdiction policy bindings              |
+| `VerificationEvidenceRecord` | Identity verification evidence            |
+| `RetentionPolicyRecord`      | Data retention schedules                  |
+| `NotificationEventRecord`    | Notification lifecycle                    |
+| `ChatStateRecord`            | Conversational state for inbound adapters |
+
+## Choosing a Driver
+
+- **Starting out?** Use `persistence-sqlite` with in-memory mode for instant setup.
+- **Production?** Use `persistence-pg` for Postgres with advisory-lock migration protection.
+
+## Wiring with the Backend
+
+```ts
+import { dsarInstance, runtimeReposFromPersistence } from "@dsar/backend";
+import { makeSqlitePersistenceService } from "@dsar/persistence-sqlite";
+
+const persistence = await makeSqlitePersistenceService();
+
+const runtime = dsarInstance({
+	repos: runtimeReposFromPersistence(persistence),
+});
+```
+
+## Related
+
+- [Getting Started](/docs/getting-started)
+- [Request Lifecycle](/docs/request-lifecycle)
+- [Architecture: Tenant-Safe Persistence](/docs/architecture/tenant-safe-persistence)

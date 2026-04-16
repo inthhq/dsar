@@ -1,0 +1,75 @@
+---
+title: "Storage S3 Adapter Integration"
+description: "This document describes how to register and use @dsar/storage-s3 with backend runtime."
+lastModified: 2026-04-16
+---
+
+This document describes how to register and use `@dsar/storage-s3` with backend runtime.
+
+## Runtime Registration
+
+```ts
+import { dsarInstance } from "@dsar/backend";
+import { makeS3StorageAdapter } from "@dsar/storage-s3";
+
+const runtime = dsarInstance({
+	adapters: {
+		inbound: "stub",
+		notifications: "stub",
+		storage: makeS3StorageAdapter({
+			bucket: "dsar-artifacts",
+			region: "us-east-1",
+			prefix: "artifacts",
+			retryMaxAttempts: 3,
+			timeoutMs: 3000,
+		}),
+	},
+});
+```
+
+## Config Fields
+
+- `bucket` (required)
+- `region` (required)
+- `endpoint` (optional for S3-compatible providers)
+- `accessKeyId`, `secretAccessKey`, `sessionToken` (optional explicit credentials)
+- `forcePathStyle` (optional)
+- `prefix` (optional, default `artifacts`)
+- `timeoutMs` (optional, default `3000`)
+- `retryMaxAttempts` (optional, default `3`)
+
+## Key Strategy Reference
+
+Default deterministic key layout:
+
+`<prefix>/<requestId>/<manifestId>/<category>/<redaction>/<thirdParty>/<artifactName>`
+
+Fallback behavior:
+
+- missing `requestId` => `request-unknown`
+- missing `manifestId` => `manifest-unknown`
+- missing `category` => `uncategorized`
+- missing name/id => `artifact.bin`
+
+## Error and Retry Behavior Matrix
+
+| Category     | Retriable | Examples                    |
+| ------------ | --------- | --------------------------- |
+| `timeout`    | yes       | timeout, aborted request    |
+| `rate_limit` | yes       | throttling, 429             |
+| `network`    | yes       | socket/connection failures  |
+| `auth`       | no        | unauthorized, access denied |
+| `validation` | no        | malformed key/input         |
+| `config`     | no        | invalid adapter config      |
+| `unknown`    | no        | unmatched provider errors   |
+
+## Manifest Linkage
+
+Storage operations preserve manifest-linked metadata on artifact references:
+
+- `requestId`
+- `manifestId`
+- `manifestHash`
+- `manifestSignature`
+
+This metadata is available via `putObject` results and `headObject`/`getObject` metadata for review and audit correlation paths.

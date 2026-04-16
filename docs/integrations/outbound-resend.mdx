@@ -1,0 +1,101 @@
+---
+title: "Outbound Resend (`@dsar/outbound-resend`)"
+description: "@dsar/outbound-resend provides built-in outbound DSAR notifications using the Resend API."
+lastModified: 2026-04-16
+---
+
+`@dsar/outbound-resend` provides built-in outbound DSAR notifications using the Resend API.
+
+## Package setup
+
+```ts
+import { dsarInstance } from "@dsar/backend";
+import { makeOutboundResendAdapter } from "@dsar/outbound-resend";
+
+const outboundResend = makeOutboundResendAdapter({
+	apiKey: process.env.RESEND_API_KEY ?? "",
+	from: "DSAR <no-reply@example.com>",
+	replyTo: "support@example.com",
+	subjectPrefix: "[DSAR]",
+});
+
+const runtime = dsarInstance({
+	adapters: {
+		inbound: "stub",
+		notifications: outboundResend,
+		storage: "stub",
+	},
+	config: {
+		notificationWebhook: {
+			url: "https://tenant.example/webhooks/notifications",
+			signingSecret: "whsec_xxx",
+			retryMaxAttempts: 3,
+			retryDelayMs: 500,
+			timeoutMs: 3000,
+		},
+	},
+});
+```
+
+## Channel behavior
+
+Notification generation remains mandatory; delivery channels execute independently:
+
+- Webhook channel (`notificationWebhook`) dispatches signed payloads.
+- Built-in email channel dispatches via `@dsar/outbound-resend` when enabled.
+- Delivery outcomes are persisted as `pending`, `delivered`, `failed`, or `skipped`.
+
+## Email enable/disable precedence
+
+Built-in email enablement resolves in this order (last match wins):
+
+1. `notificationWebhook.disableBuiltInEmail` (legacy global disable)
+2. `outboundResend.enabled` (global)
+3. `outboundResend.tenants[tenantId].enabled` (tenant override)
+4. `outboundResend.tenants[tenantId].workspaces[workspaceId].enabled` (workspace override)
+
+Example config:
+
+```ts
+config: {
+	notificationWebhook: {
+		url: "https://tenant.example/webhooks/notifications",
+		signingSecret: "whsec_xxx",
+		retryMaxAttempts: 3,
+		retryDelayMs: 500,
+		timeoutMs: 3000,
+		disableBuiltInEmail: true,
+	},
+	outboundResend: {
+		enabled: false,
+		fallbackRecipient: "ops@example.com",
+		tenants: {
+			"tenant-default": {
+				enabled: false,
+				fallbackRecipient: "compliance@example.com",
+				workspaces: {
+					"workspace-a": {
+						enabled: true,
+					},
+				},
+			},
+		},
+	},
+}
+```
+
+## Recipient resolution order
+
+Per event/request:
+
+1. `request.requestor.email`
+2. `request.capture.subject.email`
+3. Workspace/tenant/global `outboundResend.fallbackRecipient`
+
+If no recipient resolves, the email attempt is recorded as `skipped`.
+
+## Retry and failure semantics
+
+- Retriable channel failures follow `notificationWebhook.retryMaxAttempts` and `retryDelayMs`.
+- `skipped` outcomes do not retry.
+- Adapter errors are normalized to DSAR categories (`timeout`, `rate_limit`, `network`, `auth`, `validation`, `config`, `unknown`).

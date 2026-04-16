@@ -1,0 +1,32 @@
+---
+title: "Policy Versioning and Upgrades"
+description: "This document defines the T04 policy lifecycle model for immutable versioning, scoped pinning, and approval-gated upgrades."
+lastModified: 2026-04-16
+---
+
+This document defines the T04 policy lifecycle model for immutable versioning, scoped pinning, and approval-gated upgrades.
+
+## Components
+
+- `@dsar/policy-packs`: Registry, pinning resolution, legal-impact diffing, proposal workflow, and audit events.
+- `@dsar/backend`: Route handler stubs for `propose`, `approve`, and `apply` operations.
+
+## Lifecycle
+
+1. Publish policy version into immutable registry (`name`, `jurisdiction`, `version`, `checksum`, `publishedAt`).
+2. Propose tenant/workspace upgrade from `fromVersion` to `toVersion`.
+3. Review categorized diff output (deadline/verification/appeals/retention/communication).
+4. Approver with role `admin` or `compliance_admin` approves proposal.
+5. Apply atomically updates pin to target version and emits audit event.
+
+## Diff Expectations
+
+Diff output includes:
+
+- deadline-impacting clock changes (base deadline, clarification/verification pause semantics, extension allowances)
+- verification requirements and delete-after-processing behavior
+- appeals requirements and deadlines
+- retention minimum changes for key artefact classes
+- communication requirements (for example manifest requirement changes)
+
+`clockBehaviorSummary` is included for approval/apply visibility and audit traceability.

@@ -1,0 +1,16 @@
+{
+	"$schema": "https://unpkg.com/readie@1.0.0/schemas/readie.schema.json",
+	"title": "@dsar/storage-filesystem",
+	"description": "Optional local filesystem storage adapter for DSAR fulfillment artifacts.",
+	"includeTableOfContents": false,
+	"features": [
+		"Effect-based StorageAdapterContract implementation for local development.",
+		"Deterministic artifact key/reference mapping for manifest linkage.",
+		"Sidecar metadata persistence so linkage survives process restarts.",
+		"Normalized provider error mapping using backend adapter conventions.",
+		"Health and diagnostics hooks for local runtime visibility."
+	],
+	"usage": [
+		"```ts\nimport { dsarInstance } from \"@dsar/backend\";\nimport { makeFilesystemStorageAdapter } from \"@dsar/storage-filesystem\";\n\nconst storage = makeFilesystemStorageAdapter({\n\tbaseDir: \"./.dsar-artifacts\",\n\tprefix: \"artifacts\",\n});\n\nconst runtime = dsarInstance({\n\tadapters: {\n\t\tinbound: \"stub\",\n\t\tnotifications: \"stub\",\n\t\tstorage,\n\t},\n});\n```"
+	]
+}

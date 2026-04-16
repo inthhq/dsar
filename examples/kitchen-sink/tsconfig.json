@@ -1,0 +1,4 @@
+{
+	"extends": "@dsar/typescript-config/node.json",
+	"include": ["server.ts", "runtime.config.ts", "kitchen-sink.ts"]
+}

@@ -1,0 +1,66 @@
+---
+title: "Storage Filesystem Adapter Integration"
+description: "This document describes how to register and use @dsar/storage-filesystem with backend runtime."
+lastModified: 2026-04-16
+---
+
+This document describes how to register and use `@dsar/storage-filesystem` with backend runtime.
+
+## Runtime Registration
+
+```ts
+import { dsarInstance } from "@dsar/backend";
+import { makeFilesystemStorageAdapter } from "@dsar/storage-filesystem";
+
+const runtime = dsarInstance({
+	adapters: {
+		inbound: "stub",
+		notifications: "stub",
+		storage: makeFilesystemStorageAdapter({
+			baseDir: "./.dsar-artifacts",
+			prefix: "artifacts",
+			retryMaxAttempts: 1,
+		}),
+	},
+});
+```
+
+## Config Fields
+
+- `baseDir` (required): local directory used to store artifacts and sidecar metadata.
+- `prefix` (optional, default `artifacts`): key prefix used by deterministic key builder.
+- `retryMaxAttempts` (optional, default `1`): retries for retriable filesystem failures (`ETIMEDOUT`, `EAGAIN`, etc.).
+
+## Key Strategy Reference
+
+Default deterministic key layout:
+
+`<prefix>/<requestId>/<manifestId>/<category>/<redaction>/<thirdParty>/<artifactName>`
+
+Fallback behavior:
+
+- missing `requestId` => `request-unknown`
+- missing `manifestId` => `manifest-unknown`
+- missing `category` => `uncategorized`
+- missing name/id => `artifact.bin`
+
+## Error and Retry Behavior Matrix
+
+| Category     | Retriable | Examples                                        |
+| ------------ | --------- | ----------------------------------------------- |
+| `timeout`    | yes       | operation timeout (`ETIMEDOUT`)                 |
+| `network`    | yes       | temporary resource pressure (`EAGAIN`, `EBUSY`) |
+| `validation` | no        | invalid key/path traversal, missing object      |
+| `config`     | no        | base directory permission/configuration issues  |
+| `unknown`    | no        | unmatched filesystem errors                     |
+
+## Manifest Linkage
+
+Storage operations preserve manifest-linked metadata on artifact references:
+
+- `requestId`
+- `manifestId`
+- `manifestHash`
+- `manifestSignature`
+
+Manifest metadata is stored in sidecar JSON files alongside artifacts so metadata remains available across runtime restarts.

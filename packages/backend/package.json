@@ -1,0 +1,49 @@
+{
+	"name": "@dsar/backend",
+	"version": "0.0.5",
+	"private": true,
+	"description": "Backend route stubs for DSAR services.",
+	"license": "Apache-2.0",
+	"files": [
+		"src"
+	],
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"import": "./src/index.ts"
+		},
+		"./testing": {
+			"types": "./src/testing/index.ts",
+			"import": "./src/testing/index.ts"
+		},
+		"./testing/minimal-persistence": {
+			"types": "./src/testing/minimal-persistence.ts",
+			"import": "./src/testing/minimal-persistence.ts"
+		}
+	},
+	"scripts": {
+		"dev": "bun -e \"import { dsarInstance } from './src/index.ts'; const basePath = Bun.env.BASE_PATH ?? '/api/v1'; const runtime = dsarInstance({ basePath }); const server = Bun.serve({ port: Number.parseInt(Bun.env.PORT ?? Bun.env.BUN_PORT ?? Bun.env.NODE_PORT ?? '3000', 10), fetch: runtime.handler }); console.log('DSAR runtime:', server.url); console.log('Status:', `${server.url}${basePath === '/' ? '' : basePath}/status`); console.log('OpenAPI:', `${server.url}${basePath === '/' ? '' : basePath}/spec.json`); console.log('Docs:', `${server.url}${basePath === '/' ? '' : basePath}/docs`);\"",
+		"format": "oxfmt --check src package.json tsconfig.json README.md",
+		"lint": "oxlint .",
+		"test": "vitest run --passWithNoTests",
+		"test:e2e": "vitest run test/e2e/*.test.ts",
+		"typecheck": "tsgo --noEmit"
+	},
+	"dependencies": {
+		"@dsar/guards": "workspace:*",
+		"@dsar/internals-error-codes": "workspace:*",
+		"@dsar/persistence": "workspace:*",
+		"@dsar/policy-engine": "workspace:*",
+		"@dsar/policy-packs": "workspace:*",
+		"@dsar/schema": "workspace:*",
+		"effect": "catalog:effect"
+	},
+	"devDependencies": {
+		"@dsar/typescript-config": "workspace:*",
+		"@effect/language-service": "catalog:effect",
+		"@effect/vitest": "catalog:effect",
+		"typescript": "catalog:utils",
+		"vitest": "catalog:utils"
+	}
+}

@@ -1,0 +1,96 @@
+---
+title: "Unkey Integration"
+description: "@dsar/auth-unkey is an optional helper package for the DSAR bearer-token lane. It does not replace DSAR's authorization or subject-ownership checks."
+lastModified: 2026-04-16
+---
+
+`@dsar/auth-unkey` is an optional helper package for the DSAR bearer-token lane.
+It does not replace DSAR's authorization or subject-ownership checks.
+
+## Install
+
+```sh
+bun add @dsar/auth-unkey
+```
+
+## Runtime Wiring
+
+```ts
+import { dsarInstance } from "@dsar/backend";
+import { makeUnkeyBearerResolver } from "@dsar/auth-unkey";
+
+const runtime = dsarInstance({
+	config: {
+		auth: {
+			resolveBearerToken: makeUnkeyBearerResolver({
+				rootKey: process.env.UNKEY_ROOT_KEY!,
+				permissions: "dsar.api",
+				fallbackPrincipalKind: "service",
+				fallbackRole: "admin",
+			}),
+			staticBearerTokens: {
+				[process.env.DSAR_API_TOKEN!]: {
+					actorId: "local-admin",
+					principalKind: "operator",
+					role: "admin",
+					tenantId: "tenant-default",
+				},
+			},
+		},
+	},
+	repos: {
+		persistence:
+			/* see examples/config/runtime.config.example.ts or
+			   examples/kitchen-sink/runtime.config.ts for end-to-end wiring, or
+			   provide a service matching the @dsar/persistence PersistenceService
+			   contract used by runtimeReposFromPersistence(...) */,
+	},
+});
+```
+
+Validate `process.env.UNKEY_ROOT_KEY` and `process.env.DSAR_API_TOKEN` at
+startup before calling `makeUnkeyBearerResolver(...)` or building
+`staticBearerTokens`. The example uses non-null assertions for brevity, but
+production runtimes should fail fast with a clear configuration error when
+`UNKEY_ROOT_KEY` or `DSAR_API_TOKEN` is missing instead of crashing later at
+request time.
+
+## Default Mapping
+
+`makeUnkeyBearerResolver()` maps verified keys into DSAR identities like this:
+
+- `data.identity.externalId` or `data.keyId` -> `actorId`
+- `data.meta.tenantId` -> `tenantId`
+- `data.meta.workspaceId` -> `workspaceId`
+- `data.meta.role` or first role in `data.roles` -> `role`
+- `data.meta.principalKind` -> `principalKind`
+- `data.meta.email` or `data.identity.email` -> `email`
+
+If `tenantId` is missing, the resolver returns no identity and DSAR rejects the
+request.
+
+## Custom Mapping
+
+Use `mapIdentity` when your Unkey metadata shape differs from the DSAR default:
+
+```ts
+const resolver = makeUnkeyBearerResolver({
+	rootKey: process.env.UNKEY_ROOT_KEY!,
+	mapIdentity: async ({ defaultIdentity, result }) => {
+		if (!defaultIdentity) {
+			return undefined;
+		}
+		return {
+			...defaultIdentity,
+			principalKind: "operator",
+			role: "admin",
+		};
+	},
+});
+```
+
+## Hosted Safety Rules
+
+- Keep browser-held DSAR keys out of subject portals.
+- Bind every accepted key to a tenant in Unkey metadata.
+- Treat Unkey as credential verification only; DSAR still enforces route access.

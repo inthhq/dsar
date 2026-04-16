@@ -1,0 +1,57 @@
+---
+title: "DSAR-BE-1401: LIFECYCLE_TRANSITION_DISALLOWED"
+description: "The requested lifecycle action is not allowed from the request's current status."
+lastModified: 2026-04-16
+---
+
+## Meaning
+
+The requested lifecycle action is not allowed from the request's current status.
+
+## Probable Causes
+
+- Client attempted transition out of order.
+- Request state changed between reads and writes.
+
+## How to Fix
+
+1. Read current lifecycle status before issuing transition command.
+2. Inspect `error.trace.lifecycle.allowedTransitions` for valid next actions.
+3. Follow documented transition matrix.
+
+## Retryable
+
+No. Retry only with a valid transition for current state.
+
+## Response Shape
+
+```json
+{
+	"ok": false,
+	"error": {
+		"id": "DSAR-BE-1401",
+		"code": "LIFECYCLE_TRANSITION_DISALLOWED",
+		"docsUrl": "https://dsar-sdk.dev/errors/dsar-be-1401",
+		"message": "Lifecycle transition disallowed: cannot apply \"extension\" from \"captured\" state.",
+		"status": 409,
+		"trace": {
+			"lifecycle": {
+				"currentState": "captured",
+				"attemptedTransition": "extension",
+				"allowedTransitions": ["verification_request"]
+			}
+		}
+	}
+}
+```
+
+## Minimal Trigger Example
+
+```http
+POST /api/v1/requests/req-1/refusals HTTP/1.1
+Host: localhost:4086
+Content-Type: application/json
+Authorization: Bearer test-token
+
+{"rationale":"refuse from invalid state"}
+```

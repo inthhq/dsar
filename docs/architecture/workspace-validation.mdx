@@ -1,0 +1,39 @@
+---
+title: "Workspace Validation"
+description: "Run these from repo root after a clean clone. All commands must exit 0 with zero packages."
+lastModified: 2026-04-16
+---
+
+Run these from repo root after a clean clone. All commands must exit 0 with zero packages.
+
+## Commands
+
+```bash
+bun install
+turbo run build
+turbo run typecheck
+turbo run test
+turbo run lint
+turbo run format
+```
+
+## Expected behaviour (zero packages)
+
+- **`bun install`** — Installs root devDependencies (turbo, typescript, @biomejs/biome). No workspace packages yet.
+- **`turbo run build`** — Turbo runs `build` in 0 packages; succeeds.
+- **`turbo run typecheck`** — Turbo runs `typecheck` in 0 packages; succeeds.
+- **`turbo run test`** — Turbo runs `test` in 0 packages; succeeds.
+- **`turbo run lint`** — Turbo runs `lint` in 0 packages; succeeds.
+- **`turbo run format`** — Turbo runs `format` in 0 packages; succeeds.
+
+## Root workspace files (T01 deliverables)
+
+- `package.json` — Workspace definition, scripts, devDependencies.
+- `turbo.json` — Task graph (build, typecheck, test, lint, format).
+- `tsconfig.base.json` — Shared TypeScript base for packages.
+- `biome.jsonc` — Lint/format config (Biome).
+- `.gitignore` — Ignore patterns for repo.
+- `docs/architecture/monorepo-packages.md` — Package map, ownership, Effect conventions, dependency rules, package creation checklist.
+- `docs/architecture/workspace-validation.md` — This file.
+
+Once the first implementing ticket (e.g. T02) adds a package under `packages/*`, root `build` and `typecheck` will run that package's tasks; the package must follow the conventions in `monorepo-packages.md`.

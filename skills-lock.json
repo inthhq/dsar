@@ -1,0 +1,15 @@
+{
+	"version": 1,
+	"skills": {
+		"tsdown": {
+			"source": "rolldown/tsdown",
+			"sourceType": "github",
+			"computedHash": "61e35098541ab945fdd6e00bef2ac43d44dc81a6925fb25d6c9a610f3f6e46ae"
+		},
+		"turborepo": {
+			"source": "vercel/turborepo",
+			"sourceType": "github",
+			"computedHash": "64e9191d1ee7fe61adc8be01cc47cc32c899c41ebd123495e2b0ca6959a07677"
+		}
+	}
+}

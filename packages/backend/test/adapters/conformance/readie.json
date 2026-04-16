@@ -1,0 +1,15 @@
+{
+	"$schema": "https://unpkg.com/readie@1.0.0/schemas/readie.schema.json",
+	"title": "Adapter Conformance Suite",
+	"description": "Baseline contract conformance checks required by T15 for adapter implementations.",
+	"includeTableOfContents": true,
+	"features": [
+		"Lifecycle hooks: validateConfig(config), init(config) with deterministic config and no direct provider error leak",
+		"Health and diagnostics: healthCheck() returns { ok, status } (healthy|degraded|down), diagnostics() returns adapter key/capability metadata",
+		"Error normalization: provider errors normalized to AdapterInvocationError with explicit retriable classification"
+	],
+	"usage": [
+		"Capability classes: notifications, storage, inbound.",
+		"T15A/T15B/T15C/T15D implementations should add fixture-backed tests here and assert conformance lifecycle, capability-specific invocation semantics, and failure normalization. Suite is provider-neutral and should remain stable as new adapters are added."
+	]
+}

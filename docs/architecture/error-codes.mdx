@@ -1,0 +1,104 @@
+---
+title: "Error Code Architecture"
+description: "DSAR uses package-owned error catalogs with globally unique identifiers."
+lastModified: 2026-04-16
+---
+
+DSAR uses package-owned error catalogs with globally unique identifiers.
+
+- Each package owns its catalog in `src/types/error-codes.ts`.
+- `@dsar/internals-error-codes` is factory-only (`createErrorRegistry`, `createErrorCodeSchema`, and shared types).
+- Docs coverage and ID uniqueness are validated by `scripts/check-error-doc-coverage.mjs`.
+
+## Namespace Registry
+
+| package                     | id prefix     | fallback code example                   |
+| --------------------------- | ------------- | --------------------------------------- |
+| `@dsar/backend`             | `DSAR-BE-*`   | `INTERNAL_UNCATALOGED_ERROR`            |
+| `@dsar/node-sdk`            | `DSAR-SDK-*`  | `SDK_UNCATALOGED_ERROR`                 |
+| `@dsar/cli`                 | `DSAR-CLI-*`  | `CLI_UNCATALOGED_ERROR`                 |
+| `@dsar/core`                | `DSAR-CORE-*` | `CORE_UNCATALOGED_ERROR`                |
+| `@dsar/policy-engine`       | `DSAR-PE-*`   | `POLICY_ENGINE_UNCATALOGED_ERROR`       |
+| `@dsar/policy-packs`        | `DSAR-PP-*`   | `POLICY_PACKS_UNCATALOGED_ERROR`        |
+| `@dsar/persistence`         | `DSAR-PS-*`   | `PERSISTENCE_UNCATALOGED_ERROR`         |
+| `@dsar/persistence-pg`      | `DSAR-PG-*`   | `PERSISTENCE_PG_UNCATALOGED_ERROR`      |
+| `@dsar/persistence-sqlite`  | `DSAR-SQL-*`  | `PERSISTENCE_SQLITE_UNCATALOGED_ERROR`  |
+| `@dsar/storage-s3`          | `DSAR-S3-*`   | `STORAGE_S3_UNCATALOGED_ERROR`          |
+| `@dsar/storage-filesystem`  | `DSAR-FS-*`   | `STORAGE_FILESYSTEM_UNCATALOGED_ERROR`  |
+| `@dsar/storage-vercel-blob` | `DSAR-VB-*`   | `STORAGE_VERCEL_BLOB_UNCATALOGED_ERROR` |
+| `@dsar/inbound-resend`      | `DSAR-IN-*`   | `INBOUND_RESEND_UNCATALOGED_ERROR`      |
+| `@dsar/outbound-resend`     | `DSAR-OUT-*`  | `OUTBOUND_RESEND_UNCATALOGED_ERROR`     |
+| `@dsar/guards`              | `DSAR-GRD-*`  | `GUARDS_UNCATALOGED_ERROR`              |
+| `@dsar/schema`              | `DSAR-SCH-*`  | `SCHEMA_UNCATALOGED_ERROR`              |
+
+## Backend Catalog
+
+The canonical backend catalog is emitted by `@dsar/backend` from
+`packages/backend/src/types/error-codes.ts`.
+
+## Backend Envelope fields
+
+All non-success responses include:
+
+- `error.id` - stable backend error identifier (`DSAR-BE-xxxx`)
+- `error.code` - semantic machine-readable code
+- `error.docsUrl` - canonical documentation link for the identifier (`https://dsar-sdk.dev/errors/dsar-be-xxxx`)
+- `error.message` - human-readable summary
+- `error.status` - HTTP status
+- `error.trace` - optional diagnostics-only payload (e.g. `trace.lifecycle` for transition errors)
+
+## Catalog
+
+| id             | code                                 | status | meaning                                                     | retriable | docs                          |
+| -------------- | ------------------------------------ | ------ | ----------------------------------------------------------- | --------- | ----------------------------- |
+| `DSAR-BE-1001` | `AUTH_ACTOR_CONTEXT_MISSING`         | `401`  | Required actor header is missing on a protected endpoint.   | no        | `docs/errors/dsar-be-1001.md` |
+| `DSAR-BE-1002` | `AUTH_APPROVER_ROLE_FORBIDDEN`       | `403`  | Actor role is not allowed to perform an approver action.    | no        | `docs/errors/dsar-be-1002.md` |
+| `DSAR-BE-1101` | `REQUEST_BODY_INVALID_JSON`          | `400`  | Request body cannot be parsed as valid JSON.                | no        | `docs/errors/dsar-be-1101.md` |
+| `DSAR-BE-1102` | `REQUEST_ROUTE_PARAM_MISSING`        | `400`  | A route parameter required by the handler is missing.       | no        | `docs/errors/dsar-be-1102.md` |
+| `DSAR-BE-1103` | `REQUEST_BASE_PATH_INVALID`          | `400`  | Runtime base path configuration is invalid.                 | no        | `docs/errors/dsar-be-1103.md` |
+| `DSAR-BE-1199` | `REQUEST_VALIDATION_FAILED`          | `400`  | Request validation failed without a narrower boundary tag.  | no        | `docs/errors/dsar-be-1199.md` |
+| `DSAR-BE-1201` | `REQUEST_ROUTE_NOT_FOUND`            | `404`  | Incoming path/method does not map to any registered route.  | no        | `docs/errors/dsar-be-1201.md` |
+| `DSAR-BE-1202` | `POLICY_ACTIVATION_NOT_FOUND`        | `404`  | No active policy activation was found for the given scope.  | no        | `docs/errors/dsar-be-1202.md` |
+| `DSAR-BE-1203` | —                                    | —      | Reserved (unassigned).                                      | —         | —                             |
+| `DSAR-BE-1204` | `DELIVERY_ARTIFACT_NOT_FOUND`        | `404`  | No fulfilment artifact exists for the target request.       | no        | `docs/errors/dsar-be-1204.md` |
+| `DSAR-BE-1205` | `DELIVERY_TOKEN_INVALID`             | `403`  | Delivery token is missing, expired, or does not match.      | no        | `docs/errors/dsar-be-1205.md` |
+| `DSAR-BE-1206` | `MANIFEST_ARTIFACT_UPLOAD_FAILED`    | `400`  | Manifest artifact upload failed.                            | no        | `docs/errors/dsar-be-1206.md` |
+| `DSAR-BE-1207` | `MANIFEST_ARTIFACT_DOWNLOAD_FAILED`  | `404`  | Manifest artifact download failed.                          | no        | `docs/errors/dsar-be-1207.md` |
+| `DSAR-BE-1208` | `MANIFEST_ARTIFACT_REPLACE_FAILED`   | `400`  | Manifest artifact replacement failed.                       | no        | `docs/errors/dsar-be-1208.md` |
+| `DSAR-BE-1209` | `FULFILMENT_MANIFEST_NOT_APPROVED`   | `409`  | Manifest must be approved before fulfilling.                | no        | `docs/errors/dsar-be-1209.md` |
+| `DSAR-BE-1210` | `FULFILMENT_NO_ARTIFACTS`            | `409`  | At least one artifact required to fulfil.                   | no        | `docs/errors/dsar-be-1210.md` |
+| `DSAR-BE-1301` | `POLICY_JURISDICTION_UNMAPPED`       | `400`  | No policy pack is mapped to the provided jurisdiction.      | no        | `docs/errors/dsar-be-1301.md` |
+| `DSAR-BE-1302` | `POLICY_ENFORCEMENT_REFUSAL_BLOCKED` | `403`  | Refusal blocked by active policy.                           | no        | `docs/errors/dsar-be-1302.md` |
+| `DSAR-BE-1303` | —                                    | —      | Reserved (unassigned).                                      | —         | —                             |
+| `DSAR-BE-1304` | `RETENTION_CLASS_INVALID`            | `400`  | Provided retention class is not a recognized value.         | no        | `docs/errors/dsar-be-1304.md` |
+| `DSAR-BE-1401` | `LIFECYCLE_TRANSITION_DISALLOWED`    | `409`  | Requested lifecycle action is not allowed in current state. | no        | `docs/errors/dsar-be-1401.md` |
+| `DSAR-BE-1402` | `LIFECYCLE_STATUS_UNKNOWN`           | `409`  | Current lifecycle status value is unknown/unsupported.      | no        | `docs/errors/dsar-be-1402.md` |
+| `DSAR-BE-1403` | `LIFECYCLE_RATIONALE_MISSING`        | `400`  | Lifecycle transition requires a non-empty rationale.        | no        | `docs/errors/dsar-be-1403.md` |
+| `DSAR-BE-1500` | `INTERNAL_RUNTIME_ERROR`             | `500`  | Unhandled backend runtime exception.                        | yes       | `docs/errors/dsar-be-1500.md` |
+| `DSAR-BE-1599` | `INTERNAL_UNCATALOGED_ERROR`         | `500`  | Runtime emitted an unknown code; fallback mapping applied.  | yes       | `docs/errors/dsar-be-1599.md` |
+
+## Logging behavior
+
+`toErrorResponse` (in `packages/backend/src/middleware/errors.ts`) logs all mapped and unmapped errors server-side using structured logs including:
+
+- `id`
+- `code`
+- `status`
+- `docsUrl`
+- `request` (method, path, query, sanitized headers, optional body preview)
+- sanitized `error` payload (only `name`, `message`, `code`, and `stack` in development)
+
+### Header and query redaction
+
+Sensitive headers (`authorization`, `cookie`, `proxy-authorization`, `set-cookie`, `x-api-key`) are replaced with `[REDACTED]` before logging.
+
+Query parameters matching sensitive names (`token`, `secret`, `password`, `api_key`, `apikey`, `auth`, `access_token`, `key`) are also redacted.
+
+### Body preview limits
+
+Request body previews use two related constants: `BODY_PREVIEW_LIMIT` (default **4096 bytes**) is the maximum number of bytes included in the preview text, and `BODY_PREVIEW_MAX_BYTES` (`BODY_PREVIEW_LIMIT + 1`) is the stream read cap that reads one extra byte to detect whether the body was truncated. Bodies exceeding the limit are either:
+
+- omitted with a descriptive message when `content-length` declares a size beyond `BODY_PREVIEW_LIMIT`, or
+- truncated after streaming up to `BODY_PREVIEW_MAX_BYTES` with a `truncated: true` flag in the log payload.
+
+Binary content types (`application/octet-stream`, `multipart/form-data`) are excluded entirely with `[binary content omitted]`. GET and HEAD requests skip body capture.

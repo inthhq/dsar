@@ -1,0 +1,22 @@
+{
+	"name": "dsar-kitchen-sink-example",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "portless kitchen-sink bun ./server.ts",
+		"start": "bun ./server.ts",
+		"check": "bun ./server.ts --check",
+		"kitchen-sink": "bun ./kitchen-sink.ts",
+		"smoke": "bun ./kitchen-sink.ts",
+		"typecheck": "tsgo --noEmit"
+	},
+	"dependencies": {
+		"dotenv": "17.3.1",
+		"dsar": "workspace:*",
+		"effect": "catalog:effect"
+	},
+	"devDependencies": {
+		"@dsar/typescript-config": "workspace:*",
+		"@types/node": "catalog:types"
+	}
+}

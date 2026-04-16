@@ -1,0 +1,40 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"extends": ["./node_modules/ultracite/config/oxlint/core/.oxlintrc.json"],
+	"rules": {
+		"vitest/no-importing-vitest-globals": "off",
+		"promise/prefer-await-to-then": "off",
+		"promise/prefer-await-to-callbacks": "off",
+		"import/no-nodejs-modules": "off",
+		"unicorn/no-array-for-each": "off",
+		"jsdoc/check-tag-names": "off",
+		"jsdoc/require-param-type": "off",
+		"jsdoc/require-returns-type": "off",
+		"no-restricted-imports": [
+			"error",
+			{
+				"paths": [
+					{
+						"name": "effect",
+						"message": "Import from specific modules instead (e.g. effect/Effect, effect/Stream).",
+						"allowTypeImports": true
+					}
+				]
+			}
+		]
+	},
+	"overrides": [
+		{
+			"files": [
+				"**/*.{test,spec}.{ts,tsx,js,jsx}",
+				"**/__tests__/**/*.{ts,tsx,js,jsx}"
+			],
+			"rules": {
+				"jest/no-standalone-expect": "off",
+				"jest/valid-title": "off",
+				"jest/require-hook": "off",
+				"vitest/no-importing-vitest-globals": "off"
+			}
+		}
+	]
+}

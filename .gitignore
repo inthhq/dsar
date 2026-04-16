@@ -1,0 +1,23 @@
+node_modules
+dist
+coverage
+.env
+.env.*
+!.env.example
+*.lock
+!bun.lock
+.turbo
+.DS_Store
+*.log
+
+# Copied docs for npm publish
+packages/dsar/docs
+
+# Local example runtime artifacts
+examples/local-storage/.dsar-artifacts/
+examples/local-storage/.dsar-local.db
+examples/local-storage/.dsar-local.db-shm
+examples/local-storage/.dsar-local.db-wal
+examples/local-storage/.smoke-server.log
+examples/kitchen-sink/.dsar-kitchen-sink.db
+examples/kitchen-sink/.dsar-kitchen-sink-artifacts

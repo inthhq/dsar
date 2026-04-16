@@ -1,0 +1,47 @@
+---
+title: "API Contract Surface (T06)"
+description: "This document defines the backend API contract source-of-truth and how OpenAPI/docs are produced."
+lastModified: 2026-04-16
+---
+
+This document defines the backend API contract source-of-truth and how OpenAPI/docs are produced.
+
+## Source of truth
+
+- Contract source: `packages/backend/src/http-api/api.ts`
+- Contract model: `@effect/platform` `HttpApi`
+- Schema source: `@dsar/schema` Effect schemas reused in endpoint payload/success shapes
+
+## Generated surfaces
+
+- Machine-readable spec: `GET /spec.json`
+- Interactive docs: `GET /docs`
+
+Both endpoints are basePath-aware through `dsarInstance({ basePath })`.
+
+Examples:
+
+- root mount:
+  - `/spec.json`
+  - `/docs`
+- `basePath: "/api/v1"`:
+  - `/api/v1/spec.json`
+  - `/api/v1/docs`
+
+## Security declaration model
+
+- OpenAPI security scheme name: `BearerAuth`
+- Scheme type: `http` bearer
+- Protected operations declare bearer security via OpenAPI overrides.
+- Public operations (`/init`, `/status`) explicitly set empty security requirements.
+
+## Drift guard strategy
+
+- `packages/backend/test/openapi.test.ts` validates:
+  - spec endpoint returns OpenAPI 3.1.0 JSON
+  - required capability-upgrade paths exist
+  - bearer security scheme exists
+  - docs endpoint includes basePath-aware spec URL
+  - snapshot for spec stability (`toMatchSnapshot`)
+
+This keeps SDK generation inputs and developer docs aligned with route contracts.

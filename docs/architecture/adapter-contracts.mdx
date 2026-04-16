@@ -1,0 +1,55 @@
+---
+title: "Adapter Contracts (T15 Foundation)"
+description: "This document defines the provider-neutral adapter contract foundation for DSAR runtime integrations."
+lastModified: 2026-04-16
+---
+
+This document defines the provider-neutral adapter contract foundation for DSAR runtime integrations.
+
+## Goals
+
+- Keep DSAR core runnable with **zero adapters registered**
+- Isolate adapter failures so core request handling remains stable
+- Normalize provider-specific failures into a consistent contract
+- Enable independent child-ticket delivery (`T15B`, `T15C`, `T15D`)
+
+## Contract Modules
+
+- `packages/backend/src/adapters/contract.ts`
+  - capability types: `notifications`, `storage`, `inbound`
+  - lifecycle hooks: `validateConfig`, `init`, `healthCheck`, `diagnostics`
+  - capability-specific invocation surfaces
+- `packages/backend/src/adapters/errors.ts`
+  - normalized error model (`AdapterInvocationError`)
+  - retriable classification for retry policies
+- `packages/backend/src/adapters/registry.ts`
+  - adapter registration/resolution
+  - capability lookups and health summaries
+- `packages/backend/src/adapters/events.ts`
+  - operational event contract for adapter failures (`adapter_failure`)
+
+## Runtime Integration
+
+Runtime adapter bindings are transformed into registry entries at `dsarInstance` construction time. Services resolve adapters via the registry and can still operate with fallback behavior when no adapter is available.
+
+This enforces T15/T09 MVP behavior:
+
+- notification **generation** is mandatory
+- notification **delivery** is best-effort and may fail independently
+- delivery attempts can resolve to `delivered`, `failed`, or `skipped` (for disabled/unconfigured optional channels)
+
+## Error Normalization Matrix
+
+- Timeout/connection/rate-limit patterns map to retriable categories
+- Auth/config/validation issues map to non-retriable categories
+- Unknown failures are represented explicitly as `unknown`
+
+## Child Ticket Guidance
+
+- `T15B` (`@dsar/storage-s3`): implement `storage` contract conformance
+- `T15C` (`@dsar/outbound-resend`): implement `notifications` contract conformance
+- `T15D` (`@dsar/inbound-resend`): reference implementation for inbound contract
+
+All implementations should pass shared tests in:
+
+- `packages/backend/test/adapters/conformance/contract.test.ts`

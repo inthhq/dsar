@@ -1,0 +1,6 @@
+{
+	"extends": "@dsar/typescript-config/effect.json",
+	"compilerOptions": {
+		"types": ["node"]
+	}
+}

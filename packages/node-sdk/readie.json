@@ -1,0 +1,13 @@
+{
+	"$schema": "https://unpkg.com/readie@1.0.0/schemas/readie.schema.json",
+	"title": "@dsar/node-sdk",
+	"description": "Typed Node SDK for DSAR backend APIs.",
+	"includeTableOfContents": true,
+	"usage": [
+		"```ts\nimport { createNodeSdk } from \"@dsar/node-sdk\";\n```",
+		"```ts\nconst client = createNodeSdk({\n\tbaseUrl: \"https://api.example.com/api/v1\",\n\ttoken: process.env.DSAR_API_TOKEN,\n});\n\nconst request = await client.requests.create({\n\tintakeSource: {\n\t\tchannel: \"api\",\n\t\trawText: \"Please provide my personal data.\",\n\treceivedAt: new Date().toISOString(),\n\t\ttype: \"api\",\n\t},\n});\n\nconst created = request.unwrap();\n```",
+		"Configuration: baseUrl (or DSAR_API_URL) required; token (or DSAR_API_TOKEN) optional; timeoutMs (default 10000), retryMaxAttempts (default 2), fetch, debug.",
+		"Headers: Authorization and x-idempotency-key when available. Per-request overrides via method options.",
+		"Result helpers: result.unwrap(), result.expect(message?), result.orElse(fallback). Non-success responses reject with DsarSdkError and retriable metadata."
+	]
+}

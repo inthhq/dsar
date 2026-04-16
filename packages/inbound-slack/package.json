@@ -1,0 +1,59 @@
+{
+	"name": "@dsar/inbound-slack",
+	"version": "0.0.5",
+	"private": true,
+	"description": "Inbound Slack webhook adapter for DSAR request intake.",
+	"license": "Apache-2.0",
+	"files": [
+		"src"
+	],
+	"type": "module",
+	"imports": {
+		"#src/adapter": "./src/adapter.ts",
+		"#src/chat": "./src/chat.ts",
+		"#src/config": "./src/config.ts",
+		"#src/types": "./src/types.ts",
+		"#src/*": "./src/*"
+	},
+	"exports": {
+		".": {
+			"types": "./src/adapter.ts",
+			"import": "./src/adapter.ts"
+		},
+		"./chat": {
+			"types": "./src/chat.ts",
+			"import": "./src/chat.ts"
+		},
+		"./config": {
+			"types": "./src/config.ts",
+			"import": "./src/config.ts"
+		},
+		"./types": {
+			"types": "./src/types.ts",
+			"import": "./src/types.ts"
+		}
+	},
+	"scripts": {
+		"format": "oxfmt --check src test package.json tsconfig.json README.md",
+		"lint": "oxlint .",
+		"test": "vitest run",
+		"typecheck": "tsgo --noEmit"
+	},
+	"dependencies": {
+		"@chat-adapter/shared": "^4.18.0",
+		"@chat-adapter/slack": "^4.18.0",
+		"@dsar/backend": "workspace:*",
+		"@dsar/core": "workspace:*",
+		"@dsar/guards": "workspace:*",
+		"chat": "^4.18.0",
+		"effect": "catalog:effect"
+	},
+	"devDependencies": {
+		"@dsar/typescript-config": "workspace:*",
+		"@effect/language-service": "catalog:effect",
+		"@effect/vitest": "catalog:effect",
+		"@types/node": "catalog:types",
+		"typescript": "catalog:utils",
+		"vitest": "catalog:utils"
+	}
+}

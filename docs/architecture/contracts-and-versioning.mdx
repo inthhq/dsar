@@ -1,0 +1,109 @@
+---
+title: "Contracts and Versioning"
+description: "This document defines the canonical contract taxonomy and semver policy for @dsar/schema."
+lastModified: 2026-04-16
+---
+
+This document defines the canonical contract taxonomy and semver policy for `@dsar/schema`.
+
+## Type taxonomy and stability
+
+| Domain       | Contract examples                                                                                     | Stability         |
+| ------------ | ----------------------------------------------------------------------------------------------------- | ----------------- |
+| Request      | `Request`, `RequestType`, `RequestStatus`, `IntakeSource`, `Requestor`, `Authority`, `CapturedIntake` | Public-stable     |
+| Policy       | `PolicyPackVersion`, `JurisdictionCode`, `RequestClock`, `ClockSegment`                               | Public-stable     |
+| Verification | `VerificationLevel`, `VerificationCase`                                                               | Public-stable     |
+| Fulfillment  | `FulfillmentArtifact`, `ArtifactManifest`, `FulfillmentManifest`, `RefusalReasonCode`                 | Public-stable     |
+| Delivery     | `DeliveryPackage` and delivery challenge/log contracts                                                | Public-stable     |
+| Appeals      | `Appeal`                                                                                              | Public-stable     |
+| Retention    | `RetentionPolicy`                                                                                     | Public-stable     |
+| Audit/Event  | `AuditEvent`, lifecycle transition contracts                                                          | Public-stable     |
+| Internal     | helper metadata and utility schemas used to support public contracts                                  | Internal-evolving |
+
+## Semver contract policy
+
+- Additive fields and additive enum members are **minor** changes.
+- Renaming or removing fields is a **major** change.
+- Contract behavior changes (same shape, different semantics) require migration notes and are treated as **major** unless explicitly backward compatible.
+- Optional metadata fields should be used when extension points are required without breaking public contracts.
+
+## Lifecycle transition contract
+
+`LifecycleTransition` is the canonical transition payload and includes:
+
+- state movement: `from`, `to`
+- rationale: `reasonCode`, optional `rationale`
+- accountability: optional `actor`
+- temporal context: `occurredAt`
+- legal clock mutation details: optional `legalClockMutation`
+- approval linkage: optional `approval`
+
+This contract is shared by backend runtime, audit/event pipelines, and downstream SDK/CLI workflows.
+
+## Public export map
+
+All public symbols are exported from `@dsar/schema` (and mirrored via `@dsar/schema/types` for type-path compatibility):
+
+- Request contracts: `RequestSchema`, `Request`, `RequestType`, `RequestStatus`, `IntakeSource`, `Requestor`, `Authority`, `CapturedIntake`.
+- Policy/clock contracts: `PolicyPackVersion`, `JurisdictionCode`, `RequestClock`, `ClockSegment`.
+- Verification contracts: `VerificationCase`, `VerificationLevel`.
+- Fulfillment contracts: `FulfillmentArtifact`, `ArtifactManifest`, `FulfillmentManifest`, `RefusalReasonCode`.
+- Delivery contracts: `DeliveryPackage` and delivery challenge/log schemas.
+- Appeals contracts: `Appeal`.
+- Retention contracts: `RetentionPolicy`.
+- Audit contracts: `AuditEvent`, hash-chain fields (`prevHash`, `hash`, `hashAlg`, `sequence`).
+- Cross-cutting contracts: `LifecycleTransition`, `ErrorEnvelope`, `ResponseMetadata`.
+
+## Example payloads
+
+### Request payload (MVP intake provenance)
+
+```json
+{
+	"id": "req_1",
+	"type": "access",
+	"status": "captured",
+	"intakeSource": {
+		"type": "portal",
+		"receivedAt": "2026-02-17T12:00:00.000Z"
+	},
+	"subject": {
+		"subjectId": "sub_1"
+	},
+	"createdAt": "2026-02-17T12:00:00.000Z",
+	"updatedAt": "2026-02-17T12:00:00.000Z"
+}
+```
+
+### VerificationCase payload (MVP)
+
+```json
+{
+	"id": "ver_1",
+	"method": "email_link",
+	"status": "pending",
+	"requestedAt": "2026-02-17T12:00:00.000Z",
+	"pauseClock": true
+}
+```
+
+### FulfillmentManifest payload (MVP)
+
+```json
+{
+	"artifacts": [
+		{
+			"id": "artifact_1",
+			"type": "profile_data",
+			"title": "Profile export",
+			"mediaType": "application/json",
+			"sizeBytes": 1024,
+			"sourceSystem": "core-db",
+			"sha256": "abc123"
+		}
+	],
+	"dataCategories": ["profile"],
+	"redactionsApplied": [],
+	"thirdPartyExclusions": []
+}
+```
