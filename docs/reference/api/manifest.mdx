@@ -1,0 +1,110 @@
+---
+title: "Manifest API"
+description: "Get the fulfilment manifest for a request."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+## GET /requests/:id/manifest
+
+Get the fulfilment manifest for a request.
+
+**Response (200):**
+
+```json
+{
+	"artifacts": [],
+	"dataCategories": [],
+	"redactionsApplied": [],
+	"thirdPartyExclusions": []
+}
+```
+
+## POST /requests/:id/manifest/validate
+
+Record the manifest review decision for the latest fulfilment manifest attached
+to the request.
+
+**Request body:**
+
+- `action` (string, required): `"approved"` | `"rejected"`
+
+This matches the current backend validation body schema used by
+`POST /requests/:id/manifest/validate`.
+
+**Response (202):**
+
+```json
+{
+	"id": "req-123",
+	"status": "approved"
+}
+```
+
+## POST /requests/:id/manifest/artifact/upload
+
+Upload a binary file as a fulfilment manifest artifact. The file is persisted to the configured storage adapter and a record is added to the manifest's `artifacts` array.
+
+**Request headers:**
+
+- `x-artifact-filename` (string, required): URL-encoded filename
+- `x-artifact-content-type` (string, required): MIME type of the file
+- `x-artifact-title` (string, optional): Human-readable title (defaults to filename)
+- `x-artifact-type` (string, optional): Artifact category — `profile_data`, `account_data`, `support_tickets`, `audit_logs`, or `other` (defaults to `other`)
+
+**Request body:** Raw binary file content
+
+**Response (202):**
+
+```json
+{
+	"artifactId": "art-456",
+	"artifactKey": "manifest/req-123/art-456/data-export.csv",
+	"requestId": "req-123"
+}
+```
+
+**Error codes:**
+
+- `MANIFEST_ARTIFACT_UPLOAD_FAILED` (DSAR-BE-1206): Storage not configured, empty body, or storage write failure
+
+## GET /requests/:id/manifest/artifact/download
+
+Download a manifest artifact file from storage.
+
+**Query parameters:**
+
+- `artifactId` (string, required): The manifest artifact identifier returned by upload or replace operations
+
+**Response (200):** Binary file content with appropriate `Content-Type` and `Content-Disposition` headers.
+
+**Error codes:**
+
+- `MANIFEST_ARTIFACT_DOWNLOAD_FAILED` (DSAR-BE-1207): Key not found, key doesn't match request, or storage read failure
+
+## PUT /requests/:id/manifest/artifact/:artifactId/replace
+
+Replace an existing manifest artifact in-place. Used for the redaction workflow: download an artifact, redact sensitive data locally, and re-upload the modified version.
+
+**Request headers:**
+
+- `x-artifact-filename` (string, required): URL-encoded filename
+- `x-artifact-content-type` (string, required): MIME type of the replacement file
+
+**Request body:** Raw binary file content
+
+**Response (202):**
+
+```json
+{
+	"artifactId": "art-456",
+	"artifactKey": "manifest/req-123/art-456/data-export.csv",
+	"replaced": true,
+	"requestId": "req-123"
+}
+```
+
+**Error codes:**
+
+- `MANIFEST_ARTIFACT_REPLACE_FAILED` (DSAR-BE-1208): Artifact ID not found in manifest, empty body, or storage overwrite failure

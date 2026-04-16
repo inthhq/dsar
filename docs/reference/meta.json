@@ -1,0 +1,8 @@
+{
+	"title": "Reference",
+	"nav": {
+		"sidebar": "section",
+		"label": "Reference"
+	},
+	"pages": ["api", "developer", "errors", "persistence", "storage", "testing"]
+}

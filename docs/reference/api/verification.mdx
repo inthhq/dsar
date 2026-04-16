@@ -1,0 +1,122 @@
+---
+title: "Verification API"
+description: "Verification endpoints are workflow controls inside DSAR. They are not a general-purpose login system for subject portals or dashboards. In production, the host application authenticates the end user first, then DSAR uses these verification routes only when policy or risk requires extra proof."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+Verification endpoints are workflow controls inside DSAR. They are not a
+general-purpose login system for subject portals or dashboards. In production,
+the host application authenticates the end user first, then DSAR uses these
+verification routes only when policy or risk requires extra proof.
+
+## POST /requests/:id/verification/request
+
+Create a verification case. Pauses the legal clock per policy.
+
+**Response (202):**
+
+```json
+{
+	"requestId": "req-123",
+	"status": "verification_pending"
+}
+```
+
+## POST /requests/:id/verification/evidence
+
+Submit verification evidence.
+
+`existing_auth` means "the host app has already authenticated this person" as a
+verification method inside the DSAR workflow. It does not mean DSAR owns the
+upstream session or browser login.
+
+**Request body:**
+
+- `level` (string): "reasonable" | "enhanced"
+- `evidenceArtifacts` (array): Evidence file references
+- `methodsAllowed` (array): Allowed verification methods
+- `reasonForDoubt` (string, optional)
+
+**Response (202):**
+
+```json
+{
+	"requestId": "req-123",
+	"evidenceId": "ev-456",
+	"level": "reasonable",
+	"status": "pending",
+	"surface": "verification_evidence"
+}
+```
+
+## POST /requests/:id/verification/evidence/upload
+
+Upload a binary evidence artifact for the active verification case.
+
+**Request headers:**
+
+- `x-evidence-filename` (string, optional): URL-encoded original filename
+- `x-evidence-content-type` (string, optional): MIME type of the uploaded file
+- `x-evidence-level` (string, optional): evidence assurance level to associate
+  with the upload
+
+**Request body:** Raw binary file content
+
+**Response (202):**
+
+```json
+{
+	"artifactKey": "verification/req-123/evidence/passport.pdf",
+	"evidenceId": "ev-456",
+	"requestId": "req-123",
+	"status": "pending"
+}
+```
+
+If you use `@dsar/node-sdk`, `verificationEvidenceUpload()` sets the upload
+headers for you from the file name, content type, and optional level.
+
+## POST /requests/:id/verification/approve
+
+Approve verification and resume the legal clock.
+
+**Response (202):**
+
+```json
+{
+	"requestId": "req-123",
+	"status": "in_progress"
+}
+```
+
+## POST /requests/:id/verification/reject
+
+Reject verification.
+
+**Response (202):**
+
+```json
+{
+	"requestId": "req-123",
+	"status": "refused"
+}
+```
+
+## GET /requests/:id/verification-case
+
+Read the current verification case.
+
+**Response (200):**
+
+```json
+{
+	"id": "verification-req-123",
+	"status": "pending",
+	"level": "reasonable",
+	"method": "manual",
+	"pauseClock": true,
+	"requestedAt": "2026-01-01T00:00:00.000Z"
+}
+```

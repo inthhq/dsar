@@ -1,0 +1,88 @@
+---
+title: "Webhooks API"
+description: "These public endpoints accept inbound provider events and map them into DSAR intake flows."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+These public endpoints accept inbound provider events and map them into DSAR
+intake flows.
+
+## POST /webhooks/inbound/resend
+
+Receive a Resend inbound webhook event.
+
+This endpoint is public in the HTTP contract so webhook providers can call it
+without a DSAR bearer token.
+
+Callers still need to satisfy the provider signature-verification requirements.
+See the related integration guide for the exact header and secret handling
+details. Resend uses svix headers and Slack uses signing-secret verification.
+
+**Request body:**
+
+- `created_at` (string, required): provider timestamp
+- `type` (string, required): provider event type
+- `data` (unknown, required): raw provider payload
+
+**Response (202):**
+
+```json
+{
+	"id": "req-123",
+	"jurisdiction": "eu",
+	"receivedAt": "2026-01-01T00:00:00.000Z",
+	"sourceId": "resend-message-id",
+	"status": "captured",
+	"tenantId": "tenant-1",
+	"workspaceId": "workspace-1"
+}
+```
+
+Possible `status` values:
+
+- `"captured"` when DSAR created or matched a request flow
+- `"ignored_non_dsar"` when the inbound event is not treated as DSAR intake
+
+## POST /webhooks/inbound/slack
+
+Receive a Slack inbound webhook event.
+
+This endpoint is also public in the HTTP contract.
+
+Callers still need to satisfy the provider signature-verification requirements.
+See the related integration guide for the exact header and secret handling
+details. Resend uses svix headers and Slack uses signing-secret verification.
+
+**Request body:** Raw Slack webhook payload.
+
+**Responses:**
+
+- URL verification challenge:
+
+```json
+{
+	"challenge": "slack-challenge-token"
+}
+```
+
+- Accepted DSAR or ignored event:
+
+```json
+{
+	"callbackId": "cb-123",
+	"channelId": "C123",
+	"id": "req-123",
+	"reason": "matched_subject_request",
+	"sourceId": "slack-event-id",
+	"status": "captured",
+	"surface": "inbound_slack",
+	"teamId": "T123"
+}
+```
+
+Related guides:
+
+- [Inbound Resend](../../integrations/integrations/inbound-resend.md)
+- [Inbound Slack](../../integrations/integrations/inbound-slack.md)

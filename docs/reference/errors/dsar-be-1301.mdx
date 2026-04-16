@@ -1,0 +1,36 @@
+---
+title: "DSAR-BE-1301: POLICY_JURISDICTION_UNMAPPED"
+description: "No policy pack mapping exists for the requested jurisdiction."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+## Meaning
+
+No policy pack mapping exists for the requested jurisdiction.
+
+## Probable Causes
+
+- Jurisdiction code is unsupported or misspelled.
+- Policy mapping setup is incomplete.
+
+## How to Fix
+
+1. Use a jurisdiction with an existing policy mapping.
+2. Register/activate a mapped pack for the requested jurisdiction.
+
+## Retryable
+
+No. Retry only after policy mapping/configuration is corrected.
+
+## Minimal Trigger Example
+
+```http
+POST /api/v1/requests HTTP/1.1
+Host: localhost:4086
+Content-Type: application/json
+Authorization: Bearer test-token
+
+{"jurisdiction":"unknown-jurisdiction","intakeSource":{"type":"api"}}
+```

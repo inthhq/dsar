@@ -1,0 +1,50 @@
+---
+title: "DSAR-BE-1412: PERSISTENCE_OPERATION_UNSUPPORTED"
+description: "The persistence layer does not support the requested operation for the given entity or context within the backend request pipeline."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+## Meaning
+
+The persistence layer does not support the requested operation for the given entity or context within the backend request pipeline.
+
+## Probable Causes
+
+- Attempted an operation that is not implemented by the current persistence adapter.
+- Called a write operation on a read-only entity or view.
+- Used a feature that requires a specific database backend not currently configured.
+
+## How to Fix
+
+1. Check `error.trace.operation` and `error.trace.reason` for specifics.
+2. Verify the persistence adapter supports the intended operation.
+3. Use an alternative approach or enable the required feature.
+
+## Retryable
+
+No. The operation is structurally unsupported and requires a code or configuration change.
+
+## Response Shape
+
+```json
+{
+	"ok": false,
+	"error": {
+		"id": "DSAR-BE-1412",
+		"code": "PERSISTENCE_OPERATION_UNSUPPORTED",
+		"message": "Persistence operation is not supported.",
+		"status": 400,
+		"trace": {
+			"operation": "bulkDelete",
+			"reason": "not implemented",
+			"type": "UnsupportedPersistenceOperationError"
+		}
+	}
+}
+```
+
+## Minimal Trigger Example
+
+Calling an unsupported persistence method through the backend API.

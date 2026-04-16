@@ -1,0 +1,40 @@
+---
+title: "Acceptance And Parity Readiness"
+description: "This checklist turns the GA-readiness ticket work into a concrete release gate for the current DSAR repo state."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+This checklist turns the GA-readiness ticket work into a concrete release gate
+for the current DSAR repo state.
+
+## Release-blocking scenarios
+
+- Inbound intake to fulfilment: request capture, verification, fulfilment, and delivery must pass in automated API/E2E coverage.
+- Clarification pause/resume: legal-clock explain output must reflect pause and resume behavior.
+- Extension handling: justification-required extensions must be enforced and reflected in due-date calculations.
+- Refusal and appeal: refusal flow plus minimal appeal submission/decision coverage must pass.
+- Manifest review: fulfilment should remain blocked until manifest validation is approved when manifest review is enabled.
+- Notification visibility: generated notification events, delivery attempts, and replay flow must remain observable.
+
+## Current evidence in repo
+
+- API lifecycle E2E coverage exists in `packages/backend/test/e2e/full-flow.api.e2e.test.ts`.
+- Route-level lifecycle coverage exists in `packages/backend/test/routes/requests-lifecycle.test.ts`.
+- Notification retry and built-in email behavior are covered in `packages/backend/test/services/notifications.service.test.ts`.
+- CLI/backend parity is guarded by `packages/cli/test/parity.test.ts` and `packages/cli/test/e2e/parity-guard.e2e.test.ts`.
+
+## Gaps to keep tracking
+
+- Hosted vs self-hosted parity runs are still a roadmap item; there is no published parity report artifact yet.
+- Browser-driven acceptance scenarios are still thinner than the API-level coverage described in the readiness ticket.
+- Deployment packaging remains repo-specific; there is no canonical container or infra recipe in this workspace.
+
+## Recommended release checklist
+
+- Run `bun test` or the workspace-equivalent backend, CLI, and SDK test targets with no skipped critical scenarios.
+- Verify OpenAPI generation and CLI parity stay in sync after any route change.
+- Smoke test `examples/kitchen-sink`, `examples/dashboard`, and `examples/subject-portal` against the same runtime configuration.
+- Confirm bearer-token identities are configured for admin and subject example clients before manual verification.
+- Review example docs for merge markers, stale auth guidance, and broken local URLs before tagging a release.

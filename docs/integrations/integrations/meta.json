@@ -1,0 +1,16 @@
+{
+	"title": "Integrations",
+	"nav": {
+		"sidebar": "section",
+		"label": "Integrations"
+	},
+	"pages": [
+		"inbound-resend",
+		"inbound-slack",
+		"outbound-resend",
+		"storage-filesystem",
+		"storage-s3",
+		"storage-vercel-blob",
+		"unkey"
+	]
+}

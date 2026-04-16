@@ -1,0 +1,49 @@
+---
+title: "DSAR-BE-1410: PERSISTENCE_TENANT_SCOPE_MISSING"
+description: "A backend persistence operation was attempted without the required tenant scope. Every database query must be scoped to a tenant to enforce data isolation."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+## Meaning
+
+A backend persistence operation was attempted without the required tenant scope. Every database query must be scoped to a tenant to enforce data isolation.
+
+## Probable Causes
+
+- The request pipeline did not resolve or inject a tenant ID.
+- Middleware that sets tenant scope was bypassed or misconfigured.
+- A background job or internal service call omitted the tenant context.
+
+## How to Fix
+
+1. Ensure all persistence calls are wrapped with `withTenant(tenantId)`.
+2. Verify tenant resolution middleware is active in the request pipeline.
+3. For background jobs, explicitly provide the tenant ID from the job payload.
+
+## Retryable
+
+No. The tenant scope must be provided before retrying.
+
+## Response Shape
+
+```json
+{
+	"ok": false,
+	"error": {
+		"id": "DSAR-BE-1410",
+		"code": "PERSISTENCE_TENANT_SCOPE_MISSING",
+		"message": "Persistence operation is missing required tenant scope.",
+		"status": 500,
+		"trace": {
+			"operation": "tenant_scope_lookup",
+			"type": "MissingTenantScopeError"
+		}
+	}
+}
+```
+
+## Minimal Trigger Example
+
+Any persistence query executed outside a `withTenant` scope.
