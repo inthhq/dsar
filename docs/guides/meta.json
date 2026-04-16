@@ -1,0 +1,13 @@
+{
+	"title": "Guides",
+	"nav": {
+		"sidebar": "section",
+		"label": "Guides"
+	},
+	"pages": [
+		"getting-started",
+		"request-lifecycle",
+		"examples-and-deployment",
+		"package-build-metrics"
+	]
+}

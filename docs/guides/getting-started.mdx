@@ -1,0 +1,91 @@
+---
+title: "Getting Started"
+description: "This guide is the fastest way to run DSAR locally, inspect the HTTP contract, and make your first request through the runtime."
+lastModified: 2026-04-16
+---
+
+<import src="../_shared/alpha-warning.mdx" />
+
+This guide is the fastest way to run DSAR locally, inspect the HTTP contract,
+and make your first request through the runtime.
+
+## Prerequisites
+
+- Bun `1.3+`
+- A local checkout of this workspace
+- One terminal for the runtime and one for callers such as the CLI or examples
+
+## Fastest Local Path
+
+The quickest way to see the full surface is the kitchen-sink runtime plus the
+dashboard and subject-portal examples.
+
+```sh
+bunx turbo run dev --filter=./examples/kitchen-sink --filter=./examples/dashboard --filter=./examples/subject-portal
+```
+
+Supporting example READMEs:
+
+- `examples/kitchen-sink/README.md`
+- `examples/dashboard/README.md`
+- `examples/subject-portal/README.md`
+
+## Verify the Runtime
+
+Once the runtime is up, inspect these endpoints:
+
+- `GET /status` for health
+- `GET /spec.json` for the generated OpenAPI document
+- `GET /docs` for interactive HTTP reference
+
+If you mount DSAR at a base path such as `/api/v1`, the same endpoints become
+`/api/v1/status`, `/api/v1/spec.json`, and `/api/v1/docs`.
+
+## Create Your First Request
+
+### CLI
+
+```sh
+dsar requests create --api-url http://kitchen-sink.localhost:1355/api/v1
+```
+
+Use `DSAR_API_TOKEN` when your runtime expects machine access credentials.
+
+### Node SDK
+
+```ts
+import { createNodeSdk } from "@dsar/node-sdk";
+
+const client = createNodeSdk({
+	baseUrl: "http://kitchen-sink.localhost:1355/api/v1",
+	token: process.env.DSAR_API_TOKEN,
+});
+
+const created = await client.requests.create({
+	intakeSource: {
+		channel: "api",
+		rawText: "Please provide my personal data.",
+		receivedAt: new Date().toISOString(),
+	},
+	jurisdiction: "eu",
+});
+
+created.unwrap();
+```
+
+## Choose the Right Runtime Surface
+
+- `@dsar/backend`: embed the HTTP runtime into your own service
+- `@dsar/node-sdk`: call DSAR from server-side application code
+- `@dsar/cli`: script or explore the HTTP surface from the terminal
+- `@dsar/core`: select `managed`, `self-hosted`, `custom`, or `offline` client
+  modes behind a stable application-facing contract
+
+See [SDK and Runtime Modes](../reference/developer/sdk-and-runtime.md) for the comparison.
+
+## Next Steps
+
+- Read [Request Lifecycle](./request-lifecycle.md) for the end-to-end workflow
+- Use [API Reference](../reference/api) for endpoint details
+- Use [Integration Guides](../integrations/integrations) to wire auth, storage, and
+  inbound/outbound adapters

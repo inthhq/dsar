@@ -1,13 +1,8 @@
 {
 	"title": "Integrations",
-	"pages": [
-		"unkey",
-		"c15t-adapter",
-		"inbound-resend",
-		"inbound-slack",
-		"outbound-resend",
-		"storage-s3",
-		"storage-filesystem",
-		"storage-vercel-blob"
-	]
+	"nav": {
+		"sidebar": "section",
+		"label": "Integrations"
+	},
+	"pages": ["inbound", "integrations"]
 }

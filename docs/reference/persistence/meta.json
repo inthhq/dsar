@@ -1,0 +1,8 @@
+{
+	"title": "Persistence",
+	"nav": {
+		"sidebar": "section",
+		"label": "Persistence"
+	},
+	"pages": ["pg", "sqlite"]
+}

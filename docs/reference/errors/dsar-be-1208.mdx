@@ -1,0 +1,43 @@
+---
+title: "DSAR-BE-1208: MANIFEST_ARTIFACT_REPLACE_FAILED"
+description: "Replacement of an existing fulfilment manifest artifact failed. The artifact could not be overwritten in storage."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+## Meaning
+
+Replacement of an existing fulfilment manifest artifact failed. The artifact could not be overwritten in storage.
+
+## Probable Causes
+
+- The artifact ID does not exist in the manifest's `artifacts` array.
+- No fulfilment manifest record exists for the target request.
+- The uploaded file body is empty (zero bytes).
+- The storage adapter is not configured (running with "stub" storage).
+- The storage adapter encountered a write error during overwrite.
+
+## How to Fix
+
+1. Verify the artifact ID exists in the manifest — use `GET /requests/:id/manifest` to inspect the artifacts list.
+2. Ensure a fulfilment manifest has been created for the request before attempting replacement.
+3. Verify the replacement file is non-empty.
+4. Check storage connectivity and permissions if the adapter is correctly configured.
+
+## Retryable
+
+Yes — if the storage adapter was temporarily unavailable, retrying the replacement may succeed.
+
+## Minimal Trigger Example
+
+```http
+PUT /api/v1/requests/req-123/manifest/artifact/art-456/replace HTTP/1.1
+Host: localhost:4086
+authorization: Bearer test-token
+x-artifact-filename: data-export-redacted.csv
+x-artifact-content-type: text/csv
+Content-Type: text/csv
+
+<binary file body>
+```

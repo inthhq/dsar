@@ -1,0 +1,33 @@
+---
+title: "DSAR-IN-1001: INBOUND_RESEND_CONTENT_FETCH_FAILED"
+description: "The inbound Resend adapter failed to retrieve the content of a received email from the Resend API."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+## Meaning
+
+The inbound Resend adapter failed to retrieve the content of a received email from the Resend API.
+
+## Probable Causes
+
+- Resend API returned an error when fetching email content by ID.
+- Network connectivity issue between the backend and Resend servers.
+- Invalid or expired Resend API credentials.
+- The referenced email ID does not exist or has been purged.
+
+## How to Fix
+
+1. Inspect `error.details` for the upstream Resend error message and status.
+2. Verify Resend API key is valid and has sufficient permissions.
+3. Confirm the email ID exists in the Resend dashboard.
+4. Retry if the failure is transient (network/timeout).
+
+## Retryable
+
+Depends on the underlying cause. Network and timeout errors are retriable; auth and validation errors are not.
+
+## Minimal Trigger Example
+
+An inbound webhook processes an email whose content cannot be fetched from the Resend API.

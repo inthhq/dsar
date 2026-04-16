@@ -4,48 +4,39 @@ description: "DSAR ships generated OpenAPI at GET /spec.json and interactive HTT
 lastModified: 2026-04-16
 ---
 
+<import src="./_shared/alpha-warning.mdx" />
+
 DSAR ships generated OpenAPI at `GET /spec.json` and interactive HTTP docs at
 `GET /docs`, but the markdown docs in this folder explain how the runtime,
 integrations, and request lifecycle fit together.
 
-## Start Here
+## Top-Level Groups
 
-1. [Getting Started](./getting-started.md) for the fastest local path using the
-   example apps and runtime.
-2. [Request Lifecycle](./request-lifecycle.md) for the end-to-end operator and
-   subject workflow.
-3. [SDK and Runtime Modes](./developer/sdk-and-runtime.md) to choose between
-   `@dsar/backend`, `@dsar/node-sdk`, `@dsar/cli`, and `@dsar/core`.
-
-## Reference Sections
-
-- [API](./api/README.md) for endpoint-level reference pages.
-- [Architecture](./architecture/README.md) for runtime boundaries, contracts,
-  versioning, and package layout.
-- [Integrations](./integrations/README.md) for auth, inbound, outbound, and
-  storage adapters.
-- [Developer](./developer/cli.md) for contributor and CLI-focused reference.
-- [Testing](./testing/acceptance-and-parity.md) for parity and acceptance
-  expectations.
-- [Errors](./architecture/error-codes.md) for error catalog structure and links
-  into `docs/errors/*`.
+- [Guides](./guides) for onboarding, lifecycle walkthroughs, deployments, and
+  build metrics.
+- [Reference](./reference) for API, developer, persistence, storage, testing,
+  and error catalog documentation.
+- [Integrations](./integrations) for inbound channels plus auth, outbound, and
+  adapter-specific setup.
+- [Architecture](./architecture) for runtime boundaries, contracts, versioning,
+  and package layout.
 
 ## Recommended Paths
 
 - Self-hosted runtime:
-  [Getting Started](./getting-started.md) ->
+  [Getting Started](./guides/getting-started.md) ->
   [Backend Runtime Core](./architecture/backend-runtime-core.md) ->
-  [Integrations](./integrations/README.md) ->
-  [API](./api/README.md)
+  [Integrations](./integrations/integrations) ->
+  [API Reference](./reference/api)
 - Operator tooling:
-  [SDK and Runtime Modes](./developer/sdk-and-runtime.md) ->
-  [Core Request API](./api/requests.md) ->
-  [Verification API](./api/verification.md) ->
-  [Delivery API](./api/delivery.md)
+  [SDK and Runtime Modes](./reference/developer/sdk-and-runtime.md) ->
+  [Core Request API](./reference/api/requests.md) ->
+  [Verification API](./reference/api/verification.md) ->
+  [Delivery API](./reference/api/delivery.md)
 - Subject-facing experiences:
   [Auth Model](./architecture/auth-model.md) ->
-  [Request Lifecycle](./request-lifecycle.md) ->
-  [Examples and Deployment](./examples-and-deployment.md)
+  [Request Lifecycle](./guides/request-lifecycle.md) ->
+  [Examples and Deployment](./guides/examples-and-deployment.md)
 
 ## Generated HTTP Contract
 
@@ -55,4 +46,4 @@ integrations, and request lifecycle fit together.
 - Base-path-aware interactive docs: `GET /docs`
 
 If you need concrete runnable setups, start with
-[Examples and Deployment](./examples-and-deployment.md).
+[Examples and Deployment](./guides/examples-and-deployment.md).

@@ -1,0 +1,32 @@
+---
+title: "Status API"
+description: "Return the current runtime health payload."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+## GET /status
+
+Return the current runtime health payload.
+
+This is a public endpoint and does not require bearer authentication in the
+generated HTTP contract.
+
+**Response:**
+
+```json
+{
+	"service": "dsar",
+	"status": "ok"
+}
+```
+
+Use `GET /status` for health probes, smoke tests, and quick validation that the
+runtime and base path are mounted as expected.
+
+Related surfaces:
+
+- Node SDK: `client.system.status()`
+- CLI: `dsar status`
+- See also [API Contract Surface](../../architecture/api-contract-surface.md)

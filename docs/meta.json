@@ -1,17 +1,3 @@
 {
-	"pages": [
-		"getting-started",
-		"request-lifecycle",
-		"examples-and-deployment",
-		"storage",
-		"persistence",
-		"inbound",
-		"api",
-		"architecture",
-		"integrations",
-		"developer",
-		"testing",
-		"errors",
-		"package-build-metrics"
-	]
+	"pages": ["guides", "reference", "integrations", "architecture"]
 }

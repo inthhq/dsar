@@ -1,0 +1,37 @@
+---
+title: "DSAR-BE-1302: POLICY_ENFORCEMENT_REFUSAL_BLOCKED"
+description: "The active policy for this request does not permit refusal. The `refusalEligible` flag in the policy evaluation decision is `false`."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+## Meaning
+
+The active policy for this request does not permit refusal. The `refusalEligible` flag in the policy evaluation decision is `false`.
+
+## Probable Causes
+
+- The resolved policy pack explicitly disallows refusal for this request type, jurisdiction, or requestor context.
+- The request was captured under a policy version where refusal is not a permitted outcome.
+
+## How to Fix
+
+1. Review the active policy pack's rules to confirm whether refusal is intentionally blocked.
+2. If refusal should be permitted, update the policy pack configuration or upgrade to a version that allows it.
+3. If the request genuinely cannot be fulfilled, use an alternative resolution path (e.g., extension, partial fulfilment).
+
+## Retryable
+
+No. The policy decision is computed and stored at capture time. Enforcement — including retries of the same refusal action — reuses that captured decision. The decision will only change if the request is re-captured under an updated policy pack or the capture payload is resubmitted against a new policy version.
+
+## Minimal Trigger Example
+
+```http
+POST /api/v1/requests/:id/refusals HTTP/1.1
+Host: localhost:4086
+content-type: application/json
+authorization: Bearer test-token
+
+{"rationale":"Manifestly unfounded request"}
+```

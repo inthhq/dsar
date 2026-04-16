@@ -1,0 +1,70 @@
+---
+title: "Postgres"
+description: "@dsar/persistence-pg provides a Postgres driver for DSAR persistence with advisory-lock migration protection, connection pooling, and full domain record support."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+`@dsar/persistence-pg` provides a Postgres driver for DSAR persistence with advisory-lock migration protection, connection pooling, and full domain record support.
+
+## Installation
+
+| Package manager | Command                            |
+| :-------------- | :--------------------------------- |
+| npm             | `npm install @dsar/persistence-pg` |
+| pnpm            | `pnpm add @dsar/persistence-pg`    |
+| yarn            | `yarn add @dsar/persistence-pg`    |
+| bun             | `bun add @dsar/persistence-pg`     |
+
+## Quickstart
+
+### Standalone Service
+
+The simplest way to get started — creates a persistence service you can pass directly to the backend:
+
+```ts
+import { makePgPersistenceService } from "@dsar/persistence-pg";
+import { dsarInstance, runtimeReposFromPersistence } from "@dsar/backend";
+
+const persistence = await makePgPersistenceService({
+	connectionUrl: "postgres://user:pass@localhost:5432/dsar",
+});
+
+const runtime = dsarInstance({
+	repos: runtimeReposFromPersistence(persistence),
+});
+```
+
+### Effect Layer Composition
+
+For Effect-based applications, use the layer API for dependency injection:
+
+```ts
+import { Effect } from "effect";
+import { Persistence, withTenant } from "@dsar/persistence";
+import { makePgPersistenceLayer } from "@dsar/persistence-pg";
+
+const program = Persistence.pipe(
+	Effect.flatMap((persistence) => persistence.requests.list()),
+	withTenant("tenant-1"),
+	Effect.provide(
+		makePgPersistenceLayer({
+			config: { url: "postgres://user:pass@localhost:5432/dsar" },
+		})
+	)
+);
+
+await Effect.runPromise(program);
+```
+
+## Migrations
+
+Migrations run automatically on startup with advisory-lock protection to prevent concurrent migration conflicts in multi-instance deployments.
+
+## Related
+
+- [Persistence Overview](/docs/reference/persistence)
+- [SQLite Driver](/docs/reference/persistence/sqlite)
+- [Architecture: Tenant-Safe Persistence](/docs/architecture/tenant-safe-persistence)
+- [Getting Started](/docs/guides/getting-started)

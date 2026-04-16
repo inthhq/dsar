@@ -1,0 +1,30 @@
+---
+title: "DSAR-FS-1500: STORAGE_FILESYSTEM_RUNTIME_ERROR"
+description: "An unhandled filesystem storage runtime exception occurred."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+## Meaning
+
+An unhandled filesystem storage runtime exception occurred.
+
+## Probable Causes
+
+- Unexpected bug in filesystem storage logic.
+- I/O or permission failure not mapped to a typed domain error.
+
+## How to Fix
+
+1. Inspect logs for stack trace and context.
+2. Add explicit domain error mapping for the failing boundary.
+3. Patch root cause and add regression tests.
+
+## Retryable
+
+Yes, but only when failure is transient. Persistent failures require code fix.
+
+## Minimal Trigger Example
+
+Any uncaught exception thrown during filesystem storage operations.

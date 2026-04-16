@@ -1,0 +1,46 @@
+---
+title: "DSAR-SDK-1500: SDK_RETRY_FAILED"
+description: "The SDK exhausted retries and the request still failed."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+## Meaning
+
+The SDK exhausted retries and the request still failed.
+
+## Probable Causes
+
+- Persistent network or server failure.
+- Upstream dependency issues such as API rate limiting, auth failures, DNS/proxy misconfiguration, firewall/load-balancer blocking, backend crash, or database outage.
+- All retry attempts hit timeout or error.
+
+## How to Fix
+
+1. Inspect last error in the chain.
+2. Verify service availability.
+3. Adjust retry policy or resolve underlying issue.
+
+## Retryable
+
+No. Retries have been exhausted.
+
+## Minimal Trigger Example
+
+```ts
+import { createClient } from "@dsar/node-sdk";
+
+const client = createClient({
+	baseUrl: "http://down.example",
+	retryMaxAttempts: 3,
+});
+
+try {
+	await client.requests.capture({
+		/* capture options */
+	});
+} catch (err) {
+	console.error(err.code, err.errorId, err.docsUrl); // SDK_RETRY_FAILED / DSAR-SDK-1500
+}
+```

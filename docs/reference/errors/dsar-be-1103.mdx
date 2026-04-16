@@ -1,0 +1,31 @@
+---
+title: "DSAR-BE-1103: REQUEST_BASE_PATH_INVALID"
+description: "Backend runtime was configured with an invalid `basePath`."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+## Meaning
+
+Backend runtime was configured with an invalid `basePath`.
+
+## Probable Causes
+
+- `basePath` does not start with `/`.
+- Environment variable provided malformed path.
+
+## How to Fix
+
+1. Set `basePath` to either empty/root or a slash-prefixed segment (`/api/v1`).
+2. Validate deployment configuration before boot.
+
+## Retryable
+
+No. Requires configuration change.
+
+## Minimal Trigger Example
+
+```ts
+dsarInstance({ basePath: "api/v1" });
+```

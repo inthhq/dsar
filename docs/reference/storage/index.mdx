@@ -1,0 +1,59 @@
+---
+title: "Storage"
+description: "DSAR uses storage adapters to persist fulfilment artifacts — the files, documents, and data packages assembled during request processing. Each adapter implements the same StorageAdapterContract, so you can swap providers without changing application code."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+DSAR uses storage adapters to persist fulfilment artifacts — the files, documents, and data packages assembled during request processing. Each adapter implements the same `StorageAdapterContract`, so you can swap providers without changing application code.
+
+## Available Adapters
+
+| Adapter                         | Package                     | Best For                                                                  |
+| :------------------------------ | :-------------------------- | :------------------------------------------------------------------------ |
+| [S3](./s3.md)                   | `@dsar/storage-s3`          | Production deployments with AWS, MinIO, R2, or any S3-compatible provider |
+| [Filesystem](./filesystem.md)   | `@dsar/storage-filesystem`  | Local development and single-server deployments                           |
+| [Vercel Blob](./vercel-blob.md) | `@dsar/storage-vercel-blob` | Zero-infrastructure deployments on Vercel                                 |
+
+## How Storage Works
+
+When a DSAR request reaches the fulfilment stage, the runtime assembles artifacts into a manifest and stores them through the configured adapter. Each artifact gets a deterministic key:
+
+```
+<prefix>/<requestId>/<manifestId>/<category>/<redaction>/<thirdParty>/<artifactName>
+```
+
+All adapters preserve manifest-linked metadata on artifact references:
+
+- `requestId` — the originating DSAR request
+- `manifestId` — the delivery manifest grouping artifacts
+- `manifestHash` — integrity hash of the manifest
+- `manifestSignature` — cryptographic signature when available
+
+## Choosing an Adapter
+
+- **Starting out?** Use `storage-filesystem` for local development and testing.
+- **Deploying to Vercel?** Use `storage-vercel-blob` for managed storage with zero setup.
+- **Production at scale?** Use `storage-s3` with your preferred S3-compatible provider.
+
+## Stub Mode
+
+During development, you can skip storage configuration entirely:
+
+```ts
+const runtime = dsarInstance({
+	adapters: {
+		storage: "stub",
+		// ...
+	},
+});
+```
+
+Stub mode accepts all storage operations without persisting data.
+
+## Related
+
+- [Getting Started](/docs/guides/getting-started)
+- [Request Lifecycle](/docs/guides/request-lifecycle)
+- [Adapter Contracts](/docs/architecture/adapter-contracts)

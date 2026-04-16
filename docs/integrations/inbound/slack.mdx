@@ -1,0 +1,119 @@
+---
+title: "Inbound Slack"
+description: "@dsar/inbound-slack accepts Slack webhook deliveries and maps them into canonical DSAR request capture input. Supports messages, slash commands, shortcuts, block actions, and modal submissions."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+`@dsar/inbound-slack` accepts Slack webhook deliveries and maps them into canonical DSAR request capture input. Supports messages, slash commands, shortcuts, block actions, and modal submissions.
+
+## Installation
+
+| Package manager | Command                           |
+| :-------------- | :-------------------------------- |
+| npm             | `npm install @dsar/inbound-slack` |
+| pnpm            | `pnpm add @dsar/inbound-slack`    |
+| yarn            | `yarn add @dsar/inbound-slack`    |
+| bun             | `bun add @dsar/inbound-slack`     |
+
+## Setup
+
+1. **Create a Slack app** with the Events API enabled.
+2. **Point the webhook** to your DSAR endpoint: `POST /webhooks/inbound/slack`.
+3. **Subscribe to events** — app mentions, DMs, slash commands, shortcuts, block actions, or modal submissions.
+4. **Install the app** into the target workspace and capture the signing secret and bot token.
+5. **Verify the endpoint** — trigger Slack's URL verification flow and confirm the DSAR endpoint echoes the `challenge` response with HTTP `200`.
+
+## Quickstart
+
+```ts
+import { dsarInstance } from "@dsar/backend";
+import { makeSlackInboundAdapter } from "@dsar/inbound-slack";
+
+const inbound = makeSlackInboundAdapter({
+	signingSecret: process.env.SLACK_SIGNING_SECRET!,
+	botToken: process.env.SLACK_BOT_TOKEN,
+	teamRoutes: {
+		T123: {
+			jurisdiction: "uk",
+			tenantId: "tenant-a",
+			channels: {
+				CPRIVACY: {
+					jurisdiction: "uk",
+					tenantId: "tenant-a",
+					workspaceId: "workspace-1",
+				},
+			},
+			commands: {
+				"/dsar": {
+					jurisdiction: "uk",
+					tenantId: "tenant-a",
+				},
+			},
+		},
+	},
+});
+
+const runtime = dsarInstance({
+	adapters: {
+		inbound,
+		notifications: "stub",
+		storage: "stub",
+	},
+});
+```
+
+Webhook endpoint: `POST /webhooks/inbound/slack`
+
+Required headers: `x-slack-signature`, `x-slack-request-timestamp`
+
+## Configuration
+
+| Option                   | Default  | Description                               |
+| :----------------------- | :------- | :---------------------------------------- |
+| `signingSecret`          | —        | Slack app signing secret (required)       |
+| `botToken`               | —        | Bot token for profile lookup and Chat SDK |
+| `userName`               | —        | Bot username for Chat SDK adapter         |
+| `replayToleranceSeconds` | `300`    | Maximum age for signed requests           |
+| `dedupeTtlMs`            | `300000` | Chat SDK dedupe window                    |
+| `defaultRoute`           | —        | Fallback route for unmatched events       |
+| `teamRoutes`             | —        | Route map keyed by Slack team ID          |
+
+## Supported Surfaces
+
+- Events API messages, app mentions, DMs, and thread replies
+- Slash commands
+- Shortcuts and message actions
+- Block actions
+- Modal submissions
+- URL verification challenge
+
+## Intake Mapping
+
+| Field                        | Value                                                     |
+| :--------------------------- | :-------------------------------------------------------- |
+| `intakeSource.type`          | `slack`                                                   |
+| `intakeSource.channel`       | `slack:{channelName\|channelId\|surface}`                 |
+| `intakeSource.rawContextRef` | `slack:{teamId}:{channelId}:{threadOrEvent}`              |
+| `intakeSource.rawText`       | Normalised message/command/modal text                     |
+| `requestor.name`             | Slack display name when available                         |
+| `requestor.email`            | Resolved from Slack profile when `botToken` is configured |
+
+## Idempotency
+
+Idempotency key format: `inbound-slack:{sourceId}:{tenantId}:{workspaceId|*}`
+
+URL verification returns the raw Slack challenge response and does not create a DSAR request.
+
+## Failure Modes
+
+- **Invalid signature, stale timestamp, or malformed payload** — `REQUEST_VALIDATION_FAILED`
+- **Missing route and no default route** — `REQUEST_VALIDATION_FAILED`
+- **Non-DSAR conversational events** — accepted with `status: ignored_non_dsar`
+
+## Related
+
+- [Inbound Overview](/docs/integrations/inbound)
+- [Inbound Resend](/docs/integrations/inbound/resend)
+- [Slack Events API](https://api.slack.com/events-api)

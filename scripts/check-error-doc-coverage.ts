@@ -1,10 +1,18 @@
+import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
 
-const docsDirectory = path.resolve(process.cwd(), "docs/errors");
 const packagesDirectory = path.resolve(process.cwd(), "packages");
+const legacyDocsDirectory = path.resolve(process.cwd(), "docs/errors");
+const referenceDocsDirectory = path.resolve(
+	process.cwd(),
+	"docs/reference/errors"
+);
+const docsDirectory = existsSync(referenceDocsDirectory)
+	? referenceDocsDirectory
+	: legacyDocsDirectory;
 
 const readDocSlugs = async (): Promise<string[]> => {
 	const files = await readdir(docsDirectory, { withFileTypes: true });
@@ -109,14 +117,18 @@ if (
 	if (missingDocs.length > 0) {
 		console.error("[check:error-docs] Missing docs:");
 		for (const slug of missingDocs) {
-			console.error(`- docs/errors/${slug}.mdx`);
+			console.error(
+				`- ${path.relative(process.cwd(), docsDirectory)}/${slug}.mdx`
+			);
 		}
 	}
 
 	if (orphanDocs.length > 0) {
 		console.error("[check:error-docs] Orphan docs not in catalog:");
 		for (const slug of orphanDocs) {
-			console.error(`- docs/errors/${slug}.mdx`);
+			console.error(
+				`- ${path.relative(process.cwd(), docsDirectory)}/${slug}.mdx`
+			);
 		}
 	}
 

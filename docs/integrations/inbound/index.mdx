@@ -1,0 +1,57 @@
+---
+title: "Inbound"
+description: "DSAR uses inbound adapters to receive data subject access requests from external sources. Each adapter verifies webhook authenticity, normalises the payload into a canonical capture format, and routes it to the correct tenant and jurisdiction."
+lastModified: 2026-04-16
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+DSAR uses inbound adapters to receive data subject access requests from external sources. Each adapter verifies webhook authenticity, normalises the payload into a canonical capture format, and routes it to the correct tenant and jurisdiction.
+
+## Available Adapters
+
+| Adapter               | Package                | Source                                          |
+| :-------------------- | :--------------------- | :---------------------------------------------- |
+| [Resend](./resend.md) | `@dsar/inbound-resend` | Email via Resend inbound webhooks               |
+| [Slack](./slack.md)   | `@dsar/inbound-slack`  | Slack messages, commands, shortcuts, and modals |
+
+## How Inbound Works
+
+1. An external event arrives at a DSAR webhook endpoint (e.g. `POST /webhooks/inbound/resend`).
+2. The adapter verifies the request signature.
+3. The adapter resolves a route to determine `tenantId`, `workspaceId`, and `jurisdiction`.
+4. The event is normalised into a canonical `NormalizedInboundPayload`.
+5. The backend's `captureRequestLifecycle()` creates or deduplicates the DSAR request.
+
+## Intake Mapping
+
+All inbound adapters produce a consistent capture payload:
+
+- `jurisdiction` — resolved from route configuration
+- `intakeSource.type` — adapter-specific (e.g. `inbound_email`, `slack`)
+- `intakeSource.receivedAt` — authoritative timestamp from the source
+- `intakeSource.rawContextRef` — source-specific reference for traceability
+- `requestor.email` — parsed from the source when available
+
+## Idempotency
+
+Inbound adapters derive deterministic idempotency keys so replayed webhook deliveries return the original request ID instead of creating duplicates.
+
+## Stub Mode
+
+During development, skip inbound configuration:
+
+```ts
+const runtime = dsarInstance({
+	adapters: {
+		inbound: "stub",
+		// ...
+	},
+});
+```
+
+## Related
+
+- [Getting Started](/docs/guides/getting-started)
+- [Request Lifecycle](/docs/guides/request-lifecycle)
+- [Adapter Contracts](/docs/architecture/adapter-contracts)
