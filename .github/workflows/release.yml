@@ -45,9 +45,13 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile # Use frozen lockfile for reliability in CI
 
-      # Ensure npm 11.5.1+ for trusted publishing (OIDC)
+      # Ensure npm 11.5.1+ for trusted publishing (OIDC).
+      # The runner's pre-installed npm can have broken internal deps (MODULE_NOT_FOUND),
+      # so we use corepack to get a clean, up-to-date npm instead.
       - name: Update npm for trusted publishing
-        run: npm install -g npm@latest
+        run: |
+          corepack enable npm
+          corepack install -g npm@latest
 
       # Canary release: Create and publish snapshot release
       - name: Create and publish canary snapshot release
