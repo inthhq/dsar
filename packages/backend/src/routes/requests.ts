@@ -71,6 +71,11 @@ const storageScopePrefix = (input: {
 }): string =>
 	`tenants/${encodeURIComponent(input.tenantId)}/requests/${encodeURIComponent(input.requestId)}`;
 
+const fileNamePathSeparatorPattern = /[/\\]/g;
+
+const sanitizeStorageFileName = (fileName: string): string =>
+	fileName.replaceAll(fileNamePathSeparatorPattern, "_").replaceAll("..", "_");
+
 const evidenceStorageKey = (input: {
 	readonly tenantId: string;
 	readonly requestId: string;
@@ -1471,6 +1476,7 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 				} catch {
 					fileName = rawFileName;
 				}
+				fileName = sanitizeStorageFileName(fileName);
 				const contentType =
 					request.headers.get("x-artifact-content-type") ??
 					"application/octet-stream";
@@ -1744,7 +1750,7 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 				} catch {
 					fileName = rawFileName;
 				}
-				fileName = fileName.replaceAll(/[/\\]/g, "_").replaceAll("..", "_");
+				fileName = sanitizeStorageFileName(fileName);
 				const contentType =
 					request.headers.get("x-artifact-content-type") ??
 					"application/octet-stream";
