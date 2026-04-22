@@ -91,7 +91,14 @@ const isTenantScopedManifestKey = (input: {
 	readonly key: string;
 	readonly tenantId: string;
 	readonly requestId: string;
-}): boolean => input.key.startsWith(`${storageScopePrefix(input)}/manifest/`);
+}): boolean => {
+	const tenantScopedPrefix = `${storageScopePrefix(input)}/manifest/`;
+	const legacyPrefix = `manifest/${input.requestId}/`;
+	return (
+		input.key.startsWith(tenantScopedPrefix) ||
+		input.key.startsWith(legacyPrefix)
+	);
+};
 
 /**
  * DSAR request lifecycle route definitions.

@@ -653,6 +653,7 @@ const requestInput = (input: {
 
 const artifactManifest = (input: {
 	readonly artifactId: string;
+	readonly legacyStorageKey?: boolean;
 	readonly marker: string;
 	readonly requestId: string;
 	readonly tenantId: string;
@@ -666,7 +667,9 @@ const artifactManifest = (input: {
 				sha256: "",
 				sizeBytes: input.marker.length,
 				sourceSystem: "tenant-isolation-test",
-				storageKey: `tenants/${input.tenantId}/requests/${input.requestId}/manifest/${input.artifactId}/data.txt`,
+				storageKey: input.legacyStorageKey
+					? `manifest/${input.requestId}/${input.artifactId}/data.txt`
+					: `tenants/${input.tenantId}/requests/${input.requestId}/manifest/${input.artifactId}/data.txt`,
 				title: input.marker,
 				type: "export",
 			},
@@ -683,6 +686,7 @@ const seedTenant = async (
 	input: {
 		readonly artifactId: string;
 		readonly eventId: string;
+		readonly legacyStorageKey?: boolean;
 		readonly marker: string;
 		readonly requestId: string;
 		readonly subjectId: string;
@@ -1206,6 +1210,10 @@ const assertNoTenantBMarker = async (
 	response: Response
 ): Promise<string> => {
 	const text = await response.text();
+	expect(
+		response.status,
+		`${label} returned ${response.status}: ${text}`
+	).toBeLessThan(500);
 	expect({
 		label,
 		status: response.status,
@@ -1405,6 +1413,80 @@ describe("api e2e tenant isolation", () => {
 			);
 			expect(subjectLookup.status).toBe(200);
 			expect(subjectLookupText).toContain(OVERLAP_REQUEST_ID);
+		} finally {
+			await server.close();
+		}
+	});
+
+	it("keeps legacy manifest artifact keys readable during rollout", async () => {
+		const persistence = makeTenantScopedMemoryPersistence();
+		const storage = makeMemoryStorage();
+		const requestId = "req-legacy-manifest";
+		const artifactId = "artifact-legacy-manifest";
+		const marker = "tenant-a-legacy-marker";
+		const replacementMarker = "tenant-a-legacy-replacement";
+		await seedTenant(persistence, storage, TENANT_A, {
+			artifactId,
+			eventId: "event-legacy-manifest",
+			legacyStorageKey: true,
+			marker,
+			requestId,
+			subjectId: "subject-legacy",
+			token: "tenant-a-legacy-token-gate",
+		});
+
+		const server = await startApiE2eServer({
+			adapters: {
+				inbound: "stub",
+				notifications: "stub",
+				storage,
+			},
+			config: {
+				auth: authConfig,
+			},
+			persistence,
+		});
+
+		try {
+			const initialDownload = await server.request({
+				headers: tenantAHeaders,
+				method: "GET",
+				path: `/requests/${requestId}/manifest/artifact/download?artifactId=${artifactId}`,
+			});
+			const initialDownloadText = await assertNoTenantBMarker(
+				"legacy manifest artifact download",
+				initialDownload
+			);
+			expect(initialDownload.status).toBe(200);
+			expect(initialDownloadText).toContain(marker);
+
+			const replacement = await server.request({
+				body: new TextEncoder().encode(replacementMarker),
+				headers: {
+					...tenantAHeaders,
+					"content-type": "text/plain",
+					"x-artifact-filename": "legacy.txt",
+				},
+				method: "PUT",
+				path: `/requests/${requestId}/manifest/artifact/${artifactId}/replace`,
+			});
+			await assertNoTenantBMarker(
+				"legacy manifest artifact replace",
+				replacement
+			);
+			expect(replacement.status).toBe(202);
+
+			const replacedDownload = await server.request({
+				headers: tenantAHeaders,
+				method: "GET",
+				path: `/requests/${requestId}/manifest/artifact/download?artifactId=${artifactId}`,
+			});
+			const replacedDownloadText = await assertNoTenantBMarker(
+				"legacy manifest artifact download after replace",
+				replacedDownload
+			);
+			expect(replacedDownload.status).toBe(200);
+			expect(replacedDownloadText).toContain(replacementMarker);
 		} finally {
 			await server.close();
 		}

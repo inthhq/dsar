@@ -5,6 +5,7 @@ import {
 	PolicyRegistry,
 	PolicyUpgrade,
 	registerCustomPolicyPack,
+	UpgradeProposalNotFoundError,
 } from "@dsar/policy-packs";
 import * as Effect from "effect/Effect";
 
@@ -102,9 +103,7 @@ const requireProposalScope = (
 		const proposal = yield* upgrade.get(proposalId);
 		if (proposal.tenantId !== actorContext.tenantId) {
 			return yield* Effect.fail(
-				toPolicyScopeForbiddenError(
-					"Policy upgrade proposal tenant scope must match the authenticated tenant context."
-				)
+				new UpgradeProposalNotFoundError({ proposalId })
 			);
 		}
 		if (
@@ -113,9 +112,7 @@ const requireProposalScope = (
 			proposal.workspaceId !== actorContext.workspaceId
 		) {
 			return yield* Effect.fail(
-				toPolicyScopeForbiddenError(
-					"Policy upgrade proposal workspace scope must match the authenticated workspace context."
-				)
+				new UpgradeProposalNotFoundError({ proposalId })
 			);
 		}
 		return upgrade;
