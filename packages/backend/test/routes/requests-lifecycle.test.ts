@@ -464,6 +464,134 @@ describe("request lifecycle routes", () => {
 		).toBeTruthy();
 	});
 
+	it("does not commit appeal decision side effects for closed requests", async () => {
+		const runtime = await makeRuntime();
+		const capture = await runtime.handler(
+			new Request("https://example.test/requests/capture", {
+				body: JSON.stringify({
+					intakeSource: {
+						channel: "api",
+						receivedAt: "2026-01-01T00:00:00.000Z",
+						type: "api",
+					},
+					jurisdiction: "uk",
+				}),
+				headers: {
+					"content-type": "application/json",
+					...actorHeaders,
+				},
+				method: "POST",
+			})
+		);
+		const captureBody = (await capture.json()) as {
+			readonly data: { readonly id: string };
+		};
+		const requestId = captureBody.data.id;
+		await runtime.handler(
+			new Request(
+				`https://example.test/requests/${requestId}/verification/request`,
+				{
+					headers: actorHeaders,
+					method: "POST",
+				}
+			)
+		);
+		await runtime.handler(
+			new Request(
+				`https://example.test/requests/${requestId}/verification/approve`,
+				{
+					headers: actorHeaders,
+					method: "POST",
+				}
+			)
+		);
+		await runtime.handler(
+			new Request(`https://example.test/requests/${requestId}/refusals`, {
+				body: JSON.stringify({ rationale: "verification mismatch" }),
+				headers: {
+					"content-type": "application/json",
+					...actorHeaders,
+				},
+				method: "POST",
+			})
+		);
+		const createAppeal = await runtime.handler(
+			new Request(`https://example.test/requests/${requestId}/appeals`, {
+				body: JSON.stringify({ message: "Please reconsider refusal." }),
+				headers: {
+					"content-type": "application/json",
+					...actorHeaders,
+				},
+				method: "POST",
+			})
+		);
+		const createAppealBody = (await createAppeal.json()) as {
+			readonly data: { readonly appealId: string };
+		};
+		await runtime.handler(
+			new Request(`https://example.test/requests/${requestId}/closures`, {
+				headers: actorHeaders,
+				method: "POST",
+			})
+		);
+
+		const decideAppeal = await runtime.handler(
+			new Request(
+				`https://example.test/requests/${requestId}/appeals/${createAppealBody.data.appealId}/decide`,
+				{
+					body: JSON.stringify({
+						decision: "approve",
+						explanation: "Overturn refusal.",
+					}),
+					headers: {
+						"content-type": "application/json",
+						...actorHeaders,
+					},
+					method: "POST",
+				}
+			)
+		);
+		expect(decideAppeal.status).toBe(400);
+		const listAppeals = await runtime.handler(
+			new Request(`https://example.test/requests/${requestId}/appeals`, {
+				headers: actorHeaders,
+				method: "GET",
+			})
+		);
+		const listAppealsBody = (await listAppeals.json()) as {
+			readonly data: readonly {
+				readonly id: string;
+				readonly status: string;
+			}[];
+		};
+		expect(
+			listAppealsBody.data.find(
+				(appeal) => appeal.id === createAppealBody.data.appealId
+			)?.status
+		).toBe("submitted");
+		const timeline = await runtime.handler(
+			new Request(`https://example.test/requests/${requestId}/timeline`, {
+				headers: actorHeaders,
+				method: "GET",
+			})
+		);
+		const timelineBody = (await timeline.json()) as {
+			readonly data: {
+				readonly events: readonly { readonly eventType: string }[];
+			};
+		};
+		expect(
+			timelineBody.data.events.map((event) => event.eventType)
+		).toStrictEqual([
+			"captured",
+			"verification_requested",
+			"verification_resolved",
+			"refused",
+			"appeal_submitted",
+			"closed",
+		]);
+	});
+
 	it("hard-gates capture for unmapped jurisdiction", async () => {
 		const runtime = await makeRuntime();
 		const response = await runtime.handler(

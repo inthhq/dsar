@@ -209,7 +209,11 @@ const enrichPayloadWithPolicy = (
 	policyEvaluation?: unknown
 ): unknown => {
 	const { clock } = resolved.pack.sections;
+	const { appeals } = resolved.pack.sections;
 	const policy = {
+		appealDeadlineDays: appeals.deadlineDays ?? null,
+		appealExtensionDays: appeals.extensionDays ?? null,
+		appealMustIncludeAGContactIfDenied: appeals.mustIncludeAGContactIfDenied,
 		clarificationEffect: clock.clarificationEffect,
 		maxAdditionalDays: clock.extension.maxAdditionalDays,
 		policyPack: resolved.pack.packId,
@@ -408,13 +412,15 @@ export const toValidationFailure = (
 };
 
 const TIMELINE_EVENT_PRECEDENCE: Readonly<Record<string, number>> = {
-	appeal_decided: 100,
-	appeal_submitted: 90,
+	appeal_decided: 90,
+	appeal_overturned: 100,
+	appeal_submitted: 80,
 	captured: 10,
 	clarification_received: 50,
 	clarification_requested: 40,
+	closed: 120,
 	extension_applied: 60,
-	fulfilled: 80,
+	fulfilled: 110,
 	refused: 70,
 	verification_requested: 20,
 	verification_resolved: 30,

@@ -17,6 +17,13 @@ describe("lifecycle state machine", () => {
 			});
 			expect(result.from).toBe("captured");
 			expect(result.to).toBe("verification_pending");
+			const appealResult = yield* applyLifecycleTransition({
+				action: "appeal_overturn",
+				currentStatus: "refused",
+				requestId: "req-appeal",
+			});
+			expect(appealResult.from).toBe("refused");
+			expect(appealResult.to).toBe("in_progress");
 		})
 	);
 
