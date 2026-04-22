@@ -28,6 +28,7 @@ const LIFECYCLE_ACTIONS = [
 	"clarification_request",
 	"clarification_receive",
 	"extension",
+	"appeal_overturn",
 	"fulfil",
 	"refuse",
 	"close",
@@ -41,6 +42,7 @@ const LIFECYCLE_ACTIONS = [
 export type LifecycleAction = (typeof LIFECYCLE_ACTIONS)[number];
 
 const transitions: Record<LifecycleAction, readonly LifecycleStatus[]> = {
+	appeal_overturn: ["refused"],
 	clarification_receive: ["in_progress"],
 	clarification_request: ["in_progress", "verification_pending"],
 	close: ["fulfilled", "refused"],
@@ -55,6 +57,7 @@ const transitions: Record<LifecycleAction, readonly LifecycleStatus[]> = {
 const rationaleRequired = new Set<LifecycleAction>(["extension", "refuse"]);
 
 const statusByAction: Record<LifecycleAction, LifecycleStatus> = {
+	appeal_overturn: "in_progress",
 	clarification_receive: "in_progress",
 	clarification_request: "in_progress",
 	close: "closed",

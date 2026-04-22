@@ -6,7 +6,7 @@ import type {
 	RequestRecord,
 	RequestTimelineEventRecord,
 } from "@dsar/persistence";
-import type { Effect } from "effect/Effect";
+import type * as Effect from "effect/Effect";
 
 import { computeLegalClock } from "../services/legal-clock/engine";
 import type { LegalClockComputation } from "../services/legal-clock/engine";
@@ -41,6 +41,7 @@ export const addDays = (iso: string, days: number) => {
 };
 
 type LifecycleEventType =
+	| "appeal_overturned"
 	| "clarification_requested"
 	| "clarification_received"
 	| "deadline_extended"
@@ -58,6 +59,9 @@ type LifecycleEventType =
  */
 export const toEventType = (action: LifecycleAction): LifecycleEventType => {
 	switch (action) {
+		case "appeal_overturn": {
+			return "appeal_overturned";
+		}
 		case "clarification_request": {
 			return "clarification_requested";
 		}
