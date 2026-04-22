@@ -65,6 +65,34 @@ import {
 } from "./schemas";
 import type { RouteDefinition } from "./types";
 
+const storageScopePrefix = (input: {
+	readonly tenantId: string;
+	readonly requestId: string;
+}): string =>
+	`tenants/${encodeURIComponent(input.tenantId)}/requests/${encodeURIComponent(input.requestId)}`;
+
+const evidenceStorageKey = (input: {
+	readonly tenantId: string;
+	readonly requestId: string;
+	readonly evidenceId: string;
+	readonly fileName: string;
+}): string =>
+	`${storageScopePrefix(input)}/evidence/${encodeURIComponent(input.evidenceId)}/${input.fileName}`;
+
+const manifestStorageKey = (input: {
+	readonly tenantId: string;
+	readonly requestId: string;
+	readonly artifactId: string;
+	readonly fileName: string;
+}): string =>
+	`${storageScopePrefix(input)}/manifest/${encodeURIComponent(input.artifactId)}/${input.fileName}`;
+
+const isTenantScopedManifestKey = (input: {
+	readonly key: string;
+	readonly tenantId: string;
+	readonly requestId: string;
+}): boolean => input.key.startsWith(`${storageScopePrefix(input)}/manifest/`);
+
 /**
  * DSAR request lifecycle route definitions.
  *
@@ -650,7 +678,12 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 				const tenantId = getTenantId(services);
 				const now = yield* currentIsoTime;
 				const evidenceId = makeRequestId();
-				const storageKey = `evidence/${requestId}/${evidenceId}/${fileName}`;
+				const storageKey = evidenceStorageKey({
+					evidenceId,
+					fileName,
+					requestId,
+					tenantId,
+				});
 				const stored = yield* storage
 					.putObject({
 						bytes,
@@ -1446,7 +1479,12 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 				const tenantId = getTenantId(services);
 				const now = yield* currentIsoTime;
 				const artifactId = makeRequestId();
-				const storageKey = `manifest/${requestId}/${artifactId}/${fileName}`;
+				const storageKey = manifestStorageKey({
+					artifactId,
+					fileName,
+					requestId,
+					tenantId,
+				});
 				const stored = yield* storage
 					.putObject({
 						bytes,
@@ -1626,10 +1664,17 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 						})
 					);
 				}
-				if (!key.startsWith(`manifest/${requestId}/`)) {
+				if (
+					!isTenantScopedManifestKey({
+						key,
+						requestId,
+						tenantId,
+					})
+				) {
 					return yield* Effect.fail(
 						new RequestValidationError({
-							message: "Artifact key does not belong to this request.",
+							message:
+								"Artifact key does not belong to this tenant-scoped request.",
 							reasonCode:
 								backendErrorCatalogByCode.MANIFEST_ARTIFACT_DOWNLOAD_FAILED
 									.code,
@@ -1727,10 +1772,35 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 					);
 				}
 				const target = artifacts[targetIdx] as Record<string, unknown>;
-				const storageKey =
+				const existingStorageKey =
 					typeof target.storageKey === "string" && target.storageKey.length > 0
 						? target.storageKey
-						: `manifest/${requestId}/${artifactId}/${fileName}`;
+						: undefined;
+				if (
+					existingStorageKey &&
+					!isTenantScopedManifestKey({
+						key: existingStorageKey,
+						requestId,
+						tenantId,
+					})
+				) {
+					return yield* Effect.fail(
+						new RequestValidationError({
+							message:
+								"Artifact key does not belong to this tenant-scoped request.",
+							reasonCode:
+								backendErrorCatalogByCode.MANIFEST_ARTIFACT_REPLACE_FAILED.code,
+						})
+					);
+				}
+				const storageKey =
+					existingStorageKey ??
+					manifestStorageKey({
+						artifactId,
+						fileName,
+						requestId,
+						tenantId,
+					});
 				yield* storage
 					.putObject({
 						bytes,

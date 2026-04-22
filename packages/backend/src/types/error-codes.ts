@@ -83,6 +83,14 @@ const BACKEND_CATALOG_ENTRIES = [
 		title: "Policy activation not found",
 	},
 	{
+		code: "POLICY_UPGRADE_PROPOSAL_NOT_FOUND",
+		docsSlug: "dsar-be-1203",
+		id: "DSAR-BE-1203",
+		namespace: "backend",
+		status: 404,
+		title: "Policy upgrade proposal not found",
+	},
+	{
 		code: "DELIVERY_ARTIFACT_NOT_FOUND",
 		docsSlug: "dsar-be-1204",
 		id: "DSAR-BE-1204",
@@ -153,6 +161,14 @@ const BACKEND_CATALOG_ENTRIES = [
 		namespace: "backend",
 		status: 403,
 		title: "Refusal blocked by active policy",
+	},
+	{
+		code: "POLICY_UPGRADE_APPROVAL_REQUIRED",
+		docsSlug: "dsar-be-1303",
+		id: "DSAR-BE-1303",
+		namespace: "backend",
+		status: 409,
+		title: "Policy upgrade approval required",
 	},
 	{
 		code: "RETENTION_CLASS_INVALID",

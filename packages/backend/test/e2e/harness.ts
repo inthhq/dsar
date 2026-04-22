@@ -2,7 +2,10 @@ import { once } from "node:events";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+import type { PersistenceService } from "@dsar/persistence";
+
 import { dsarInstance } from "../../src";
+import type { RuntimeAdapters, RuntimeConfig } from "../../src/types/runtime";
 import { TEST_ADMIN_HEADERS, TEST_RUNTIME_AUTH } from "../auth";
 import { makeMemoryPersistence } from "./fixtures";
 
@@ -12,6 +15,7 @@ export interface ApiE2eRequestInput {
 	readonly method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 	readonly path: string;
 	readonly headers?: Readonly<Record<string, string>>;
+	readonly body?: BodyInit;
 	readonly json?: unknown;
 }
 
@@ -19,6 +23,12 @@ export interface ApiE2eServer {
 	readonly baseUrl: string;
 	readonly request: (input: ApiE2eRequestInput) => Promise<Response>;
 	readonly close: () => Promise<void>;
+}
+
+export interface ApiE2eServerOptions {
+	readonly adapters?: Partial<RuntimeAdapters>;
+	readonly config?: Partial<RuntimeConfig>;
+	readonly persistence?: PersistenceService;
 }
 
 const toRequestHeaders = (incoming: IncomingMessage): Headers => {
@@ -87,16 +97,22 @@ const writeWebResponse = async (
 	outgoing.end(responseBuffer);
 };
 
-export const startApiE2eServer = async (): Promise<ApiE2eServer> => {
+export const startApiE2eServer = async (
+	options: ApiE2eServerOptions = {}
+): Promise<ApiE2eServer> => {
 	const runtime = dsarInstance({
-		...TEST_RUNTIME_AUTH,
-		adapters: {
+		adapters: options.adapters ?? {
 			inbound: "stub",
 			notifications: "stub",
 			storage: "stub",
 		},
+		config: {
+			...TEST_RUNTIME_AUTH.config,
+			...options.config,
+			auth: options.config?.auth ?? TEST_RUNTIME_AUTH.config.auth,
+		},
 		repos: {
-			persistence: makeMemoryPersistence(),
+			persistence: options.persistence ?? makeMemoryPersistence(),
 		},
 	});
 	const server = createServer(async (incoming, outgoing) => {
@@ -131,8 +147,8 @@ export const startApiE2eServer = async (): Promise<ApiE2eServer> => {
 			const headers = new Headers(input.headers);
 			const method = input.method ?? "GET";
 			const body =
-				input.json === undefined ? undefined : JSON.stringify(input.json);
-			if (body && !headers.has("content-type")) {
+				input.json === undefined ? input.body : JSON.stringify(input.json);
+			if (input.json !== undefined && !headers.has("content-type")) {
 				headers.set("content-type", "application/json");
 			}
 			return fetch(`${baseUrl}${input.path}`, {

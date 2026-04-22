@@ -3,6 +3,7 @@ import {
 	deactivateCustomPolicyPack,
 	PolicyPacksLive,
 	PolicyRegistry,
+	PolicyUpgrade,
 	registerCustomPolicyPack,
 } from "@dsar/policy-packs";
 import * as Effect from "effect/Effect";
@@ -17,11 +18,7 @@ import {
 	requireRequestTenantId,
 } from "./authz";
 import { accepted, decodeJsonBody, ok, parseParam } from "./helpers";
-import {
-	approvePolicyUpgrade,
-	applyPolicyUpgrade,
-	proposePolicyUpgrade,
-} from "./policies/handlers";
+import { proposePolicyUpgrade } from "./policies/handlers";
 import {
 	PolicyActivationBodySchema,
 	PolicyDeactivationBodySchema,
@@ -87,6 +84,41 @@ const requireRoleContext = (
 			tenantId,
 			workspaceId: workspaceId ?? requestedScope?.workspaceId,
 		};
+	});
+
+interface PolicyActorContext {
+	readonly actor: string;
+	readonly role: string;
+	readonly tenantId: string;
+	readonly workspaceId: string | undefined;
+}
+
+const requireProposalScope = (
+	proposalId: string,
+	actorContext: PolicyActorContext
+) =>
+	Effect.gen(function* requireProposalScopeEffect() {
+		const upgrade = yield* Effect.service(PolicyUpgrade);
+		const proposal = yield* upgrade.get(proposalId);
+		if (proposal.tenantId !== actorContext.tenantId) {
+			return yield* Effect.fail(
+				toPolicyScopeForbiddenError(
+					"Policy upgrade proposal tenant scope must match the authenticated tenant context."
+				)
+			);
+		}
+		if (
+			actorContext.workspaceId &&
+			proposal.workspaceId &&
+			proposal.workspaceId !== actorContext.workspaceId
+		) {
+			return yield* Effect.fail(
+				toPolicyScopeForbiddenError(
+					"Policy upgrade proposal workspace scope must match the authenticated workspace context."
+				)
+			);
+		}
+		return upgrade;
 	});
 
 const withPolicyRouteAuthorization = (
@@ -270,11 +302,14 @@ const rawPolicyRoutes: readonly RouteDefinition[] = [
 				const proposalId = yield* parseParam(params, "proposalId");
 				const services = yield* Effect.service(RuntimeServicesTag);
 				const actorContext = yield* requireRoleContext(services);
-				const result = yield* approvePolicyUpgrade({
-					approverId: actorContext.actor,
-					approverRole: actorContext.role,
-					now: new Date().toISOString(),
-					proposalId,
+				const result = yield* Effect.gen(function* approveScopedUpgrade() {
+					const upgrade = yield* requireProposalScope(proposalId, actorContext);
+					return yield* upgrade.approve({
+						approverId: actorContext.actor,
+						approverRole: actorContext.role,
+						now: new Date().toISOString(),
+						proposalId,
+					});
 				}).pipe(Effect.provide(PolicyPacksLive));
 				return accepted(result);
 			}),
@@ -289,10 +324,13 @@ const rawPolicyRoutes: readonly RouteDefinition[] = [
 				const proposalId = yield* parseParam(params, "proposalId");
 				const services = yield* Effect.service(RuntimeServicesTag);
 				const actorContext = yield* requireRoleContext(services);
-				const result = yield* applyPolicyUpgrade({
-					actor: actorContext.actor,
-					now: new Date().toISOString(),
-					proposalId,
+				const result = yield* Effect.gen(function* applyScopedUpgrade() {
+					const upgrade = yield* requireProposalScope(proposalId, actorContext);
+					return yield* upgrade.apply({
+						actor: actorContext.actor,
+						now: new Date().toISOString(),
+						proposalId,
+					});
 				}).pipe(Effect.provide(PolicyPacksLive));
 				return accepted(result);
 			}),
