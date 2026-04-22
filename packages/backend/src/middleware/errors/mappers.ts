@@ -121,6 +121,34 @@ const mapPolicyActivationNotFound = (error: unknown): MappedError | undefined =>
 			}
 		: undefined;
 
+const mapPolicyUpgradeProposalNotFound = (
+	error: unknown
+): MappedError | undefined =>
+	hasErrorTag(error, "UpgradeProposalNotFoundError")
+		? {
+				code: "POLICY_UPGRADE_PROPOSAL_NOT_FOUND",
+				message: "Policy upgrade proposal was not found.",
+				status: 404,
+				trace: {
+					proposalId: getStringField(error, "proposalId", "unknown"),
+				},
+			}
+		: undefined;
+
+const mapPolicyUpgradeApprovalRequired = (
+	error: unknown
+): MappedError | undefined =>
+	hasErrorTag(error, "UpgradeApprovalRequiredError")
+		? {
+				code: "POLICY_UPGRADE_APPROVAL_REQUIRED",
+				message: "Policy upgrade proposal must be approved before apply.",
+				status: 409,
+				trace: {
+					proposalId: getStringField(error, "proposalId", "unknown"),
+				},
+			}
+		: undefined;
+
 const getTraceForUnmappedJurisdiction = (
 	error: unknown
 ): MappedError["trace"] => {
@@ -335,6 +363,8 @@ export const errorMappers = [
 	mapValidation,
 	mapNotFound,
 	mapPolicyActivationNotFound,
+	mapPolicyUpgradeProposalNotFound,
+	mapPolicyUpgradeApprovalRequired,
 	mapPersistenceEntityNotFound,
 	mapUnmappedJurisdiction,
 	mapInvalidTransition,
