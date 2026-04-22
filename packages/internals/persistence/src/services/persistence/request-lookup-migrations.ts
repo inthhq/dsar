@@ -24,14 +24,10 @@ const collectErrorText = (error: unknown): string => {
 		seen.add(value);
 		if (value instanceof Error) {
 			messages.push(value.message);
-			visit((value as { readonly cause?: unknown }).cause);
 		}
 		const record = value as Record<PropertyKey, unknown>;
-		visit(record.message);
-		visit(record.code);
-		visit(record.cause);
-		for (const symbol of Object.getOwnPropertySymbols(value)) {
-			visit(record[symbol]);
+		for (const key of Reflect.ownKeys(value)) {
+			visit(record[key]);
 		}
 	};
 	visit(error);

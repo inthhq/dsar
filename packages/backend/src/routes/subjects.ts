@@ -47,7 +47,8 @@ const parseIsoTimestampParam = (
 	paramName: "created_after" | "created_before"
 ): Effect.Effect<string | undefined, RequestValidationError> => {
 	if (!value || value.trim().length === 0) {
-		return Effect.succeed();
+		const emptyTimestamp: string | undefined = undefined;
+		return Effect.succeed(emptyTimestamp);
 	}
 	const normalized = normalizeIsoTimestamp(value);
 	if (!normalized) {
