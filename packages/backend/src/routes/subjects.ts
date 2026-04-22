@@ -78,12 +78,12 @@ const decodeCursor = (
 		if (
 			typeof parsed === "object" &&
 			parsed !== null &&
-			typeof (parsed as { readonly createdAt?: unknown }).createdAt ===
-				"string" &&
-			typeof (parsed as { readonly id?: unknown }).id === "string"
+			"createdAt" in parsed &&
+			"id" in parsed &&
+			typeof parsed.createdAt === "string" &&
+			typeof parsed.id === "string"
 		) {
-			const { createdAt } = parsed as { readonly createdAt: string };
-			const { id } = parsed as { readonly id: string };
+			const { createdAt, id } = parsed;
 			const normalizedCreatedAt = normalizeIsoTimestamp(createdAt);
 			if (!normalizedCreatedAt || id.trim().length === 0) {
 				return undefined;
