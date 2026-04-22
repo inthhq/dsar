@@ -2,6 +2,54 @@ import * as Effect from "effect/Effect";
 
 import type { Sql } from "./shared";
 
+const sqliteDuplicateColumnPattern = /duplicate column name/i;
+
+const collectErrorText = (error: unknown): string => {
+	const seen = new WeakSet<object>();
+	const messages: string[] = [];
+	const visit = (value: unknown): void => {
+		if (value === null || value === undefined) {
+			return;
+		}
+		if (typeof value === "string" || typeof value === "number") {
+			messages.push(String(value));
+			return;
+		}
+		if (typeof value !== "object") {
+			return;
+		}
+		if (seen.has(value)) {
+			return;
+		}
+		seen.add(value);
+		if (value instanceof Error) {
+			messages.push(value.message);
+			visit((value as { readonly cause?: unknown }).cause);
+		}
+		const record = value as Record<PropertyKey, unknown>;
+		visit(record.message);
+		visit(record.code);
+		visit(record.cause);
+		for (const symbol of Object.getOwnPropertySymbols(value)) {
+			visit(record[symbol]);
+		}
+	};
+	visit(error);
+	return messages.join("\n");
+};
+
+const isSqliteDuplicateColumnError = (error: unknown): boolean =>
+	sqliteDuplicateColumnPattern.test(collectErrorText(error));
+
+const ignoreSqliteDuplicateColumnError = <A, E, R>(
+	effect: Effect.Effect<A, E, R>
+) =>
+	effect.pipe(
+		Effect.catch((error) =>
+			isSqliteDuplicateColumnError(error) ? Effect.void : Effect.fail(error)
+		)
+	);
+
 /**
  * Adds request lookup columns used by subject profile queries.
  *
@@ -24,17 +72,17 @@ export const ensureRequestLookupColumns = (sql: Sql) =>
 				ADD COLUMN IF NOT EXISTS policy_pack TEXT`,
 		sqlite: () =>
 			Effect.gen(function* addSqliteRequestLookupColumns() {
-				yield* sql`ALTER TABLE requests ADD COLUMN subject_id TEXT`.pipe(
-					Effect.ignore
+				yield* ignoreSqliteDuplicateColumnError(
+					sql`ALTER TABLE requests ADD COLUMN subject_id TEXT`
 				);
-				yield* sql`ALTER TABLE requests ADD COLUMN subject_external_ref TEXT`.pipe(
-					Effect.ignore
+				yield* ignoreSqliteDuplicateColumnError(
+					sql`ALTER TABLE requests ADD COLUMN subject_external_ref TEXT`
 				);
-				yield* sql`ALTER TABLE requests ADD COLUMN requestor_email TEXT`.pipe(
-					Effect.ignore
+				yield* ignoreSqliteDuplicateColumnError(
+					sql`ALTER TABLE requests ADD COLUMN requestor_email TEXT`
 				);
-				yield* sql`ALTER TABLE requests ADD COLUMN policy_pack TEXT`.pipe(
-					Effect.ignore
+				yield* ignoreSqliteDuplicateColumnError(
+					sql`ALTER TABLE requests ADD COLUMN policy_pack TEXT`
 				);
 			}),
 	});

@@ -34,6 +34,14 @@ const parseStatusFilter = (value: string | null): readonly string[] =>
 				.filter((entry) => entry.length > 0)
 		: [];
 
+const normalizeIsoTimestamp = (value: string): string | undefined => {
+	const decoded = Schema.decodeUnknownExit(IsoTimestampSchema)(value);
+	if (Exit.isFailure(decoded)) {
+		return undefined;
+	}
+	return new Date(value).toISOString();
+};
+
 const parseIsoTimestampParam = (
 	value: string | null,
 	paramName: "created_after" | "created_before"
@@ -41,8 +49,8 @@ const parseIsoTimestampParam = (
 	if (!value || value.trim().length === 0) {
 		return Effect.succeed();
 	}
-	const decoded = Schema.decodeUnknownExit(IsoTimestampSchema)(value);
-	if (Exit.isFailure(decoded)) {
+	const normalized = normalizeIsoTimestamp(value);
+	if (!normalized) {
 		return Effect.fail(
 			new RequestValidationError({
 				message: `${paramName} must be a valid ISO-8601 timestamp.`,
@@ -50,7 +58,7 @@ const parseIsoTimestampParam = (
 			})
 		);
 	}
-	return Effect.succeed(new Date(value).toISOString());
+	return Effect.succeed(normalized);
 };
 
 const encodeCursor = (cursor: RequestSubjectCursor): string =>
@@ -73,9 +81,15 @@ const decodeCursor = (
 				"string" &&
 			typeof (parsed as { readonly id?: unknown }).id === "string"
 		) {
+			const { createdAt } = parsed as { readonly createdAt: string };
+			const { id } = parsed as { readonly id: string };
+			const normalizedCreatedAt = normalizeIsoTimestamp(createdAt);
+			if (!normalizedCreatedAt || id.trim().length === 0) {
+				return undefined;
+			}
 			return {
-				createdAt: (parsed as { readonly createdAt: string }).createdAt,
-				id: (parsed as { readonly id: string }).id,
+				createdAt: normalizedCreatedAt,
+				id,
 			};
 		}
 	} catch {

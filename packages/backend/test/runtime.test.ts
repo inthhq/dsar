@@ -537,6 +537,31 @@ describe(dsarInstance, () => {
 		]);
 	});
 
+	it("rejects malformed subject lookup cursors", async () => {
+		const runtime = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			repos: { persistence: makeMemoryPersistence() },
+		});
+		const cursor = Buffer.from(
+			JSON.stringify({ createdAt: "zzz", id: "" }),
+			"utf8"
+		).toString("base64url");
+
+		const response = await runtime.handler(
+			new Request(`https://example.test/subjects/subject-1?cursor=${cursor}`, {
+				headers: actorHeaders,
+				method: "GET",
+			})
+		);
+		const body = (await response.json()) as ErrorEnvelope;
+
+		expect([response.status, body.ok, body.error.code]).toStrictEqual([
+			400,
+			false,
+			"REQUEST_VALIDATION_FAILED",
+		]);
+	});
+
 	it("forbids policy scope mismatches against authenticated tenant context", async () => {
 		const runtime = dsarInstance({
 			...TEST_RUNTIME_AUTH,
