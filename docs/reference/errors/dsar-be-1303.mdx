@@ -1,0 +1,35 @@
+---
+title: "DSAR-BE-1303: POLICY_UPGRADE_APPROVAL_REQUIRED"
+description: "A policy upgrade must be approved before it can be applied."
+lastModified: 2026-04-22
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+## Meaning
+
+A policy upgrade proposal exists, but it has not reached the approval state required for application.
+
+## Probable Causes
+
+- The proposal was created but not approved.
+- The approval step failed or was performed against a different proposal ID.
+- The caller attempted to apply the proposal before the approval workflow completed.
+
+## How to Fix
+
+1. Approve the policy upgrade proposal for the same tenant/workspace scope.
+2. Verify the approval response shows the expected proposal ID and status.
+3. Re-run the apply operation after approval succeeds.
+
+## Retryable
+
+Yes, after the proposal has been approved.
+
+## Minimal Trigger Example
+
+```http
+POST /api/v1/policies/upgrades/proposal-1/apply HTTP/1.1
+Host: localhost:4086
+authorization: Bearer test-token
+```

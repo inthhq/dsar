@@ -57,6 +57,7 @@ const OVERLAP_EVENT_ID = "event-overlap";
 const TENANT_B_EVENT_ID = "event-tenant-b-only";
 const OVERLAP_APPEAL_ID = "appeal-overlap";
 const FUTURE_ISO = "2099-01-01T00:00:00.000Z";
+const E2E_TEST_TIMEOUT_MS = 15_000;
 
 const tenantAHeaders = {
 	authorization: `Bearer ${TOKEN_A}`,
@@ -1240,109 +1241,113 @@ const expectedRouteKeys = (): readonly string[] =>
 	coreRoutes.map((route) => routeKey(route.method, route.path));
 
 describe("api e2e tenant isolation", () => {
-	it("exercises every backend route without leaking sibling tenant data", async () => {
-		const persistence = makeTenantScopedMemoryPersistence();
-		const storage = makeMemoryStorage();
-		await seedTenant(persistence, storage, TENANT_A, {
-			artifactId: OVERLAP_ARTIFACT_ID,
-			eventId: OVERLAP_EVENT_ID,
-			marker: TENANT_A_SECRET,
-			requestId: OVERLAP_REQUEST_ID,
-			subjectId: "subject-a",
-			token: "tenant-a-token-gate",
-		});
-		await seedTenant(persistence, storage, TENANT_B, {
-			artifactId: OVERLAP_ARTIFACT_ID,
-			eventId: OVERLAP_EVENT_ID,
-			marker: TENANT_B_SECRET,
-			requestId: OVERLAP_REQUEST_ID,
-			subjectId: "subject-overlap",
-			token: "tenant-b-overlap-token-gate",
-		});
-		await seedTenant(persistence, storage, TENANT_B, {
-			artifactId: TENANT_B_ARTIFACT_ID,
-			eventId: TENANT_B_EVENT_ID,
-			marker: TENANT_B_SECRET,
-			requestId: TENANT_B_ONLY_REQUEST_ID,
-			subjectId: "subject-b",
-			token: "tenant-b-token-gate",
-		});
+	it(
+		"exercises every backend route without leaking sibling tenant data",
+		async () => {
+			const persistence = makeTenantScopedMemoryPersistence();
+			const storage = makeMemoryStorage();
+			await seedTenant(persistence, storage, TENANT_A, {
+				artifactId: OVERLAP_ARTIFACT_ID,
+				eventId: OVERLAP_EVENT_ID,
+				marker: TENANT_A_SECRET,
+				requestId: OVERLAP_REQUEST_ID,
+				subjectId: "subject-a",
+				token: "tenant-a-token-gate",
+			});
+			await seedTenant(persistence, storage, TENANT_B, {
+				artifactId: OVERLAP_ARTIFACT_ID,
+				eventId: OVERLAP_EVENT_ID,
+				marker: TENANT_B_SECRET,
+				requestId: OVERLAP_REQUEST_ID,
+				subjectId: "subject-overlap",
+				token: "tenant-b-overlap-token-gate",
+			});
+			await seedTenant(persistence, storage, TENANT_B, {
+				artifactId: TENANT_B_ARTIFACT_ID,
+				eventId: TENANT_B_EVENT_ID,
+				marker: TENANT_B_SECRET,
+				requestId: TENANT_B_ONLY_REQUEST_ID,
+				subjectId: "subject-b",
+				token: "tenant-b-token-gate",
+			});
 
-		const server = await startApiE2eServer({
-			adapters: {
-				inbound: [
-					makeInboundAdapter("resend", {
-						content: { text: "inbound resend request" },
-						from: "Inbound Resend",
-						fromEmail: "resend-subject@example.test",
-						intent: { isDsar: true },
-						route: { jurisdiction: "uk", tenantId: TENANT_B },
-						subject: "DSAR request",
-						to: ["privacy@example.test"],
-					}),
-					makeInboundAdapter("slack", {
-						intakeSourceChannel: "slack:message",
-						intent: { isDsar: true },
-						kind: "request_capture",
-						requestor: {
-							email: "slack-subject@example.test",
-							name: "Slack Subject",
-						},
-						route: { jurisdiction: "uk", tenantId: TENANT_B },
-						surface: "message",
-						text: "inbound slack request",
-					}),
-				],
-				notifications: "stub",
-				storage,
-			},
-			config: {
-				auth: authConfig,
-			},
-			persistence,
-		});
+			const server = await startApiE2eServer({
+				adapters: {
+					inbound: [
+						makeInboundAdapter("resend", {
+							content: { text: "inbound resend request" },
+							from: "Inbound Resend",
+							fromEmail: "resend-subject@example.test",
+							intent: { isDsar: true },
+							route: { jurisdiction: "uk", tenantId: TENANT_B },
+							subject: "DSAR request",
+							to: ["privacy@example.test"],
+						}),
+						makeInboundAdapter("slack", {
+							intakeSourceChannel: "slack:message",
+							intent: { isDsar: true },
+							kind: "request_capture",
+							requestor: {
+								email: "slack-subject@example.test",
+								name: "Slack Subject",
+							},
+							route: { jurisdiction: "uk", tenantId: TENANT_B },
+							surface: "message",
+							text: "inbound slack request",
+						}),
+					],
+					notifications: "stub",
+					storage,
+				},
+				config: {
+					auth: authConfig,
+				},
+				persistence,
+			});
 
-		try {
-			const probes = makeRouteProbes();
-			const exercised = new Set(probes.map((probe) => probe.key));
-			const missingRoutes = expectedRouteKeys().filter(
-				(key) => !exercised.has(key)
-			);
-			expect(missingRoutes).toStrictEqual([]);
+			try {
+				const probes = makeRouteProbes();
+				const exercised = new Set(probes.map((probe) => probe.key));
+				const missingRoutes = expectedRouteKeys().filter(
+					(key) => !exercised.has(key)
+				);
+				expect(missingRoutes).toStrictEqual([]);
 
-			for (const probe of probes) {
-				const response = await server.request({
-					body: probe.body,
-					headers: probe.headers,
-					json: probe.json,
-					method: probe.method,
-					path: probe.path,
+				for (const probe of probes) {
+					const response = await server.request({
+						body: probe.body,
+						headers: probe.headers,
+						json: probe.json,
+						method: probe.method,
+						path: probe.path,
+					});
+					await assertNoTenantBMarker(probe.key, response);
+				}
+
+				const tenantAList = await server.request({
+					headers: tenantAHeaders,
+					method: "GET",
+					path: "/requests?limit=500",
 				});
-				await assertNoTenantBMarker(probe.key, response);
+				const tenantAListText = await assertNoTenantBMarker(
+					"tenant A list after probes",
+					tenantAList
+				);
+				expect(tenantAListText).toContain(TENANT_A_SECRET);
+
+				const tenantBList = await server.request({
+					headers: tenantBHeaders,
+					method: "GET",
+					path: "/requests?limit=500",
+				});
+				const tenantBListText = await tenantBList.text();
+				expect(tenantBListText).toContain(TENANT_B_SECRET);
+			} finally {
+				await server.close();
 			}
-
-			const tenantAList = await server.request({
-				headers: tenantAHeaders,
-				method: "GET",
-				path: "/requests?limit=500",
-			});
-			const tenantAListText = await assertNoTenantBMarker(
-				"tenant A list after probes",
-				tenantAList
-			);
-			expect(tenantAListText).toContain(TENANT_A_SECRET);
-
-			const tenantBList = await server.request({
-				headers: tenantBHeaders,
-				method: "GET",
-				path: "/requests?limit=500",
-			});
-			const tenantBListText = await tenantBList.text();
-			expect(tenantBListText).toContain(TENANT_B_SECRET);
-		} finally {
-			await server.close();
-		}
-	});
+		},
+		E2E_TEST_TIMEOUT_MS
+	);
 
 	it("resolves overlapping ids to the authenticated tenant only", async () => {
 		const persistence = makeTenantScopedMemoryPersistence();

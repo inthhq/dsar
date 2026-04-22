@@ -1,0 +1,35 @@
+---
+title: "DSAR-BE-1203: POLICY_UPGRADE_PROPOSAL_NOT_FOUND"
+description: "The requested policy upgrade proposal was not found for the current tenant/workspace scope."
+lastModified: 2026-04-22
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+## Meaning
+
+The requested policy upgrade proposal was not found for the current tenant/workspace scope.
+
+## Probable Causes
+
+- The proposal ID is unknown or expired.
+- The proposal belongs to a different tenant or workspace.
+- The proposal was already applied, removed, or recreated under a different ID.
+
+## How to Fix
+
+1. List or create policy upgrade proposals for the authenticated tenant/workspace.
+2. Retry the approve or apply operation with a proposal ID from that scoped result.
+3. Confirm the caller is using the intended tenant and workspace context.
+
+## Retryable
+
+No. Retry only after using a proposal ID that exists in the caller's scope.
+
+## Minimal Trigger Example
+
+```http
+POST /api/v1/policies/upgrades/proposal-unknown/approve HTTP/1.1
+Host: localhost:4086
+authorization: Bearer test-token
+```

@@ -83,7 +83,7 @@ const commandCases: readonly CommandCase[] = [
 		],
 		expectedExitCode: 1,
 		id: "policies_upgrades_approve",
-		outputIncludes: ["INTERNAL_RUNTIME_ERROR"],
+		outputIncludes: ["POLICY_UPGRADE_PROPOSAL_NOT_FOUND"],
 	},
 	{
 		argv: [
@@ -96,7 +96,7 @@ const commandCases: readonly CommandCase[] = [
 		],
 		expectedExitCode: 1,
 		id: "policies_upgrades_apply",
-		outputIncludes: ["INTERNAL_RUNTIME_ERROR"],
+		outputIncludes: ["POLICY_UPGRADE_PROPOSAL_NOT_FOUND"],
 	},
 	{
 		argv: ["policies", "custom", "register", "--json", policiesRegisterBody],
