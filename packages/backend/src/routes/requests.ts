@@ -115,6 +115,17 @@ const isTenantScopedManifestKey = (input: {
  * delivery (prepare, address verification, step-up challenge, artifact download),
  * appeals, notification replay, retention policy, and audit export/verification.
  */
+const DEFAULT_APPEAL_DEADLINE_DAYS = 45;
+
+const resolveAppealDeadlineDays = (capture: unknown): number => {
+	const policy = asObject(asObject(capture)?.policy);
+	const days = policy?.appealDeadlineDays;
+	if (typeof days !== "number" || !Number.isFinite(days)) {
+		return DEFAULT_APPEAL_DEADLINE_DAYS;
+	}
+	return Math.max(0, Math.floor(days));
+};
+
 const rawRequestRoutes: readonly RouteDefinition[] = [
 	...coreRequestRoutes,
 	{
@@ -1927,8 +1938,13 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 					? current.appeals
 					: [];
 				const now = yield* currentIsoTime;
+				const appealDeadlineDays = resolveAppealDeadlineDays(current.capture);
+				const appealDueAt = new Date(
+					Date.parse(now) + appealDeadlineDays * DAY_MS
+				).toISOString();
 				const appealRecord: JsonValue = {
 					createdAt: now,
+					dueAt: appealDueAt,
 					id: appealId,
 					message,
 					status: "submitted",
@@ -1941,10 +1957,31 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 						updatedAt: now,
 					})
 					.pipe(withTenant(tenantId));
+				yield* services.repos.persistence.timeline
+					.append({
+						createdAt: now,
+						eventType: "appeal_submitted",
+						id: makeRequestId(),
+						payload: {
+							actor,
+							appealId,
+							dueAt: appealDueAt,
+							grounds: grounds ?? null,
+							message,
+							status: "submitted",
+						},
+						requestId,
+					})
+					.pipe(withTenant(tenantId));
 				yield* appendAuditEvent({
 					action: "appeal_submitted",
 					actor,
-					after: { appealId, message, status: "submitted" },
+					after: {
+						appealId,
+						dueAt: appealDueAt,
+						message,
+						status: "submitted",
+					},
 					before: { status: "none" },
 					object: "appeal",
 					reason: {
@@ -1968,6 +2005,7 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 				});
 				return accepted({
 					appealId,
+					dueAt: appealDueAt,
 					requestId,
 					status: "submitted",
 				});
@@ -2031,6 +2069,15 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 						})
 					);
 				}
+				if (current.status === "closed") {
+					return yield* Effect.fail(
+						new RequestValidationError({
+							message: `Appeal ${appealId} cannot be decided because request ${requestId} is closed.`,
+							reasonCode:
+								backendErrorCatalogByCode.REQUEST_VALIDATION_FAILED.code,
+						})
+					);
+				}
 				const now = yield* currentIsoTime;
 				const DECISION_TO_STATUS: Readonly<Record<string, string>> = {
 					approve: "approved",
@@ -2038,6 +2085,8 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 					partial: "partially_approved",
 				};
 				const nextStatus = DECISION_TO_STATUS[decision];
+				const shouldOverturnRefusal =
+					decision === "approve" && current.status === "refused";
 				const nextAppeals: readonly JsonValue[] = existingAppeals.map(
 					(appeal, index) => {
 						if (index !== appealIndex) {
@@ -2053,10 +2102,36 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 						};
 					}
 				);
+				if (shouldOverturnRefusal) {
+					yield* transitionRequestLifecycle({
+						action: "appeal_overturn",
+						actor,
+						idempotencyKey: `appeal-overturn:${requestId}:${appealId}`,
+						rationale: explanation ?? "Appeal approved.",
+						requestId,
+						tenantId,
+						workspaceId: getWorkspaceId(services),
+					});
+				}
 				yield* services.repos.persistence.requests
 					.update(requestId, {
 						appeals: nextAppeals,
 						updatedAt: now,
+					})
+					.pipe(withTenant(tenantId));
+				yield* services.repos.persistence.timeline
+					.append({
+						createdAt: now,
+						eventType: "appeal_decided",
+						id: makeRequestId(),
+						payload: {
+							actor,
+							appealId,
+							decision,
+							explanation: explanation ?? null,
+							status: nextStatus ?? null,
+						},
+						requestId,
 					})
 					.pipe(withTenant(tenantId));
 				yield* appendAuditEvent({
