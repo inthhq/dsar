@@ -1834,6 +1834,7 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 					...target,
 					mediaType: contentType,
 					sizeBytes: bytes.byteLength,
+					storageKey,
 					updatedAt: now,
 				};
 				const updatedManifest = structuredClone({

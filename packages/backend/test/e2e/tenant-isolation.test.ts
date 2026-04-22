@@ -653,12 +653,20 @@ const requestInput = (input: {
 
 const artifactManifest = (input: {
 	readonly artifactId: string;
+	readonly emptyStorageKey?: boolean;
 	readonly legacyStorageKey?: boolean;
 	readonly marker: string;
 	readonly requestId: string;
 	readonly tenantId: string;
-}) =>
-	({
+}) => {
+	let storageKey = `tenants/${input.tenantId}/requests/${input.requestId}/manifest/${input.artifactId}/data.txt`;
+	if (input.legacyStorageKey) {
+		storageKey = `manifest/${input.requestId}/${input.artifactId}/data.txt`;
+	}
+	if (input.emptyStorageKey) {
+		storageKey = "";
+	}
+	return {
 		artifacts: [
 			{
 				description: input.marker,
@@ -667,9 +675,7 @@ const artifactManifest = (input: {
 				sha256: "",
 				sizeBytes: input.marker.length,
 				sourceSystem: "tenant-isolation-test",
-				storageKey: input.legacyStorageKey
-					? `manifest/${input.requestId}/${input.artifactId}/data.txt`
-					: `tenants/${input.tenantId}/requests/${input.requestId}/manifest/${input.artifactId}/data.txt`,
+				storageKey,
 				title: input.marker,
 				type: "export",
 			},
@@ -677,7 +683,8 @@ const artifactManifest = (input: {
 		dataCategories: [input.marker],
 		redactionsApplied: [],
 		thirdPartyExclusions: [],
-	}) as const satisfies JsonValue;
+	} as const satisfies JsonValue;
+};
 
 const seedTenant = async (
 	persistence: PersistenceService,
@@ -685,6 +692,7 @@ const seedTenant = async (
 	tenantId: string,
 	input: {
 		readonly artifactId: string;
+		readonly emptyStorageKey?: boolean;
 		readonly eventId: string;
 		readonly legacyStorageKey?: boolean;
 		readonly marker: string;
@@ -704,7 +712,9 @@ const seedTenant = async (
 		typeof artifact.storageKey === "string"
 			? artifact.storageKey
 			: "";
-	storage.seed(storageKey, new TextEncoder().encode(input.marker));
+	if (storageKey) {
+		storage.seed(storageKey, new TextEncoder().encode(input.marker));
+	}
 	await Effect.runPromise(
 		Effect.gen(function* seedTenantData() {
 			yield* persistence.requests.create(
@@ -1487,6 +1497,70 @@ describe("api e2e tenant isolation", () => {
 			);
 			expect(replacedDownload.status).toBe(200);
 			expect(replacedDownloadText).toContain(replacementMarker);
+		} finally {
+			await server.close();
+		}
+	});
+
+	it("persists generated manifest keys when replacing artifacts without one", async () => {
+		const persistence = makeTenantScopedMemoryPersistence();
+		const storage = makeMemoryStorage();
+		const requestId = "req-missing-manifest-key";
+		const artifactId = "artifact-missing-manifest-key";
+		const replacementMarker = "tenant-a-generated-key-replacement";
+		await seedTenant(persistence, storage, TENANT_A, {
+			artifactId,
+			emptyStorageKey: true,
+			eventId: "event-missing-manifest-key",
+			marker: "tenant-a-missing-key-marker",
+			requestId,
+			subjectId: "subject-missing-key",
+			token: "tenant-a-missing-key-token-gate",
+		});
+
+		const server = await startApiE2eServer({
+			adapters: {
+				inbound: "stub",
+				notifications: "stub",
+				storage,
+			},
+			config: {
+				auth: authConfig,
+			},
+			persistence,
+		});
+
+		try {
+			const replacement = await server.request({
+				body: new TextEncoder().encode(replacementMarker),
+				headers: {
+					...tenantAHeaders,
+					"content-type": "text/plain",
+					"x-artifact-filename": "generated.txt",
+				},
+				method: "PUT",
+				path: `/requests/${requestId}/manifest/artifact/${artifactId}/replace`,
+			});
+			const replacementText = await assertNoTenantBMarker(
+				"missing storage key manifest artifact replace",
+				replacement
+			);
+			expect(replacement.status).toBe(202);
+			expect(replacementText).toContain(
+				`tenants/${TENANT_A}/requests/${requestId}/manifest/${artifactId}/generated.txt`
+			);
+
+			const download = await server.request({
+				headers: tenantAHeaders,
+				method: "GET",
+				path: `/requests/${requestId}/manifest/artifact/download?artifactId=${artifactId}`,
+			});
+			const downloadText = await assertNoTenantBMarker(
+				"generated manifest artifact key download",
+				download
+			);
+			expect(download.status).toBe(200);
+			expect(downloadText).toContain(replacementMarker);
 		} finally {
 			await server.close();
 		}
