@@ -77,7 +77,7 @@ const evidenceStorageKey = (input: {
 	readonly evidenceId: string;
 	readonly fileName: string;
 }): string =>
-	`${storageScopePrefix(input)}/evidence/${encodeURIComponent(input.evidenceId)}/${input.fileName}`;
+	`${storageScopePrefix(input)}/evidence/${encodeURIComponent(input.evidenceId)}/${encodeURIComponent(input.fileName)}`;
 
 const manifestStorageKey = (input: {
 	readonly tenantId: string;
@@ -85,7 +85,7 @@ const manifestStorageKey = (input: {
 	readonly artifactId: string;
 	readonly fileName: string;
 }): string =>
-	`${storageScopePrefix(input)}/manifest/${encodeURIComponent(input.artifactId)}/${input.fileName}`;
+	`${storageScopePrefix(input)}/manifest/${encodeURIComponent(input.artifactId)}/${encodeURIComponent(input.fileName)}`;
 
 const isTenantScopedManifestKey = (input: {
 	readonly key: string;
