@@ -18,6 +18,33 @@ const baseRequest = {
 	status: "received",
 } as const;
 
+const subjectLookupSeedRequests = [
+	{
+		id: "req-subject-0",
+		policyPack: "pack-a",
+		receivedAt: "2026-01-01T00:00:00.000Z",
+		status: "received",
+	},
+	{
+		id: "req-subject-1",
+		policyPack: "pack-a",
+		receivedAt: "2026-01-02T00:00:00.000Z",
+		status: "fulfilled",
+	},
+	{
+		id: "req-subject-2",
+		policyPack: "pack-a",
+		receivedAt: "2026-01-03T00:00:00.000Z",
+		status: "received",
+	},
+	{
+		id: "req-subject-3",
+		policyPack: "pack-b",
+		receivedAt: "2026-01-04T00:00:00.000Z",
+		status: "received",
+	},
+] as const;
+
 const runForTenant = <A>(
 	filename: string,
 	tenantId: string,
@@ -87,6 +114,117 @@ describe(Persistence, () => {
 
 		expect(Array.isArray(requestList)).toBeTruthy();
 		expect(requestList).toHaveLength(0);
+	});
+
+	it("backfills indexed subject lookup columns for existing request rows", async () => {
+		const dbPath = sqliteFile("subject-backfill");
+		const requestList = await Effect.runPromise(
+			Effect.gen(function* listBackfilledSubjectRequests() {
+				const persistence = yield* Effect.service(Persistence);
+				return yield* persistence.requests.listBySubject({
+					identifiers: ["subject-backfill"],
+					limit: 10,
+				});
+			}).pipe(
+				Effect.provide(
+					makeSqlitePersistenceLayer({
+						filename: dbPath,
+						migrationHooks: {
+							beforeMigrations: (sql) =>
+								Effect.gen(function* seedOldSchema() {
+									yield* sql`CREATE TABLE IF NOT EXISTS requests (
+										id TEXT NOT NULL,
+										tenant_id TEXT NOT NULL,
+										status TEXT NOT NULL,
+										received_at TEXT NOT NULL,
+										due_at TEXT NOT NULL,
+										clock_mode TEXT NOT NULL,
+										requestor_json TEXT NOT NULL,
+										authority_json TEXT NOT NULL,
+										capture_json TEXT NOT NULL,
+										appeals_json TEXT NOT NULL,
+										created_at TEXT NOT NULL,
+										updated_at TEXT NOT NULL,
+										PRIMARY KEY (tenant_id, id)
+									)`;
+									yield* sql`INSERT INTO requests (
+										id,
+										tenant_id,
+										status,
+										received_at,
+										due_at,
+										clock_mode,
+										requestor_json,
+										authority_json,
+										capture_json,
+										appeals_json,
+										created_at,
+										updated_at
+									) VALUES (
+										'req-backfilled',
+										'tenant-a',
+										'received',
+										'2026-01-01T00:00:00.000Z',
+										'2026-02-01T00:00:00.000Z',
+										'calendar_days',
+										'{"type":"subject","email":"backfill@example.com"}',
+										'{}',
+										'{"subject":{"subjectId":"subject-backfill"},"policy":{"policyPack":"pack-backfill"}}',
+										'[]',
+										'2026-01-01T00:00:00.000Z',
+										'2026-01-01T00:00:00.000Z'
+									)`;
+								}),
+						},
+					})
+				),
+				withTenant("tenant-a")
+			)
+		);
+
+		expect(requestList.items.map((request) => request.id)).toStrictEqual([
+			"req-backfilled",
+		]);
+	});
+
+	it("lists subject requests with indexed filters and cursor pagination", async () => {
+		const dbPath = sqliteFile("subject-lookup");
+		const page = await runForTenant(
+			dbPath,
+			"tenant-a",
+			Effect.gen(function* subjectLookupProgram() {
+				const persistence = yield* Effect.service(Persistence);
+				for (const seedRequest of subjectLookupSeedRequests) {
+					yield* persistence.requests.create({
+						...baseRequest,
+						capture: {
+							policy: {
+								policyPack: seedRequest.policyPack,
+							},
+							subject: {
+								externalRef: "external-subject",
+								subjectId: "subject-indexed",
+							},
+						},
+						id: seedRequest.id,
+						receivedAt: seedRequest.receivedAt,
+						status: seedRequest.status,
+					});
+				}
+				return yield* persistence.requests.listBySubject({
+					identifiers: ["external-subject"],
+					limit: 2,
+					policyPack: "pack-a",
+					status: ["received"],
+				});
+			})
+		);
+
+		expect(page.items.map((request) => request.id)).toStrictEqual([
+			"req-subject-2",
+			"req-subject-0",
+		]);
+		expect(page.nextCursor).toBeUndefined();
 	});
 
 	it("persists and lists clock segments in deterministic order", async () => {

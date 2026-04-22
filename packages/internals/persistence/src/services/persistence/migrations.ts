@@ -2,6 +2,58 @@ import * as Effect from "effect/Effect";
 
 import type { Sql } from "./shared";
 
+const ensureRequestLookupColumns = (sql: Sql) =>
+	sql.onDialectOrElse({
+		orElse: () =>
+			Effect.gen(function* addGenericRequestLookupColumns() {
+				yield* sql`ALTER TABLE requests ADD COLUMN subject_id TEXT`.pipe(
+					Effect.ignore
+				);
+				yield* sql`ALTER TABLE requests ADD COLUMN subject_external_ref TEXT`.pipe(
+					Effect.ignore
+				);
+				yield* sql`ALTER TABLE requests ADD COLUMN requestor_email TEXT`.pipe(
+					Effect.ignore
+				);
+				yield* sql`ALTER TABLE requests ADD COLUMN policy_pack TEXT`.pipe(
+					Effect.ignore
+				);
+			}),
+		pg: () =>
+			sql`ALTER TABLE requests
+				ADD COLUMN IF NOT EXISTS subject_id TEXT,
+				ADD COLUMN IF NOT EXISTS subject_external_ref TEXT,
+				ADD COLUMN IF NOT EXISTS requestor_email TEXT,
+				ADD COLUMN IF NOT EXISTS policy_pack TEXT`,
+	});
+
+const backfillRequestLookupColumns = (sql: Sql) =>
+	sql.onDialectOrElse({
+		orElse: () => Effect.void,
+		pg: () =>
+			sql`UPDATE requests
+				SET
+					subject_id = lower(nullif(trim(capture_json::jsonb #>> '{subject,subjectId}'), '')),
+					subject_external_ref = lower(nullif(trim(capture_json::jsonb #>> '{subject,externalRef}'), '')),
+					requestor_email = lower(nullif(trim(requestor_json::jsonb ->> 'email'), '')),
+					policy_pack = nullif(trim(capture_json::jsonb #>> '{policy,policyPack}'), '')
+				WHERE subject_id IS NULL
+					OR subject_external_ref IS NULL
+					OR requestor_email IS NULL
+					OR policy_pack IS NULL`,
+		sqlite: () =>
+			sql`UPDATE requests
+				SET
+					subject_id = lower(nullif(trim(CAST(json_extract(capture_json, '$.subject.subjectId') AS TEXT)), '')),
+					subject_external_ref = lower(nullif(trim(CAST(json_extract(capture_json, '$.subject.externalRef') AS TEXT)), '')),
+					requestor_email = lower(nullif(trim(CAST(json_extract(requestor_json, '$.email') AS TEXT)), '')),
+					policy_pack = nullif(trim(CAST(json_extract(capture_json, '$.policy.policyPack') AS TEXT)), '')
+				WHERE subject_id IS NULL
+					OR subject_external_ref IS NULL
+					OR requestor_email IS NULL
+					OR policy_pack IS NULL`,
+	});
+
 /**
  * Creates all persistence tables and indexes if they do not already exist.
  *
@@ -18,6 +70,10 @@ export const runMigrations = (sql: Sql) =>
 			received_at TEXT NOT NULL,
 			due_at TEXT NOT NULL,
 			clock_mode TEXT NOT NULL,
+			subject_id TEXT,
+			subject_external_ref TEXT,
+			requestor_email TEXT,
+			policy_pack TEXT,
 			requestor_json TEXT NOT NULL,
 			authority_json TEXT NOT NULL,
 			capture_json TEXT NOT NULL,
@@ -26,6 +82,8 @@ export const runMigrations = (sql: Sql) =>
 			updated_at TEXT NOT NULL,
 			PRIMARY KEY (tenant_id, id)
 		)`;
+		yield* ensureRequestLookupColumns(sql);
+		yield* backfillRequestLookupColumns(sql);
 
 		yield* sql`CREATE TABLE IF NOT EXISTS request_clock_segments (
 			id TEXT NOT NULL,
@@ -184,6 +242,14 @@ export const runMigrations = (sql: Sql) =>
 
 		yield* sql`CREATE INDEX IF NOT EXISTS idx_requests_tenant_due
 			ON requests(tenant_id, due_at)`;
+		yield* sql`CREATE INDEX IF NOT EXISTS idx_requests_tenant_subject_created
+			ON requests(tenant_id, subject_id, created_at, id)`;
+		yield* sql`CREATE INDEX IF NOT EXISTS idx_requests_tenant_subject_external_created
+			ON requests(tenant_id, subject_external_ref, created_at, id)`;
+		yield* sql`CREATE INDEX IF NOT EXISTS idx_requests_tenant_requestor_email_created
+			ON requests(tenant_id, requestor_email, created_at, id)`;
+		yield* sql`CREATE INDEX IF NOT EXISTS idx_requests_tenant_policy_created
+			ON requests(tenant_id, policy_pack, created_at, id)`;
 		yield* sql`CREATE INDEX IF NOT EXISTS idx_timeline_tenant_request
 			ON request_timeline_events(tenant_id, request_id)`;
 		yield* sql`CREATE INDEX IF NOT EXISTS idx_audit_tenant_request

@@ -1,5 +1,14 @@
 import type { DsarResult, RequestOptions } from "../types";
-import type { EndpointContext, SubjectProfileResponse } from "./types";
+import type {
+	EndpointContext,
+	SubjectProfileQuery,
+	SubjectProfileResponse,
+} from "./types";
+
+export interface SubjectProfileRequestOptions extends RequestOptions {
+	/** Query filters and cursor pagination controls for subject request lookup. */
+	readonly query?: SubjectProfileQuery;
+}
 
 /**
  * Read-only client interface for the Subjects API namespace. Provides
@@ -11,14 +20,14 @@ export interface SubjectsApi {
 	 *
 	 * @param subjectId - Unique subject identifier (e.g. UUID or external ref).
 	 * @param options - Optional per-request overrides such as idempotency key
-	 *   and additional headers.
+	 *   and additional headers, plus subject lookup query filters.
 	 * @returns A promise resolving to a {@link DsarResult} containing the
 	 *   {@link SubjectProfileResponse} with the subject's profile data and
 	 *   associated result metadata.
 	 */
 	readonly getProfile: (
 		subjectId: string,
-		options?: RequestOptions
+		options?: SubjectProfileRequestOptions
 	) => Promise<DsarResult<SubjectProfileResponse>>;
 }
 
@@ -35,5 +44,6 @@ export const makeSubjectsApi = (ctx: EndpointContext): SubjectsApi => ({
 			method: "GET",
 			options,
 			path: `/subjects/${subjectId}`,
+			query: options?.query,
 		}),
 });

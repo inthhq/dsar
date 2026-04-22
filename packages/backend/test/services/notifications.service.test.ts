@@ -155,6 +155,11 @@ const makeMemoryPersistence = (): {
 						updatedAt: "2026-01-01T00:00:00.000Z",
 					}),
 				list: () => Effect.succeed([]),
+				listBySubject: () =>
+					Effect.succeed({
+						items: [],
+						limit: 50,
+					}),
 				remove: () => Effect.succeed(),
 				update: (_id: string, _input: UpdateRequestInput) =>
 					failNotImplemented("requests.update"),

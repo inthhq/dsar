@@ -25,10 +25,14 @@ const seedRequest = async (
 	persistence: ReturnType<typeof makeMemoryPersistence>,
 	input?: {
 		readonly id?: string;
+		readonly policyPack?: string;
+		readonly receivedAt?: string;
 		readonly requestorEmail?: string;
+		readonly status?: string;
 		readonly subjectId?: string;
 	}
 ): Promise<void> => {
+	const receivedAt = input?.receivedAt ?? "2026-02-20T00:00:00.000Z";
 	await Effect.runPromise(
 		persistence.requests.create({
 			appeals: [],
@@ -36,9 +40,16 @@ const seedRequest = async (
 			capture: {
 				intakeSource: {
 					channel: "portal",
-					receivedAt: "2026-02-20T00:00:00.000Z",
+					receivedAt,
 					type: "portal",
 				},
+				...(input?.policyPack
+					? {
+							policy: {
+								policyPack: input.policyPack,
+							},
+						}
+					: {}),
 				subject: {
 					subjectId: input?.subjectId ?? "subject-1",
 				},
@@ -46,15 +57,31 @@ const seedRequest = async (
 			clockMode: "policy_controlled",
 			dueAt: "2026-03-20T00:00:00.000Z",
 			id: input?.id ?? "req-owned",
-			receivedAt: "2026-02-20T00:00:00.000Z",
+			receivedAt,
 			requestor: {
 				email: input?.requestorEmail ?? "subject@example.com",
 				type: "subject",
 			},
-			status: "in_progress",
+			status: input?.status ?? "in_progress",
 		})
 	);
 };
+
+const filteredSubjectSeedInput = (index: number) => ({
+	id: `req-filtered-${index.toString().padStart(2, "0")}`,
+	policyPack: index % 2 === 0 ? "pack-a" : "pack-b",
+	receivedAt: `2026-02-${(10 + index).toString().padStart(2, "0")}T00:00:00.000Z`,
+	status: index % 2 === 0 ? "fulfilled" : "in_progress",
+	subjectId: "subject-filtered",
+});
+
+const scaledSubjectSeedInput = (scale: number, index: number) => ({
+	id: `req-scale-${scale}-${index.toString().padStart(5, "0")}`,
+	policyPack: index % 4 === 0 ? "pack-scale" : "pack-other",
+	receivedAt: `2026-03-${((index % 28) + 1).toString().padStart(2, "0")}T00:00:00.000Z`,
+	status: index % 2 === 0 ? "in_progress" : "fulfilled",
+	subjectId: index % 100 === 0 ? "subject-scale" : "subject-other",
+});
 
 const makePolicyPack = (version: string) => ({
 	effectiveAt: "2026-01-01T00:00:00.000Z",
@@ -422,6 +449,119 @@ describe(dsarInstance, () => {
 		expect(
 			body.data.requests.map((request) => request.id).toSorted()
 		).toStrictEqual(["req-subject-email", "req-subject-id"]);
+	});
+
+	it("paginates and filters subject profile request lookup without using full request list", async () => {
+		const basePersistence = makeMemoryPersistence();
+		const persistence = {
+			...basePersistence,
+			requests: {
+				...basePersistence.requests,
+				list: () =>
+					Effect.fail(new Error("subject lookup must use listBySubject")),
+			},
+		};
+		for (let index = 0; index < 12; index += 1) {
+			await seedRequest(persistence, filteredSubjectSeedInput(index));
+		}
+		await seedRequest(persistence, {
+			id: "req-other-subject",
+			policyPack: "pack-a",
+			status: "fulfilled",
+			subjectId: "other-subject",
+		});
+		const runtime = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			repos: { persistence },
+		});
+
+		const firstResponse = await runtime.handler(
+			new Request(
+				"https://example.test/subjects/subject-filtered?status=fulfilled&policy_pack=pack-a&created_after=2026-02-09T00:00:00.000Z&created_before=2026-02-22T00:00:00.000Z&limit=2",
+				{
+					headers: actorHeaders,
+					method: "GET",
+				}
+			)
+		);
+		const firstBody = (await firstResponse.json()) as {
+			readonly data: {
+				readonly pagination: {
+					readonly limit: number;
+					readonly nextCursor?: string;
+				};
+				readonly requests: readonly { readonly id: string }[];
+			};
+			readonly ok: boolean;
+		};
+		expect(firstResponse.status).toBe(200);
+		expect(firstBody.data.pagination.limit).toBe(2);
+		expect(firstBody.data.requests.map((request) => request.id)).toStrictEqual([
+			"req-filtered-10",
+			"req-filtered-08",
+		]);
+		expect(firstBody.data.pagination.nextCursor).toBeDefined();
+
+		const secondResponse = await runtime.handler(
+			new Request(
+				`https://example.test/subjects/subject-filtered?status=fulfilled&policy_pack=pack-a&limit=2&cursor=${firstBody.data.pagination.nextCursor}`,
+				{
+					headers: actorHeaders,
+					method: "GET",
+				}
+			)
+		);
+		const secondBody = (await secondResponse.json()) as {
+			readonly data: {
+				readonly requests: readonly { readonly id: string }[];
+			};
+		};
+		expect(secondBody.data.requests.map((request) => request.id)).toStrictEqual(
+			["req-filtered-06", "req-filtered-04"]
+		);
+	});
+
+	it("keeps subject lookup latency bounded at 100, 1k, and 10k request scale", async () => {
+		const scales = [100, 1000, 10_000] as const;
+		const thresholdsMs: Readonly<Record<(typeof scales)[number], number>> = {
+			100: 100,
+			1000: 250,
+			10_000: 1500,
+		};
+		for (const scale of scales) {
+			const persistence = makeMemoryPersistence();
+			for (let index = 0; index < scale; index += 1) {
+				await seedRequest(persistence, scaledSubjectSeedInput(scale, index));
+			}
+			const runtime = dsarInstance({
+				...TEST_RUNTIME_AUTH,
+				repos: { persistence },
+			});
+
+			const started = performance.now();
+			const response = await runtime.handler(
+				new Request(
+					"https://example.test/subjects/subject-scale?status=in_progress&policy_pack=pack-scale&limit=25",
+					{
+						headers: actorHeaders,
+						method: "GET",
+					}
+				)
+			);
+			const elapsedMs = performance.now() - started;
+			const body = (await response.json()) as {
+				readonly data: {
+					readonly requests: readonly { readonly id: string }[];
+				};
+				readonly ok: boolean;
+			};
+			expect(response.status).toBe(200);
+			expect(body.ok).toBe(true);
+			expect(body.data.requests).toHaveLength(
+				Math.min(Math.ceil(scale / 100), 25)
+			);
+			expect(elapsedMs).toBeLessThan(thresholdsMs[scale]);
+		}
 	});
 
 	it("forbids policy scope mismatches against authenticated tenant context", async () => {

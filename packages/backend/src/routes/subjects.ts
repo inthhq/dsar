@@ -1,5 +1,5 @@
-import { asObject, asNonEmptyString } from "@dsar/guards";
-import type { RequestRecord } from "@dsar/persistence";
+import { asNonEmptyString } from "@dsar/guards";
+import type { RequestSubjectCursor } from "@dsar/persistence";
 import { withTenant } from "@dsar/persistence";
 import * as Effect from "effect/Effect";
 
@@ -12,11 +12,55 @@ import {
 	requireRequestTenantId,
 } from "./authz";
 import { ok, parseParam } from "./helpers";
+import {
+	MAX_LIST_LIMIT,
+	parseIntParam,
+	toValidationFailure,
+} from "./requests/shared";
 import type { RouteDefinition } from "./types";
 
-const PAGE_SIZE = 500;
+const DEFAULT_SUBJECT_PAGE_SIZE = 50;
 const normalizeIdentifier = (value: string): string =>
 	value.trim().toLowerCase();
+
+const parseStatusFilter = (value: string | null): readonly string[] =>
+	value
+		? value
+				.split(",")
+				.map((entry) => entry.trim())
+				.filter((entry) => entry.length > 0)
+		: [];
+
+const encodeCursor = (cursor: RequestSubjectCursor): string =>
+	Buffer.from(JSON.stringify(cursor), "utf8").toString("base64url");
+
+const decodeCursor = (
+	value: string | null
+): RequestSubjectCursor | undefined => {
+	if (!value) {
+		return undefined;
+	}
+	try {
+		const parsed: unknown = JSON.parse(
+			Buffer.from(value, "base64url").toString("utf8")
+		);
+		if (
+			typeof parsed === "object" &&
+			parsed !== null &&
+			typeof (parsed as { readonly createdAt?: unknown }).createdAt ===
+				"string" &&
+			typeof (parsed as { readonly id?: unknown }).id === "string"
+		) {
+			return {
+				createdAt: (parsed as { readonly createdAt: string }).createdAt,
+				id: (parsed as { readonly id: string }).id,
+			};
+		}
+	} catch {
+		return undefined;
+	}
+	return undefined;
+};
 
 /**
  * Route definitions for the `/subjects` namespace: retrieving
@@ -24,10 +68,27 @@ const normalizeIdentifier = (value: string): string =>
  */
 export const subjectRoutes: readonly RouteDefinition[] = [
 	{
-		handler: ({ params }) =>
+		handler: ({ params, request }) =>
 			Effect.gen(function* handler() {
 				const subjectId = yield* parseParam(params, "subjectId");
 				const normalizedSubjectId = normalizeIdentifier(subjectId);
+				const { searchParams } = new URL(request.url);
+				const limit = parseIntParam(
+					searchParams.get("limit"),
+					DEFAULT_SUBJECT_PAGE_SIZE,
+					1,
+					MAX_LIST_LIMIT
+				);
+				const cursor = decodeCursor(searchParams.get("cursor"));
+				const cursorParam = searchParams.get("cursor");
+				if (cursorParam && !cursor) {
+					return yield* Effect.fail(
+						toValidationFailure(
+							"Invalid subject pagination cursor.",
+							new Error("Cursor must be a cursor returned by this endpoint.")
+						)
+					);
+				}
 				const services = yield* Effect.service(RuntimeServicesTag);
 				const actor = yield* requireRequestActor(services.requestContext);
 				let subjectIdentifiers = new Set([normalizedSubjectId]);
@@ -56,36 +117,25 @@ export const subjectRoutes: readonly RouteDefinition[] = [
 					});
 				}
 				const tenantId = yield* requireRequestTenantId(services.requestContext);
-				const allRequests: RequestRecord[] = [];
-				let offset = 0;
-				let hasMore = true;
-				while (hasMore) {
-					const page = yield* services.repos.persistence.requests
-						.list({ limit: PAGE_SIZE, offset })
-						.pipe(withTenant(tenantId));
-					for (const req of page) {
-						allRequests.push(req);
-					}
-					hasMore = page.length === PAGE_SIZE;
-					offset += page.length;
-				}
-				const subjectRequests = allRequests.filter((req) => {
-					const capture = asObject(req.capture);
-					const subject = asObject(capture?.subject);
-					const requestor = asObject(req.requestor);
-					const recordIdentifiers = [
-						asNonEmptyString(subject?.subjectId),
-						asNonEmptyString(subject?.externalRef),
-						asNonEmptyString(requestor?.email),
-					]
-						.filter((value): value is string => typeof value === "string")
-						.map(normalizeIdentifier);
-					return recordIdentifiers.some((identifier) =>
-						subjectIdentifiers.has(identifier)
-					);
-				});
+				const page = yield* services.repos.persistence.requests
+					.listBySubject({
+						createdAfter: asNonEmptyString(searchParams.get("created_after")),
+						createdBefore: asNonEmptyString(searchParams.get("created_before")),
+						cursor,
+						identifiers: [...subjectIdentifiers],
+						limit,
+						policyPack: asNonEmptyString(searchParams.get("policy_pack")),
+						status: parseStatusFilter(searchParams.get("status")),
+					})
+					.pipe(withTenant(tenantId));
 				return ok({
-					requests: subjectRequests.map((req) => ({
+					pagination: {
+						limit: page.limit,
+						nextCursor: page.nextCursor
+							? encodeCursor(page.nextCursor)
+							: undefined,
+					},
+					requests: page.items.map((req) => ({
 						id: req.id,
 						receivedAt: req.receivedAt,
 						status: req.status,
