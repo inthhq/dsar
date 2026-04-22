@@ -2,57 +2,10 @@ import * as Effect from "effect/Effect";
 import type * as SqlClient from "effect/unstable/sql/SqlClient";
 import type { SqlError } from "effect/unstable/sql/SqlError";
 
-const ensureRequestLookupColumns = (sql: SqlClient.SqlClient) =>
-	sql.onDialectOrElse({
-		orElse: () =>
-			Effect.gen(function* addGenericRequestLookupColumns() {
-				yield* sql`ALTER TABLE requests ADD COLUMN subject_id TEXT`.pipe(
-					Effect.ignore
-				);
-				yield* sql`ALTER TABLE requests ADD COLUMN subject_external_ref TEXT`.pipe(
-					Effect.ignore
-				);
-				yield* sql`ALTER TABLE requests ADD COLUMN requestor_email TEXT`.pipe(
-					Effect.ignore
-				);
-				yield* sql`ALTER TABLE requests ADD COLUMN policy_pack TEXT`.pipe(
-					Effect.ignore
-				);
-			}),
-		pg: () =>
-			sql`ALTER TABLE requests
-				ADD COLUMN IF NOT EXISTS subject_id TEXT,
-				ADD COLUMN IF NOT EXISTS subject_external_ref TEXT,
-				ADD COLUMN IF NOT EXISTS requestor_email TEXT,
-				ADD COLUMN IF NOT EXISTS policy_pack TEXT`,
-	});
-
-const backfillRequestLookupColumns = (sql: SqlClient.SqlClient) =>
-	sql.onDialectOrElse({
-		orElse: () => Effect.void,
-		pg: () =>
-			sql`UPDATE requests
-				SET
-					subject_id = lower(nullif(trim(capture_json::jsonb #>> '{subject,subjectId}'), '')),
-					subject_external_ref = lower(nullif(trim(capture_json::jsonb #>> '{subject,externalRef}'), '')),
-					requestor_email = lower(nullif(trim(requestor_json::jsonb ->> 'email'), '')),
-					policy_pack = nullif(trim(capture_json::jsonb #>> '{policy,policyPack}'), '')
-				WHERE subject_id IS NULL
-					OR subject_external_ref IS NULL
-					OR requestor_email IS NULL
-					OR policy_pack IS NULL`,
-		sqlite: () =>
-			sql`UPDATE requests
-				SET
-					subject_id = lower(nullif(trim(CAST(json_extract(capture_json, '$.subject.subjectId') AS TEXT)), '')),
-					subject_external_ref = lower(nullif(trim(CAST(json_extract(capture_json, '$.subject.externalRef') AS TEXT)), '')),
-					requestor_email = lower(nullif(trim(CAST(json_extract(requestor_json, '$.email') AS TEXT)), '')),
-					policy_pack = nullif(trim(CAST(json_extract(capture_json, '$.policy.policyPack') AS TEXT)), '')
-				WHERE subject_id IS NULL
-					OR subject_external_ref IS NULL
-					OR requestor_email IS NULL
-					OR policy_pack IS NULL`,
-	});
+import {
+	backfillRequestLookupColumns,
+	ensureRequestLookupColumns,
+} from "../services/persistence/request-lookup-migrations";
 
 /**
  * Unique migration identifier used to track applied migrations.

@@ -75,14 +75,6 @@ const filteredSubjectSeedInput = (index: number) => ({
 	subjectId: "subject-filtered",
 });
 
-const scaledSubjectSeedInput = (scale: number, index: number) => ({
-	id: `req-scale-${scale}-${index.toString().padStart(5, "0")}`,
-	policyPack: index % 4 === 0 ? "pack-scale" : "pack-other",
-	receivedAt: `2026-03-${((index % 28) + 1).toString().padStart(2, "0")}T00:00:00.000Z`,
-	status: index % 2 === 0 ? "in_progress" : "fulfilled",
-	subjectId: index % 100 === 0 ? "subject-scale" : "subject-other",
-});
-
 const makePolicyPack = (version: string) => ({
 	effectiveAt: "2026-01-01T00:00:00.000Z",
 	jurisdiction: "uk",
@@ -521,47 +513,28 @@ describe(dsarInstance, () => {
 		);
 	});
 
-	it("keeps subject lookup latency bounded at 100, 1k, and 10k request scale", async () => {
-		const scales = [100, 1000, 10_000] as const;
-		const thresholdsMs: Readonly<Record<(typeof scales)[number], number>> = {
-			100: 100,
-			1000: 250,
-			10_000: 1500,
-		};
-		for (const scale of scales) {
-			const persistence = makeMemoryPersistence();
-			for (let index = 0; index < scale; index += 1) {
-				await seedRequest(persistence, scaledSubjectSeedInput(scale, index));
-			}
-			const runtime = dsarInstance({
-				...TEST_RUNTIME_AUTH,
-				repos: { persistence },
-			});
+	it("rejects invalid subject lookup date filters", async () => {
+		const runtime = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			repos: { persistence: makeMemoryPersistence() },
+		});
 
-			const started = performance.now();
-			const response = await runtime.handler(
-				new Request(
-					"https://example.test/subjects/subject-scale?status=in_progress&policy_pack=pack-scale&limit=25",
-					{
-						headers: actorHeaders,
-						method: "GET",
-					}
-				)
-			);
-			const elapsedMs = performance.now() - started;
-			const body = (await response.json()) as {
-				readonly data: {
-					readonly requests: readonly { readonly id: string }[];
-				};
-				readonly ok: boolean;
-			};
-			expect(response.status).toBe(200);
-			expect(body.ok).toBe(true);
-			expect(body.data.requests).toHaveLength(
-				Math.min(Math.ceil(scale / 100), 25)
-			);
-			expect(elapsedMs).toBeLessThan(thresholdsMs[scale]);
-		}
+		const response = await runtime.handler(
+			new Request(
+				"https://example.test/subjects/subject-1?created_after=not-a-date",
+				{
+					headers: actorHeaders,
+					method: "GET",
+				}
+			)
+		);
+		const body = (await response.json()) as ErrorEnvelope;
+
+		expect([response.status, body.ok, body.error.code]).toStrictEqual([
+			400,
+			false,
+			"REQUEST_VALIDATION_FAILED",
+		]);
 	});
 
 	it("forbids policy scope mismatches against authenticated tenant context", async () => {

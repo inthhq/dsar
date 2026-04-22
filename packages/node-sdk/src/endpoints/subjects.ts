@@ -5,6 +5,9 @@ import type {
 	SubjectProfileResponse,
 } from "./types";
 
+/**
+ * Optional request customizations for subject profile lookups.
+ */
 export interface SubjectProfileRequestOptions extends RequestOptions {
 	/** Query filters and cursor pagination controls for subject request lookup. */
 	readonly query?: SubjectProfileQuery;

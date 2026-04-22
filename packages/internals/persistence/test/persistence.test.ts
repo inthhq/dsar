@@ -45,6 +45,39 @@ const subjectLookupSeedRequests = [
 	},
 ] as const;
 
+const toSubjectLookupCreateInput = (
+	seedRequest: (typeof subjectLookupSeedRequests)[number]
+) => ({
+	...baseRequest,
+	capture: {
+		policy: {
+			policyPack: seedRequest.policyPack,
+		},
+		subject: {
+			externalRef: "external-subject",
+			subjectId: "subject-indexed",
+		},
+	},
+	id: seedRequest.id,
+	receivedAt: seedRequest.receivedAt,
+	status: seedRequest.status,
+});
+
+const scaledSubjectLookupSeedInput = (scale: number, index: number) => ({
+	...baseRequest,
+	capture: {
+		policy: {
+			policyPack: index % 4 === 0 ? "pack-scale" : "pack-other",
+		},
+		subject: {
+			subjectId: index % 100 === 0 ? "subject-scale" : "subject-other",
+		},
+	},
+	id: `req-scale-${scale}-${index.toString().padStart(5, "0")}`,
+	receivedAt: `2026-03-${((index % 28) + 1).toString().padStart(2, "0")}T00:00:00.000Z`,
+	status: index % 2 === 0 ? "in_progress" : "fulfilled",
+});
+
 const runForTenant = <A>(
 	filename: string,
 	tenantId: string,
@@ -195,21 +228,9 @@ describe(Persistence, () => {
 			Effect.gen(function* subjectLookupProgram() {
 				const persistence = yield* Effect.service(Persistence);
 				for (const seedRequest of subjectLookupSeedRequests) {
-					yield* persistence.requests.create({
-						...baseRequest,
-						capture: {
-							policy: {
-								policyPack: seedRequest.policyPack,
-							},
-							subject: {
-								externalRef: "external-subject",
-								subjectId: "subject-indexed",
-							},
-						},
-						id: seedRequest.id,
-						receivedAt: seedRequest.receivedAt,
-						status: seedRequest.status,
-					});
+					yield* persistence.requests.create(
+						toSubjectLookupCreateInput(seedRequest)
+					);
 				}
 				return yield* persistence.requests.listBySubject({
 					identifiers: ["external-subject"],
@@ -225,6 +246,82 @@ describe(Persistence, () => {
 			"req-subject-0",
 		]);
 		expect(page.nextCursor).toBeUndefined();
+	});
+
+	it("continues subject request lookup from the returned cursor", async () => {
+		const dbPath = sqliteFile("subject-lookup-cursor");
+		const pages = await runForTenant(
+			dbPath,
+			"tenant-a",
+			Effect.gen(function* subjectLookupCursorProgram() {
+				const persistence = yield* Effect.service(Persistence);
+				for (const seedRequest of subjectLookupSeedRequests) {
+					yield* persistence.requests.create(
+						toSubjectLookupCreateInput(seedRequest)
+					);
+				}
+				const firstPage = yield* persistence.requests.listBySubject({
+					identifiers: ["external-subject"],
+					limit: 1,
+					policyPack: "pack-a",
+					status: ["received"],
+				});
+				const secondPage = yield* persistence.requests.listBySubject({
+					cursor: firstPage.nextCursor,
+					identifiers: ["external-subject"],
+					limit: 1,
+					policyPack: "pack-a",
+					status: ["received"],
+				});
+				return { firstPage, secondPage };
+			})
+		);
+
+		expect(pages.firstPage.items.map((request) => request.id)).toStrictEqual([
+			"req-subject-2",
+		]);
+		expect(pages.firstPage.nextCursor).toBeDefined();
+		expect(pages.secondPage.items.map((request) => request.id)).toStrictEqual([
+			"req-subject-0",
+		]);
+		expect(pages.secondPage.nextCursor).toBeUndefined();
+	});
+
+	it("keeps real SQLite subject lookup latency bounded at 100, 1k, and 10k request scale", async () => {
+		const scales = [100, 1000, 10_000] as const;
+		const thresholdsMs: Readonly<Record<(typeof scales)[number], number>> = {
+			100: 100,
+			1000: 250,
+			10_000: 1500,
+		};
+		for (const scale of scales) {
+			const dbPath = sqliteFile(`subject-scale-${scale}`);
+			const result = await runForTenant(
+				dbPath,
+				"tenant-a",
+				Effect.gen(function* subjectLookupScaleProgram() {
+					const persistence = yield* Effect.service(Persistence);
+					for (let index = 0; index < scale; index += 1) {
+						yield* persistence.requests.create(
+							scaledSubjectLookupSeedInput(scale, index)
+						);
+					}
+					const started = performance.now();
+					const page = yield* persistence.requests.listBySubject({
+						identifiers: ["subject-scale"],
+						limit: 25,
+						policyPack: "pack-scale",
+						status: ["in_progress"],
+					});
+					return { elapsedMs: performance.now() - started, page };
+				})
+			);
+
+			expect(result.page.items).toHaveLength(
+				Math.min(Math.ceil(scale / 100), 25)
+			);
+			expect(result.elapsedMs).toBeLessThan(thresholdsMs[scale]);
+		}
 	});
 
 	it("persists and lists clock segments in deterministic order", async () => {

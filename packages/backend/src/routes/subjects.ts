@@ -1,10 +1,13 @@
 import { asNonEmptyString } from "@dsar/guards";
 import type { RequestSubjectCursor } from "@dsar/persistence";
 import { withTenant } from "@dsar/persistence";
+import { IsoTimestampSchema } from "@dsar/schema";
 import * as Effect from "effect/Effect";
+import * as Exit from "effect/Exit";
+import * as Schema from "effect/Schema";
 
 import { backendErrorCatalogByCode } from "../types/error-codes";
-import { ForbiddenRequestError } from "../types/errors";
+import { ForbiddenRequestError, RequestValidationError } from "../types/errors";
 import { RuntimeServicesTag } from "../types/runtime";
 import {
 	requirePrincipalKinds,
@@ -30,6 +33,25 @@ const parseStatusFilter = (value: string | null): readonly string[] =>
 				.map((entry) => entry.trim())
 				.filter((entry) => entry.length > 0)
 		: [];
+
+const parseIsoTimestampParam = (
+	value: string | null,
+	paramName: "created_after" | "created_before"
+): Effect.Effect<string | undefined, RequestValidationError> => {
+	if (!value || value.trim().length === 0) {
+		return Effect.succeed();
+	}
+	const decoded = Schema.decodeUnknownExit(IsoTimestampSchema)(value);
+	if (Exit.isFailure(decoded)) {
+		return Effect.fail(
+			new RequestValidationError({
+				message: `${paramName} must be a valid ISO-8601 timestamp.`,
+				reasonCode: backendErrorCatalogByCode.REQUEST_VALIDATION_FAILED.code,
+			})
+		);
+	}
+	return Effect.succeed(new Date(value).toISOString());
+};
 
 const encodeCursor = (cursor: RequestSubjectCursor): string =>
 	Buffer.from(JSON.stringify(cursor), "utf8").toString("base64url");
@@ -89,6 +111,14 @@ export const subjectRoutes: readonly RouteDefinition[] = [
 						)
 					);
 				}
+				const createdAfter = yield* parseIsoTimestampParam(
+					searchParams.get("created_after"),
+					"created_after"
+				);
+				const createdBefore = yield* parseIsoTimestampParam(
+					searchParams.get("created_before"),
+					"created_before"
+				);
 				const services = yield* Effect.service(RuntimeServicesTag);
 				const actor = yield* requireRequestActor(services.requestContext);
 				let subjectIdentifiers = new Set([normalizedSubjectId]);
@@ -119,8 +149,8 @@ export const subjectRoutes: readonly RouteDefinition[] = [
 				const tenantId = yield* requireRequestTenantId(services.requestContext);
 				const page = yield* services.repos.persistence.requests
 					.listBySubject({
-						createdAfter: asNonEmptyString(searchParams.get("created_after")),
-						createdBefore: asNonEmptyString(searchParams.get("created_before")),
+						createdAfter,
+						createdBefore,
 						cursor,
 						identifiers: [...subjectIdentifiers],
 						limit,
