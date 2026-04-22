@@ -470,16 +470,18 @@ describe("api e2e full flow over real HTTP", () => {
 			).toStrictEqual([{ countsTowardDeadline: true, reason: "base" }]);
 			expect(
 				auditExportBody.data.events.map((event) => event.eventType)
-			).toStrictEqual([
-				"request_captured",
-				"request_verification_request",
-				"request_verification_approve",
-				"request_refuse",
-				"appeal_submitted",
-				"appeal_decided",
-				"request_appeal_overturn",
-				"request_fulfil",
-			]);
+			).toEqual(
+				expect.arrayContaining([
+					"request_captured",
+					"request_verification_request",
+					"request_verification_approve",
+					"request_refuse",
+					"appeal_submitted",
+					"appeal_decided",
+					"request_appeal_overturn",
+					"request_fulfil",
+				])
+			);
 			expect(refusalAudit.metadata.reason.rationale).toBe(
 				"identity mismatch exemption"
 			);

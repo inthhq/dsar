@@ -1985,6 +1985,15 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 						})
 					);
 				}
+				if (current.status === "closed") {
+					return yield* Effect.fail(
+						new RequestValidationError({
+							message: `Appeal ${appealId} cannot be decided because request ${requestId} is closed.`,
+							reasonCode:
+								backendErrorCatalogByCode.REQUEST_VALIDATION_FAILED.code,
+						})
+					);
+				}
 				const now = yield* currentIsoTime;
 				const DECISION_TO_STATUS: Readonly<Record<string, string>> = {
 					approve: "approved",
@@ -1992,6 +2001,8 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 					partial: "partially_approved",
 				};
 				const nextStatus = DECISION_TO_STATUS[decision];
+				const shouldOverturnRefusal =
+					decision === "approve" && current.status === "refused";
 				const nextAppeals: readonly JsonValue[] = existingAppeals.map(
 					(appeal, index) => {
 						if (index !== appealIndex) {
@@ -2007,6 +2018,17 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 						};
 					}
 				);
+				if (shouldOverturnRefusal) {
+					yield* transitionRequestLifecycle({
+						action: "appeal_overturn",
+						actor,
+						idempotencyKey: `appeal-overturn:${requestId}:${appealId}`,
+						rationale: explanation ?? "Appeal approved.",
+						requestId,
+						tenantId,
+						workspaceId: getWorkspaceId(services),
+					});
+				}
 				yield* services.repos.persistence.requests
 					.update(requestId, {
 						appeals: nextAppeals,
@@ -2059,17 +2081,6 @@ const rawRequestRoutes: readonly RouteDefinition[] = [
 					tenantId,
 					workspaceId: getWorkspaceId(services),
 				});
-				if (decision === "approve" && current.status === "refused") {
-					yield* transitionRequestLifecycle({
-						action: "appeal_overturn",
-						actor,
-						idempotencyKey: `appeal-overturn:${requestId}:${appealId}`,
-						rationale: explanation ?? "Appeal approved.",
-						requestId,
-						tenantId,
-						workspaceId: getWorkspaceId(services),
-					});
-				}
 				return accepted({
 					appealId,
 					decision,
