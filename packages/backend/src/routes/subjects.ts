@@ -47,8 +47,7 @@ const parseIsoTimestampParam = (
 	paramName: "created_after" | "created_before"
 ): Effect.Effect<string | undefined, RequestValidationError> => {
 	if (!value || value.trim().length === 0) {
-		const emptyTimestamp: string | undefined = undefined;
-		return Effect.succeed(emptyTimestamp);
+		return Effect.succeed(undefined as string | undefined);
 	}
 	const normalized = normalizeIsoTimestamp(value);
 	if (!normalized) {
@@ -116,8 +115,8 @@ export const subjectRoutes: readonly RouteDefinition[] = [
 					1,
 					MAX_LIST_LIMIT
 				);
-				const cursor = decodeCursor(searchParams.get("cursor"));
 				const cursorParam = searchParams.get("cursor");
+				const cursor = decodeCursor(cursorParam);
 				if (cursorParam && !cursor) {
 					return yield* Effect.fail(
 						toValidationFailure(
