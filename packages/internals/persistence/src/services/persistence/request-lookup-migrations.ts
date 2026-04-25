@@ -41,8 +41,10 @@ const ignoreSqliteDuplicateColumnError = <A, E, R>(
 	effect: Effect.Effect<A, E, R>
 ) =>
 	effect.pipe(
-		Effect.catch((error) =>
-			isSqliteDuplicateColumnError(error) ? Effect.void : Effect.fail(error)
+		Effect.catchCause((cause) =>
+			isSqliteDuplicateColumnError(cause)
+				? Effect.void
+				: Effect.failCause(cause)
 		)
 	);
 
