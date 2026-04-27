@@ -348,13 +348,22 @@ const makeMemoryPersistence = (): PersistenceService => {
 				) as never,
 			listActiveKeys: (endpointId, now) =>
 				Effect.succeed(
-					webhookSigningKeys.filter(
-						(key) =>
-							key.endpointId === endpointId &&
-							(key.role === "primary" ||
-								typeof key.expiresAt !== "string" ||
-								key.expiresAt > now)
-					)
+					webhookSigningKeys
+						.filter(
+							(key) =>
+								key.endpointId === endpointId &&
+								(key.role === "primary" ||
+									typeof key.expiresAt !== "string" ||
+									key.expiresAt > now)
+						)
+						.toSorted((left, right) => {
+							if (left.role === right.role) {
+								return String(right.createdAt).localeCompare(
+									String(left.createdAt)
+								);
+							}
+							return left.role === "primary" ? -1 : 1;
+						})
 				) as never,
 			rotateSigningKey: (input) => {
 				const endpoint = webhookEndpoints.get(input.endpointId);
@@ -380,7 +389,22 @@ const makeMemoryPersistence = (): PersistenceService => {
 				};
 				webhookSigningKeys.push(newPrimary);
 				return Effect.succeed({
-					activeKeys: webhookSigningKeys,
+					activeKeys: webhookSigningKeys
+						.filter(
+							(key) =>
+								key.endpointId === input.endpointId &&
+								(key.role === "primary" ||
+									typeof key.expiresAt !== "string" ||
+									key.expiresAt > input.rotatedAt)
+						)
+						.toSorted((left, right) => {
+							if (left.role === right.role) {
+								return String(right.createdAt).localeCompare(
+									String(left.createdAt)
+								);
+							}
+							return left.role === "primary" ? -1 : 1;
+						}),
 					endpoint,
 					newPrimary,
 					previousPrimary,

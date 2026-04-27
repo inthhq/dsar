@@ -351,11 +351,43 @@ describe(dsarInstance, () => {
 		);
 		expect(unauthorized.status).toBe(401);
 
+		const forbiddenSubject = await runtime.handler(
+			new Request(
+				"https://example.test/webhooks/endpoints/default/rotate-key",
+				{
+					body: "{}",
+					headers: {
+						"content-type": "application/json",
+						...subjectHeaders,
+					},
+					method: "POST",
+				}
+			)
+		);
+		expect(forbiddenSubject.status).toBe(403);
+
+		for (const invalidGracePeriod of [-1, 1.5]) {
+			const invalid = await runtime.handler(
+				new Request(
+					"https://example.test/webhooks/endpoints/default/rotate-key",
+					{
+						body: JSON.stringify({ gracePeriodDays: invalidGracePeriod }),
+						headers: {
+							"content-type": "application/json",
+							...adminHeaders,
+						},
+						method: "POST",
+					}
+				)
+			);
+			expect(invalid.status).toBe(400);
+		}
+
 		const response = await runtime.handler(
 			new Request(
 				"https://example.test/webhooks/endpoints/default/rotate-key",
 				{
-					body: JSON.stringify({ gracePeriodDays: 2 }),
+					body: JSON.stringify({ gracePeriodDays: 0 }),
 					headers: {
 						"content-type": "application/json",
 						...adminHeaders,
@@ -388,6 +420,39 @@ describe(dsarInstance, () => {
 			actor: "tester-admin",
 			object: "webhook_endpoint:default",
 		});
+	});
+
+	it("defaults omitted webhook signing key rotation grace period", async () => {
+		const runtime = dsarInstance({
+			config: {
+				...TEST_RUNTIME_AUTH.config,
+				notificationWebhook: {
+					endpointId: "default",
+					retryDelayMs: 1,
+					retryMaxAttempts: 1,
+					signingSecret: "old-secret",
+					timeoutMs: 1000,
+					url: "https://tenant.example/webhook",
+				},
+			},
+			repos: { persistence: makeMemoryPersistence() },
+		});
+
+		const response = await runtime.handler(
+			new Request(
+				"https://example.test/webhooks/endpoints/default/rotate-key",
+				{
+					headers: adminHeaders,
+					method: "POST",
+				}
+			)
+		);
+		const body = (await response.json()) as {
+			readonly data: { readonly previousKeyExpiresAt?: string };
+		};
+
+		expect(response.status).toBe(200);
+		expect(body.data.previousKeyExpiresAt).toBeDefined();
 	});
 
 	it("allows subject principals to read their own requests", async () => {

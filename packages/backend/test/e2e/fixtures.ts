@@ -508,13 +508,20 @@ export const makeMemoryPersistence = (): PersistenceService => {
 				};
 				webhookSigningKeys.push(newPrimary);
 				return Effect.succeed({
-					activeKeys: webhookSigningKeys.filter(
-						(key) =>
-							key.endpointId === input.endpointId &&
-							(key.role === "primary" ||
-								key.expiresAt === undefined ||
-								key.expiresAt > input.rotatedAt)
-					),
+					activeKeys: webhookSigningKeys
+						.filter(
+							(key) =>
+								key.endpointId === input.endpointId &&
+								(key.role === "primary" ||
+									key.expiresAt === undefined ||
+									key.expiresAt > input.rotatedAt)
+						)
+						.toSorted((left, right) => {
+							if (left.role === right.role) {
+								return right.createdAt.localeCompare(left.createdAt);
+							}
+							return left.role === "primary" ? -1 : 1;
+						}),
 					endpoint,
 					newPrimary,
 					previousPrimary,

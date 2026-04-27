@@ -2,6 +2,7 @@ import * as Schema from "effect/Schema";
 import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 
+import { WebhookRotateKeyPayloadSchema } from "../../webhook-schemas";
 import { protectedOperation, publicOperation, s202 } from "../common";
 import {
 	SlackWebhookAcceptedResponseSchema,
@@ -16,10 +17,6 @@ const ResendWebhookPayloadSchema = Schema.Struct({
 });
 
 const SlackWebhookPayloadSchema = Schema.Unknown;
-
-const WebhookRotateKeyPayloadSchema = Schema.Struct({
-	gracePeriodDays: Schema.optional(Schema.Number),
-});
 
 const WebhookRotateKeyResponseSchema = Schema.Struct({
 	activeKeyIds: Schema.Array(Schema.String),

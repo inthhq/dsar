@@ -388,7 +388,10 @@ export const emitNotificationEvent = (input: {
 				retryMaxAttempts: webhookConfig.retryMaxAttempts,
 				send: () =>
 					webhookAdapter
-						? webhookAdapter.send(dispatchInput)
+						? webhookAdapter.send({
+								...dispatchInput,
+								webhookSigningKey: signingKey,
+							})
 						: dispatchWebhookNotification({
 								event: dispatchInput,
 								signingKey,

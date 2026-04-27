@@ -1,3 +1,6 @@
+import { Buffer } from "node:buffer";
+import { timingSafeEqual } from "node:crypto";
+
 import type { DsarResult, RequestOptions } from "../types";
 import type {
 	EndpointContext,
@@ -8,6 +11,9 @@ import type {
 	WebhookRotateKeyPayload,
 	WebhookRotateKeyResponse,
 } from "./types";
+
+const HEX_SHA256_SIGNATURE_PATTERN = /^[\da-f]{64}$/i;
+const EMPTY_SHA256_SIGNATURE = Buffer.alloc(32);
 
 /**
  * Active webhook signing secret plus optional key metadata.
@@ -97,17 +103,17 @@ const signBody = async (
 	return toHex(signature);
 };
 
-const constantTimeEqual = (left: string, right: string): boolean => {
-	if (left.length !== right.length) {
-		return false;
-	}
-	let matches = true;
-	for (let index = 0; index < left.length; index += 1) {
-		if (left.codePointAt(index) !== right.codePointAt(index)) {
-			matches = false;
-		}
-	}
-	return matches;
+const constantTimeEqual = (
+	expectedHex: string,
+	suppliedHex: string
+): boolean => {
+	const expected = Buffer.from(expectedHex, "hex");
+	const hasValidShape = HEX_SHA256_SIGNATURE_PATTERN.test(suppliedHex);
+	const supplied = hasValidShape
+		? Buffer.from(suppliedHex, "hex")
+		: EMPTY_SHA256_SIGNATURE;
+	const matched = timingSafeEqual(expected, supplied);
+	return hasValidShape && matched;
 };
 
 /**

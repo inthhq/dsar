@@ -6,6 +6,11 @@ import { appendAuditEvent } from "../../audit/service";
 import { makeRequestId } from "../../middleware/auth-context";
 import { RequestValidationError } from "../../types/errors";
 import { RuntimeServicesTag } from "../../types/runtime";
+import {
+	requirePrincipalKinds,
+	requireRequestActor,
+	requireRequestTenantId,
+} from "../authz";
 import { ok } from "../helpers";
 import { WebhookRotateKeyBodySchema } from "../schemas";
 import type { RouteDefinition } from "../types";
@@ -51,9 +56,9 @@ const parseBody = (request: Request) =>
 
 const resolveGracePeriodDays = (value: number | undefined): number => {
 	const days = value ?? DEFAULT_GRACE_PERIOD_DAYS;
-	if (!Number.isFinite(days) || days <= 0) {
+	if (!Number.isSafeInteger(days) || days < 0) {
 		throw new RequestValidationError({
-			message: "gracePeriodDays must be a positive number.",
+			message: "gracePeriodDays must be a non-negative integer.",
 			reasonCode: "REQUEST_VALIDATION_FAILED",
 		});
 	}
@@ -103,17 +108,15 @@ export const rotateWebhookKeyRoute: RouteDefinition = {
 	handler: ({ params, request }) =>
 		Effect.gen(function* rotateWebhookSigningKeyHandler() {
 			const services = yield* Effect.service(RuntimeServicesTag);
-			const { tenantId } = services.requestContext;
-			const { actor } = services.requestContext;
+			const actor = yield* requireRequestActor(services.requestContext);
+			yield* requirePrincipalKinds({
+				actor,
+				allowedKinds: ["operator", "service"],
+				message:
+					"Webhook signing key rotation is reserved for operator and service principals.",
+			});
+			const tenantId = yield* requireRequestTenantId(services.requestContext);
 			const endpointId = params.id;
-			if (!tenantId || !actor) {
-				return yield* Effect.fail(
-					new RequestValidationError({
-						message: "Authenticated tenant and actor are required.",
-						reasonCode: "AUTH_ACTOR_CONTEXT_MISSING",
-					})
-				);
-			}
 			if (!endpointId) {
 				return yield* Effect.fail(
 					new RequestValidationError({

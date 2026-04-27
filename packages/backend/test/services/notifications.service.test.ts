@@ -23,7 +23,20 @@ import {
 	makeNotificationDraft,
 } from "../../src/services/notifications/service";
 import { RuntimeServicesTag } from "../../src/types/runtime";
-import type { RuntimeServices } from "../../src/types/runtime";
+import type {
+	NotificationDispatchInput,
+	RuntimeServices,
+} from "../../src/types/runtime";
+
+const sortWebhookSigningKeys = (
+	keys: readonly WebhookSigningKeyRecord[]
+): readonly WebhookSigningKeyRecord[] =>
+	keys.toSorted((left, right) => {
+		if (left.role === right.role) {
+			return right.createdAt.localeCompare(left.createdAt);
+		}
+		return left.role === "primary" ? -1 : 1;
+	});
 
 const makeMemoryPersistence = (): {
 	readonly persistence: PersistenceService;
@@ -210,12 +223,14 @@ const makeMemoryPersistence = (): {
 					),
 				listActiveKeys: (endpointId, now) =>
 					Effect.succeed(
-						webhookSigningKeys.filter(
-							(key) =>
-								key.endpointId === endpointId &&
-								(key.role === "primary" ||
-									key.expiresAt === undefined ||
-									key.expiresAt > now)
+						sortWebhookSigningKeys(
+							webhookSigningKeys.filter(
+								(key) =>
+									key.endpointId === endpointId &&
+									(key.role === "primary" ||
+										key.expiresAt === undefined ||
+										key.expiresAt > now)
+							)
 						)
 					),
 				rotateSigningKey: (input) => {
@@ -252,12 +267,14 @@ const makeMemoryPersistence = (): {
 					};
 					webhookSigningKeys.push(newPrimary);
 					return Effect.succeed({
-						activeKeys: webhookSigningKeys.filter(
-							(key) =>
-								key.endpointId === input.endpointId &&
-								(key.role === "primary" ||
-									key.expiresAt === undefined ||
-									key.expiresAt > input.rotatedAt)
+						activeKeys: sortWebhookSigningKeys(
+							webhookSigningKeys.filter(
+								(key) =>
+									key.endpointId === input.endpointId &&
+									(key.role === "primary" ||
+										key.expiresAt === undefined ||
+										key.expiresAt > input.rotatedAt)
+							)
 						),
 						endpoint,
 						newPrimary,
@@ -617,6 +634,46 @@ describe("notification retry/backoff behavior", () => {
 		} finally {
 			vi.unstubAllGlobals();
 		}
+	});
+
+	it("passes persisted signing keys to webhook adapters", async () => {
+		const memory = makeMemoryPersistence();
+		let receivedInput: NotificationDispatchInput | undefined;
+		const dispatch = {
+			send: (input: NotificationDispatchInput) =>
+				Effect.sync(() => {
+					receivedInput = input;
+					return {
+						responseCode: 202,
+						status: "delivered" as const,
+					};
+				}),
+		};
+		const services = makeServices({
+			adapterKey: "custom-webhook",
+			disableBuiltInEmail: true,
+			dispatch,
+			persistence: memory.persistence,
+			retryDelayMs: 1,
+			retryMaxAttempts: 1,
+		});
+
+		await Effect.runPromise(
+			emitNotificationEvent({
+				draft: makeNotificationDraft({
+					eventType: "request_captured",
+					payload: { note: "adapter signed webhook" },
+					requestId: "req-adapter-webhook",
+				}),
+				idempotencyKey: "idem-adapter-webhook",
+				tenantId: "tenant-default",
+			}).pipe(Effect.provideService(RuntimeServicesTag, services))
+		);
+
+		expect(receivedInput?.webhookSigningKey).toStrictEqual({
+			id: "default:primary",
+			secret: "test-secret",
+		});
 	});
 
 	it("uses capability-spec clock webhook event names for lifecycle derivation", () => {

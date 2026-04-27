@@ -530,14 +530,21 @@ const makeTenantScopedMemoryPersistence = (): PersistenceService => {
 			listActiveKeys: (endpointId, now) =>
 				Effect.gen(function* listActiveWebhookKeys() {
 					const tenantId = yield* currentTenantId;
-					return webhookSigningKeys.filter(
-						(signingKey) =>
-							signingKey.tenantId === tenantId &&
-							signingKey.endpointId === endpointId &&
-							(signingKey.role === "primary" ||
-								signingKey.expiresAt === undefined ||
-								signingKey.expiresAt > now)
-					);
+					return webhookSigningKeys
+						.filter(
+							(signingKey) =>
+								signingKey.tenantId === tenantId &&
+								signingKey.endpointId === endpointId &&
+								(signingKey.role === "primary" ||
+									signingKey.expiresAt === undefined ||
+									signingKey.expiresAt > now)
+						)
+						.toSorted((left, right) => {
+							if (left.role === right.role) {
+								return right.createdAt.localeCompare(left.createdAt);
+							}
+							return left.role === "primary" ? -1 : 1;
+						});
 				}),
 			rotateSigningKey: (input) =>
 				Effect.gen(function* rotateWebhookSigningKey() {
@@ -579,14 +586,21 @@ const makeTenantScopedMemoryPersistence = (): PersistenceService => {
 					};
 					webhookSigningKeys.push(newPrimary);
 					return {
-						activeKeys: webhookSigningKeys.filter(
-							(signingKey) =>
-								signingKey.tenantId === tenantId &&
-								signingKey.endpointId === input.endpointId &&
-								(signingKey.role === "primary" ||
-									signingKey.expiresAt === undefined ||
-									signingKey.expiresAt > input.rotatedAt)
-						),
+						activeKeys: webhookSigningKeys
+							.filter(
+								(signingKey) =>
+									signingKey.tenantId === tenantId &&
+									signingKey.endpointId === input.endpointId &&
+									(signingKey.role === "primary" ||
+										signingKey.expiresAt === undefined ||
+										signingKey.expiresAt > input.rotatedAt)
+							)
+							.toSorted((left, right) => {
+								if (left.role === right.role) {
+									return right.createdAt.localeCompare(left.createdAt);
+								}
+								return left.role === "primary" ? -1 : 1;
+							}),
 						endpoint,
 						newPrimary,
 						previousPrimary,

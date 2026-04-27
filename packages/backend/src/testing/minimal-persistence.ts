@@ -608,13 +608,22 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 				listActiveKeys: (endpointId: string, now: string) =>
 					Ref.get(webhookSigningKeysRef).pipe(
 						Effect.map((keys) =>
-							keys.filter(
-								(key) =>
-									key.endpointId === endpointId &&
-									(key.role === "primary" ||
-										typeof key.expiresAt !== "string" ||
-										key.expiresAt > now)
-							)
+							keys
+								.filter(
+									(key) =>
+										key.endpointId === endpointId &&
+										(key.role === "primary" ||
+											typeof key.expiresAt !== "string" ||
+											key.expiresAt > now)
+								)
+								.toSorted((left, right) => {
+									if (left.role === right.role) {
+										return String(right.createdAt).localeCompare(
+											String(left.createdAt)
+										);
+									}
+									return left.role === "primary" ? -1 : 1;
+								})
 						)
 					),
 				rotateSigningKey: (input: Record<string, unknown>) =>
@@ -660,13 +669,22 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 						);
 						const activeKeys = yield* Ref.get(webhookSigningKeysRef).pipe(
 							Effect.map((keys) =>
-								keys.filter(
-									(key) =>
-										key.endpointId === endpointId &&
-										(key.role === "primary" ||
-											typeof key.expiresAt !== "string" ||
-											key.expiresAt > rotatedAt)
-								)
+								keys
+									.filter(
+										(key) =>
+											key.endpointId === endpointId &&
+											(key.role === "primary" ||
+												typeof key.expiresAt !== "string" ||
+												key.expiresAt > rotatedAt)
+									)
+									.toSorted((left, right) => {
+										if (left.role === right.role) {
+											return String(right.createdAt).localeCompare(
+												String(left.createdAt)
+											);
+										}
+										return left.role === "primary" ? -1 : 1;
+									})
 							)
 						);
 						return { activeKeys, endpoint, newPrimary, previousPrimary };

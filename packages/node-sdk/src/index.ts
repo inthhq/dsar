@@ -1,14 +1,6 @@
 export { createNodeSdk } from "./client";
-export { verifyWebhook } from "./endpoints";
 export { isRetriableHttpStatus } from "./fetcher";
 export type { NodeSdkClient } from "./client";
-export type {
-	VerifyWebhookInput,
-	VerifyWebhookResult,
-	WebhookSecretLookup,
-	WebhookSecretLookupResult,
-	WebhookVerificationSecret,
-} from "./endpoints";
 export type {
 	ApiEnvelope,
 	ApiErrorEnvelope,
@@ -43,6 +35,4 @@ export type {
 	VerificationPayload,
 	WebhookInboundSlackPayload,
 	WebhookInboundSlackResponse,
-	WebhookRotateKeyPayload,
-	WebhookRotateKeyResponse,
 } from "./endpoints";

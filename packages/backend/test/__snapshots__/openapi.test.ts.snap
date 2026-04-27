@@ -9749,29 +9749,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                   "gracePeriodDays": {
                     "anyOf": [
                       {
-                        "anyOf": [
+                        "allOf": [
                           {
-                            "type": "number",
-                          },
-                          {
-                            "enum": [
-                              "NaN",
-                            ],
-                            "type": "string",
-                          },
-                          {
-                            "enum": [
-                              "Infinity",
-                            ],
-                            "type": "string",
-                          },
-                          {
-                            "enum": [
-                              "-Infinity",
-                            ],
-                            "type": "string",
+                            "minimum": 0,
                           },
                         ],
+                        "type": "integer",
                       },
                       {
                         "type": "null",

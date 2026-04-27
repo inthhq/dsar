@@ -1,10 +1,10 @@
+import { makeWebhooksApi, verifyWebhook } from "@dsar/node-sdk/webhooks";
 import { describe, expect, it, vi } from "@effect/vitest";
 
 import type {
 	EndpointContext,
 	WebhookInboundResendPayload,
 } from "#src/endpoints/types";
-import { makeWebhooksApi, verifyWebhook } from "#src/endpoints/webhooks";
 
 const DEFAULT_RETURN: unknown = { ok: true };
 

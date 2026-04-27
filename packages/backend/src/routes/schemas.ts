@@ -6,6 +6,8 @@ import {
 } from "@dsar/schema";
 import * as Schema from "effect/Schema";
 
+export { WebhookRotateKeyPayloadSchema as WebhookRotateKeyBodySchema } from "../webhook-schemas";
+
 const NonEmptyString = Schema.String.pipe(
 	Schema.check(
 		Schema.makeFilter((s: string) =>
@@ -118,11 +120,6 @@ export const AppealSubmitBodySchema = Schema.Struct({
 export const AppealDecideBodySchema = Schema.Struct({
 	decision: Schema.Literals(["approve", "deny", "partial"]),
 	explanation: Schema.optional(Schema.String),
-});
-
-/** POST /webhooks/endpoints/:id/rotate-key */
-export const WebhookRotateKeyBodySchema = Schema.Struct({
-	gracePeriodDays: Schema.optional(Schema.Number),
 });
 
 /** PUT /tenants/:tenantId/retention */

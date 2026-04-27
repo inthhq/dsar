@@ -186,7 +186,7 @@ export const applyMigration0001 = (
 			tenant_id TEXT NOT NULL,
 			endpoint_id TEXT NOT NULL,
 			secret TEXT NOT NULL,
-			role TEXT NOT NULL,
+			role TEXT NOT NULL CHECK (role IN ('primary', 'secondary')),
 			expires_at TEXT,
 			created_at TEXT NOT NULL,
 			PRIMARY KEY (tenant_id, id),

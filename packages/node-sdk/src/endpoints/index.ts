@@ -10,15 +10,8 @@ export { makeSubjectsApi } from "./subjects";
 export type { SubjectsApi } from "./subjects";
 export { makeSystemApi } from "./system";
 export type { SystemApi } from "./system";
-export { makeWebhooksApi, verifyWebhook } from "./webhooks";
-export type {
-	VerifyWebhookInput,
-	VerifyWebhookResult,
-	WebhookSecretLookup,
-	WebhookSecretLookupResult,
-	WebhookVerificationSecret,
-	WebhooksApi,
-} from "./webhooks";
+export { makeWebhooksApi } from "./webhooks";
+export type { WebhooksApi } from "./webhooks";
 export type {
 	AppealDecisionPayload,
 	AuditExportResponse,
@@ -55,6 +48,4 @@ export type {
 	WebhookInboundResendResponse,
 	WebhookInboundSlackPayload,
 	WebhookInboundSlackResponse,
-	WebhookRotateKeyPayload,
-	WebhookRotateKeyResponse,
 } from "./types";
