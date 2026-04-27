@@ -83,31 +83,45 @@ const scaledSubjectLookupSeedInput = (scale: number, index: number) => ({
 	status: index % 2 === 0 ? "in_progress" : "fulfilled",
 });
 
+const SQLITE_INSERT_BATCH_SIZE = 500;
+
 const seedRequestsDirectly = (scale: number) => (sql: Sql) =>
 	sql.withTransaction(
 		Effect.forEach(
-			Array.from({ length: scale }, (_, index) => index),
-			(index) => {
-				const input = scaledSubjectLookupSeedInput(scale, index);
-				const lookupFields = extractRequestLookupFields(input);
-				return sql`INSERT INTO requests ${sql.insert({
-					appeals_json: jsonEncode(input.appeals),
-					authority_json: jsonEncode(input.authority),
-					capture_json: jsonEncode(input.capture),
-					clock_mode: input.clockMode,
-					created_at: input.receivedAt,
-					due_at: input.dueAt,
-					id: input.id,
-					policy_pack: lookupFields.policyPack,
-					received_at: input.receivedAt,
-					requestor_email: lookupFields.requestorEmail,
-					requestor_json: jsonEncode(input.requestor),
-					status: input.status,
-					subject_external_ref: lookupFields.subjectExternalRef,
-					subject_id: lookupFields.subjectId,
-					tenant_id: "tenant-a",
-					updated_at: input.receivedAt,
-				})}`;
+			Array.from(
+				{ length: Math.ceil(scale / SQLITE_INSERT_BATCH_SIZE) },
+				(_, batchIndex) => batchIndex
+			),
+			(batchIndex) => {
+				const start = batchIndex * SQLITE_INSERT_BATCH_SIZE;
+				const rows = Array.from(
+					{
+						length: Math.min(SQLITE_INSERT_BATCH_SIZE, scale - start),
+					},
+					(_, offset) => {
+						const input = scaledSubjectLookupSeedInput(scale, start + offset);
+						const lookupFields = extractRequestLookupFields(input);
+						return {
+							appeals_json: jsonEncode(input.appeals),
+							authority_json: jsonEncode(input.authority),
+							capture_json: jsonEncode(input.capture),
+							clock_mode: input.clockMode,
+							created_at: input.receivedAt,
+							due_at: input.dueAt,
+							id: input.id,
+							policy_pack: lookupFields.policyPack,
+							received_at: input.receivedAt,
+							requestor_email: lookupFields.requestorEmail,
+							requestor_json: jsonEncode(input.requestor),
+							status: input.status,
+							subject_external_ref: lookupFields.subjectExternalRef,
+							subject_id: lookupFields.subjectId,
+							tenant_id: "tenant-a",
+							updated_at: input.receivedAt,
+						};
+					}
+				);
+				return sql`INSERT INTO requests ${sql.insert(rows)}`;
 			},
 			{ concurrency: 1, discard: true }
 		)
