@@ -1,5 +1,7 @@
 import type { Effect } from "effect";
 
+import type { NotificationEventType } from "../events/contracts";
+
 /**
  * Supported adapter capability groups used by the runtime registry.
  */
@@ -101,7 +103,7 @@ export interface NotificationDispatchInput {
 	/** Unique notification event identifier for auditing and deduplication. */
 	readonly eventId: string;
 	/** Domain event name that determines template/channel handling. */
-	readonly eventType: string;
+	readonly eventType: NotificationEventType;
 	/** DSAR request identifier this notification belongs to. */
 	readonly requestId: string;
 	/** Correlation id shared across pipeline steps for tracing. */

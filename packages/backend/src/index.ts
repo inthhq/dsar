@@ -34,6 +34,7 @@ export type {
 	StorageAdapterContract,
 	StorageObjectMetadata,
 } from "./adapters";
+export type { NotificationEventType } from "./events/contracts";
 export type { AdapterModule, CoreModule } from "./layers";
 export type {
 	AuthenticatedRequestIdentity,

@@ -35,6 +35,22 @@
 			"types": "./dist/node-sdk.d.mts",
 			"import": "./dist/node-sdk.mjs"
 		},
+		"./node-sdk/webhooks": {
+			"types": "./dist/node-sdk-webhooks.d.mts",
+			"import": "./dist/node-sdk-webhooks.mjs"
+		},
+		"./node-sdk/webhooks/express": {
+			"types": "./dist/node-sdk-webhooks-express.d.mts",
+			"import": "./dist/node-sdk-webhooks-express.mjs"
+		},
+		"./node-sdk/webhooks/hono": {
+			"types": "./dist/node-sdk-webhooks-hono.d.mts",
+			"import": "./dist/node-sdk-webhooks-hono.mjs"
+		},
+		"./node-sdk/webhooks/next": {
+			"types": "./dist/node-sdk-webhooks-next.d.mts",
+			"import": "./dist/node-sdk-webhooks-next.mjs"
+		},
 		"./persistence-pg": {
 			"types": "./dist/persistence-pg.d.mts",
 			"import": "./dist/persistence-pg.mjs"

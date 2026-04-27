@@ -16,6 +16,22 @@
 		".": {
 			"types": "./src/index.ts",
 			"import": "./src/index.ts"
+		},
+		"./webhooks": {
+			"types": "./src/webhooks/index.ts",
+			"import": "./src/webhooks/index.ts"
+		},
+		"./webhooks/express": {
+			"types": "./src/webhooks/express.ts",
+			"import": "./src/webhooks/express.ts"
+		},
+		"./webhooks/hono": {
+			"types": "./src/webhooks/hono.ts",
+			"import": "./src/webhooks/hono.ts"
+		},
+		"./webhooks/next": {
+			"types": "./src/webhooks/next.ts",
+			"import": "./src/webhooks/next.ts"
 		}
 	},
 	"scripts": {
@@ -35,8 +51,28 @@
 		"@dsar/typescript-config": "workspace:*",
 		"@effect/language-service": "catalog:effect",
 		"@effect/vitest": "catalog:effect",
+		"@types/express": "^5.0.6",
 		"@types/node": "catalog:types",
+		"express": "^5.2.1",
+		"hono": "^4.12.15",
+		"next": "^16.2.4",
 		"typescript": "catalog:utils",
 		"vitest": "catalog:utils"
+	},
+	"peerDependencies": {
+		"express": "*",
+		"hono": "*",
+		"next": "*"
+	},
+	"peerDependenciesMeta": {
+		"express": {
+			"optional": true
+		},
+		"hono": {
+			"optional": true
+		},
+		"next": {
+			"optional": true
+		}
 	}
 }
