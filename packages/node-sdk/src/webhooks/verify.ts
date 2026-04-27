@@ -1,3 +1,6 @@
+/**
+ * Input required to verify a DSAR webhook request signature.
+ */
 export interface VerifyWebhookInput {
 	/** Raw request body, exactly as received. */
 	readonly payload: string;
@@ -7,11 +10,18 @@ export interface VerifyWebhookInput {
 	readonly signingSecret: string;
 }
 
+/**
+ * Machine-readable webhook verification failure code.
+ */
 export type WebhookVerificationErrorCode =
 	| "missing_signature"
 	| "invalid_signature";
 
+/**
+ * Error thrown when DSAR webhook signature verification fails.
+ */
 export class WebhookVerificationError extends Error {
+	/** Stable verification error code for caller branching. */
 	readonly code: WebhookVerificationErrorCode;
 
 	constructor(code: WebhookVerificationErrorCode) {
@@ -63,6 +73,11 @@ const constantTimeEqualHex = (expected: string, provided: string): boolean => {
 	return difference === 0;
 };
 
+/**
+ * Verifies an outbound DSAR webhook HMAC signature against the raw request body.
+ *
+ * @param input - Raw payload, received signature, and shared signing secret.
+ */
 export const verifyWebhook = async (
 	input: VerifyWebhookInput
 ): Promise<void> => {
