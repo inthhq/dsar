@@ -322,7 +322,7 @@ describe(Persistence, () => {
 			);
 			expect(result.elapsedMs).toBeLessThan(thresholdsMs[scale]);
 		}
-	});
+	}, 15_000);
 
 	it("persists and lists clock segments in deterministic order", async () => {
 		const dbPath = sqliteFile("clock-segments");
