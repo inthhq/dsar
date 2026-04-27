@@ -3,6 +3,11 @@ import * as Effect from "effect/Effect";
 
 import { makeSqlitePersistenceLayer } from "../../persistence-sqlite/src";
 import { Persistence, withTenant } from "../src";
+import {
+	extractRequestLookupFields,
+	jsonEncode,
+} from "../src/services/persistence/shared";
+import type { Sql } from "../src/services/persistence/shared";
 
 const sqliteFile = (name: string): string =>
 	`/tmp/dsar-persistence-${name}-${crypto.randomUUID()}.sqlite`;
@@ -77,6 +82,36 @@ const scaledSubjectLookupSeedInput = (scale: number, index: number) => ({
 	receivedAt: `2026-03-${((index % 28) + 1).toString().padStart(2, "0")}T00:00:00.000Z`,
 	status: index % 2 === 0 ? "in_progress" : "fulfilled",
 });
+
+const seedRequestsDirectly = (scale: number) => (sql: Sql) =>
+	sql.withTransaction(
+		Effect.forEach(
+			Array.from({ length: scale }, (_, index) => index),
+			(index) => {
+				const input = scaledSubjectLookupSeedInput(scale, index);
+				const lookupFields = extractRequestLookupFields(input);
+				return sql`INSERT INTO requests ${sql.insert({
+					appeals_json: jsonEncode(input.appeals),
+					authority_json: jsonEncode(input.authority),
+					capture_json: jsonEncode(input.capture),
+					clock_mode: input.clockMode,
+					created_at: input.receivedAt,
+					due_at: input.dueAt,
+					id: input.id,
+					policy_pack: lookupFields.policyPack,
+					received_at: input.receivedAt,
+					requestor_email: lookupFields.requestorEmail,
+					requestor_json: jsonEncode(input.requestor),
+					status: input.status,
+					subject_external_ref: lookupFields.subjectExternalRef,
+					subject_id: lookupFields.subjectId,
+					tenant_id: "tenant-a",
+					updated_at: input.receivedAt,
+				})}`;
+			},
+			{ concurrency: 1, discard: true }
+		)
+	);
 
 const runForTenant = <A>(
 	filename: string,
@@ -296,16 +331,9 @@ describe(Persistence, () => {
 		};
 		for (const scale of scales) {
 			const dbPath = sqliteFile(`subject-scale-${scale}`);
-			const result = await runForTenant(
-				dbPath,
-				"tenant-a",
+			const result = await Effect.runPromise(
 				Effect.gen(function* subjectLookupScaleProgram() {
 					const persistence = yield* Effect.service(Persistence);
-					for (let index = 0; index < scale; index += 1) {
-						yield* persistence.requests.create(
-							scaledSubjectLookupSeedInput(scale, index)
-						);
-					}
 					const started = performance.now();
 					const page = yield* persistence.requests.listBySubject({
 						identifiers: ["subject-scale"],
@@ -314,7 +342,17 @@ describe(Persistence, () => {
 						status: ["in_progress"],
 					});
 					return { elapsedMs: performance.now() - started, page };
-				})
+				}).pipe(
+					Effect.provide(
+						makeSqlitePersistenceLayer({
+							filename: dbPath,
+							migrationHooks: {
+								afterMigrations: seedRequestsDirectly(scale),
+							},
+						})
+					),
+					withTenant("tenant-a")
+				)
 			);
 
 			expect(result.page.items).toHaveLength(
@@ -322,7 +360,7 @@ describe(Persistence, () => {
 			);
 			expect(result.elapsedMs).toBeLessThan(thresholdsMs[scale]);
 		}
-	}, 15_000);
+	});
 
 	it("persists and lists clock segments in deterministic order", async () => {
 		const dbPath = sqliteFile("clock-segments");
