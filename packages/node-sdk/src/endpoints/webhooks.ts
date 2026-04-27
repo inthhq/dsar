@@ -9,6 +9,9 @@ import type {
 	WebhookRotateKeyResponse,
 } from "./types";
 
+/**
+ * Active webhook signing secret plus optional key metadata.
+ */
 export interface WebhookVerificationSecret {
 	/** Optional key id associated with this secret. */
 	readonly id?: string;
@@ -16,15 +19,24 @@ export interface WebhookVerificationSecret {
 	readonly secret: string;
 }
 
+/**
+ * Secrets returned directly or by a webhook signing-secret lookup function.
+ */
 export type WebhookSecretLookupResult =
 	| readonly string[]
 	| readonly WebhookVerificationSecret[];
 
+/**
+ * Resolves active webhook signing secrets for an endpoint and optional key id.
+ */
 export type WebhookSecretLookup = (input: {
 	readonly endpointId?: string;
 	readonly keyId?: string;
 }) => Promise<WebhookSecretLookupResult> | WebhookSecretLookupResult;
 
+/**
+ * Input used to verify a DSAR outbound webhook signature.
+ */
 export interface VerifyWebhookInput {
 	/** Raw request body exactly as signed by DSAR. */
 	readonly body: string | Uint8Array;
@@ -40,6 +52,9 @@ export interface VerifyWebhookInput {
 	readonly lookupSecrets?: WebhookSecretLookup;
 }
 
+/**
+ * Result returned after verifying a DSAR outbound webhook signature.
+ */
 export interface VerifyWebhookResult {
 	/** Whether any supplied secret matched the signature. */
 	readonly verified: boolean;

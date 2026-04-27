@@ -945,6 +945,13 @@ const makeRouteProbes = (): readonly RouteProbe[] => [
 	},
 	{
 		headers: tenantAHeaders,
+		json: { gracePeriodDays: 7 },
+		key: "POST /webhooks/endpoints/:id/rotate-key",
+		method: "POST",
+		path: "/webhooks/endpoints/default/rotate-key",
+	},
+	{
+		headers: tenantAHeaders,
 		json: {
 			intakeSource: BASE_JSON_BODY.intakeSource,
 			jurisdiction: "uk",
@@ -1415,6 +1422,14 @@ describe("api e2e tenant isolation", () => {
 				},
 				config: {
 					auth: authConfig,
+					notificationWebhook: {
+						endpointId: "default",
+						retryDelayMs: 1,
+						retryMaxAttempts: 1,
+						signingSecret: "tenant-a-webhook-secret",
+						timeoutMs: 1000,
+						url: "https://tenant-a.example.test/webhook",
+					},
 				},
 				persistence,
 			});
