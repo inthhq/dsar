@@ -54,7 +54,10 @@ const DEFAULT_WEBHOOK_TIMEOUT_MS = 30_000;
  */
 export const dispatchWebhookNotification = (input: {
 	readonly url: string;
-	readonly signingSecret: string;
+	readonly signingKey: {
+		readonly id: string;
+		readonly secret: string;
+	};
 	readonly timeoutMs: number;
 	readonly event: NotificationDispatchInput;
 }): Effect.Effect<NotificationDispatchResult> =>
@@ -69,7 +72,7 @@ export const dispatchWebhookNotification = (input: {
 			policyVersion: input.event.policyVersion,
 			requestId: input.event.requestId,
 		});
-		const signature = yield* signPayload(body, input.signingSecret);
+		const signature = yield* signPayload(body, input.signingKey.secret);
 		const controller = new AbortController();
 		const safeTimeout = Duration.millis(
 			Number.isFinite(input.timeoutMs) && input.timeoutMs > 0
@@ -93,6 +96,7 @@ export const dispatchWebhookNotification = (input: {
 						"x-dsar-event-id": input.event.eventId,
 						"x-dsar-idempotency-key": input.event.idempotencyKey,
 						"x-dsar-signature": signature,
+						"x-dsar-signature-key-id": input.signingKey.id,
 					},
 					method: "POST",
 					signal: controller.signal,

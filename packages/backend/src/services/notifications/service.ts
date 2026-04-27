@@ -20,6 +20,7 @@ const DEFAULT_TENANT_ID = "tenant-default";
 const DEFAULT_POLICY_VERSION = "policy-v1";
 const DEFAULT_LOCALE = "en-GB";
 const GENERATED_STATUS = "generated";
+const DEFAULT_WEBHOOK_ENDPOINT_ID = "default";
 
 const toGeneratedResult = (
 	eventId: string
@@ -140,6 +141,28 @@ const toDispatchInput = (input: {
 		requestId: input.draft.requestId,
 	};
 };
+
+const resolveWebhookSigningKey = (input: {
+	readonly config: NonNullable<
+		RuntimeServices["config"]["notificationWebhook"]
+	>;
+	readonly services: RuntimeServices;
+	readonly tenantId: string;
+}) =>
+	input.services.repos.persistence.webhookEndpoints
+		.ensureConfigured({
+			createdAt: new Date().toISOString(),
+			id: input.config.endpointId ?? DEFAULT_WEBHOOK_ENDPOINT_ID,
+			signingSecret: input.config.signingSecret,
+			url: input.config.url,
+		})
+		.pipe(
+			withTenant(input.tenantId),
+			Effect.map(({ primaryKey }) => ({
+				id: primaryKey.id,
+				secret: primaryKey.secret,
+			}))
+		);
 
 const appendDeliveryAttempt = (input: {
 	readonly eventId: string;
@@ -339,35 +362,42 @@ export const emitNotificationEvent = (input: {
 
 		// Webhook is optional; we still persist a pending attempt so audit trails can
 		// explain why no outbound webhook dispatch occurred.
-		yield* !webhookConfig || webhookConfig.url.length === 0
-			? appendDeliveryAttempt({
-					attempt: 1,
-					channel: "webhook",
-					destination: "unconfigured",
-					eventId,
-					requestId: input.draft.requestId,
-					status: "pending",
-					tenantId,
-				})
-			: deliverWithRetries({
-					adapterKey: webhookAdapter?.key ?? "webhook-fallback",
-					channel: "webhook",
-					destination: webhookConfig.url,
-					eventId,
-					requestId: input.draft.requestId,
-					retryDelayMs: webhookConfig.retryDelayMs,
-					retryMaxAttempts: webhookConfig.retryMaxAttempts,
-					send: () =>
-						webhookAdapter
-							? webhookAdapter.send(dispatchInput)
-							: dispatchWebhookNotification({
-									event: dispatchInput,
-									signingSecret: webhookConfig.signingSecret,
-									timeoutMs: webhookConfig.timeoutMs,
-									url: webhookConfig.url,
-								}),
-					tenantId,
-				});
+		if (!webhookConfig || webhookConfig.url.length === 0) {
+			yield* appendDeliveryAttempt({
+				attempt: 1,
+				channel: "webhook",
+				destination: "unconfigured",
+				eventId,
+				requestId: input.draft.requestId,
+				status: "pending",
+				tenantId,
+			});
+		} else {
+			const signingKey = yield* resolveWebhookSigningKey({
+				config: webhookConfig,
+				services,
+				tenantId,
+			});
+			yield* deliverWithRetries({
+				adapterKey: webhookAdapter?.key ?? "webhook-fallback",
+				channel: "webhook",
+				destination: webhookConfig.url,
+				eventId,
+				requestId: input.draft.requestId,
+				retryDelayMs: webhookConfig.retryDelayMs,
+				retryMaxAttempts: webhookConfig.retryMaxAttempts,
+				send: () =>
+					webhookAdapter
+						? webhookAdapter.send(dispatchInput)
+						: dispatchWebhookNotification({
+								event: dispatchInput,
+								signingKey,
+								timeoutMs: webhookConfig.timeoutMs,
+								url: webhookConfig.url,
+							}),
+				tenantId,
+			});
+		}
 
 		// Email dispatch can be disabled independently from webhook dispatch.
 		const outboundPolicy = resolveOutboundResendPolicy({

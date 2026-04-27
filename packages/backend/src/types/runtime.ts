@@ -108,6 +108,8 @@ export interface RuntimeConfig {
 	readonly aiEnabled: boolean;
 	/** Optional tenant webhook configuration for outbound notifications. */
 	readonly notificationWebhook?: {
+		/** Stable endpoint id used for signing-key persistence and rotation. */
+		readonly endpointId?: string;
 		/** Webhook endpoint receiving outbound lifecycle notification events. */
 		readonly url: string;
 		/** Shared secret used to sign outbound webhook payloads. */

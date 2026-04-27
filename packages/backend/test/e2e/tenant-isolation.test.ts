@@ -28,6 +28,8 @@ import type {
 	UpdateRequestInput,
 	UpsertRetentionPolicyInput,
 	VerificationEvidenceRecord,
+	WebhookEndpointRecord,
+	WebhookSigningKeyRecord,
 } from "@dsar/persistence";
 import { ukDefaultPack } from "@dsar/policy-packs";
 /* oxlint-disable jest/max-expects -- adversarial route matrix intentionally asserts every protected surface */
@@ -140,6 +142,8 @@ const makeTenantScopedMemoryPersistence = (): PersistenceService => {
 	const auditEvents: AuditEventRecord[] = [];
 	const notificationEvents = new Map<string, NotificationEventRecord>();
 	const notificationAttempts: NotificationDeliveryAttemptRecord[] = [];
+	const webhookEndpoints = new Map<string, WebhookEndpointRecord>();
+	const webhookSigningKeys: WebhookSigningKeyRecord[] = [];
 	const chatState = new Map<string, ChatStateRecord>();
 	const chatSubscriptions = new Map<string, ChatThreadSubscriptionRecord>();
 	const chatLocks = new Map<string, ChatThreadLockRecord>();
@@ -477,6 +481,116 @@ const makeTenantScopedMemoryPersistence = (): PersistenceService => {
 						(evidence) =>
 							evidence.tenantId === tenantId && evidence.requestId === requestId
 					);
+				}),
+		},
+		webhookEndpoints: {
+			ensureConfigured: (input) =>
+				Effect.gen(function* ensureConfiguredWebhookEndpoint() {
+					const tenantId = yield* currentTenantId;
+					const key = scopedKey(tenantId, input.id);
+					const current = webhookEndpoints.get(key);
+					const endpoint: WebhookEndpointRecord = {
+						createdAt: current?.createdAt ?? input.createdAt,
+						id: input.id,
+						tenantId,
+						updatedAt: input.createdAt,
+						url: input.url,
+					};
+					webhookEndpoints.set(key, endpoint);
+					let primaryKey = webhookSigningKeys.find(
+						(signingKey) =>
+							signingKey.tenantId === tenantId &&
+							signingKey.endpointId === input.id &&
+							signingKey.role === "primary"
+					);
+					if (!primaryKey) {
+						primaryKey = {
+							createdAt: input.createdAt,
+							endpointId: input.id,
+							id: input.keyId ?? `${input.id}:primary`,
+							role: "primary",
+							secret: input.signingSecret,
+							tenantId,
+						};
+						webhookSigningKeys.push(primaryKey);
+					}
+					return { endpoint, primaryKey };
+				}),
+			getById: (id) =>
+				Effect.gen(function* getWebhookEndpointById() {
+					const tenantId = yield* currentTenantId;
+					const endpoint = webhookEndpoints.get(scopedKey(tenantId, id));
+					if (!endpoint) {
+						return yield* Effect.fail(
+							new Error(`Missing webhook endpoint ${id}`)
+						);
+					}
+					return endpoint;
+				}),
+			listActiveKeys: (endpointId, now) =>
+				Effect.gen(function* listActiveWebhookKeys() {
+					const tenantId = yield* currentTenantId;
+					return webhookSigningKeys.filter(
+						(signingKey) =>
+							signingKey.tenantId === tenantId &&
+							signingKey.endpointId === endpointId &&
+							(signingKey.role === "primary" ||
+								signingKey.expiresAt === undefined ||
+								signingKey.expiresAt > now)
+					);
+				}),
+			rotateSigningKey: (input) =>
+				Effect.gen(function* rotateWebhookSigningKey() {
+					const tenantId = yield* currentTenantId;
+					const endpoint = webhookEndpoints.get(
+						scopedKey(tenantId, input.endpointId)
+					);
+					if (!endpoint) {
+						return yield* Effect.fail(
+							new Error(`Missing webhook endpoint ${input.endpointId}`)
+						);
+					}
+					const previousIndex = webhookSigningKeys.findIndex(
+						(signingKey) =>
+							signingKey.tenantId === tenantId &&
+							signingKey.endpointId === input.endpointId &&
+							signingKey.role === "primary"
+					);
+					const previousPrimary =
+						previousIndex === -1
+							? undefined
+							: {
+									...(webhookSigningKeys[
+										previousIndex
+									] as WebhookSigningKeyRecord),
+									expiresAt: input.graceExpiresAt,
+									role: "secondary" as const,
+								};
+					if (previousPrimary) {
+						webhookSigningKeys[previousIndex] = previousPrimary;
+					}
+					const newPrimary: WebhookSigningKeyRecord = {
+						createdAt: input.rotatedAt,
+						endpointId: input.endpointId,
+						id: input.newKeyId,
+						role: "primary",
+						secret: input.newSecret,
+						tenantId,
+					};
+					webhookSigningKeys.push(newPrimary);
+					return {
+						activeKeys: webhookSigningKeys.filter(
+							(signingKey) =>
+								signingKey.tenantId === tenantId &&
+								signingKey.endpointId === input.endpointId &&
+								(signingKey.role === "primary" ||
+									signingKey.expiresAt === undefined ||
+									signingKey.expiresAt > input.rotatedAt)
+						),
+						endpoint,
+						newPrimary,
+						previousPrimary,
+					};
 				}),
 		},
 	};

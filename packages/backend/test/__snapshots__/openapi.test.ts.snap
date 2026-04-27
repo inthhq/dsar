@@ -9727,6 +9727,170 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
         ],
       },
     },
+    "/webhooks/endpoints/{id}/rotate-key": {
+      "post": {
+        "operationId": "webhooks_endpoint_rotate_key",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+            },
+          },
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "gracePeriodDays": {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                          },
+                          {
+                            "enum": [
+                              "NaN",
+                            ],
+                            "type": "string",
+                          },
+                          {
+                            "enum": [
+                              "Infinity",
+                            ],
+                            "type": "string",
+                          },
+                          {
+                            "enum": [
+                              "-Infinity",
+                            ],
+                            "type": "string",
+                          },
+                        ],
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+                },
+                "type": "object",
+              },
+            },
+          },
+          "required": true,
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "activeKeyIds": {
+                          "items": {
+                            "type": "string",
+                          },
+                          "type": "array",
+                        },
+                        "endpointId": {
+                          "type": "string",
+                        },
+                        "newPrimaryKeyId": {
+                          "type": "string",
+                        },
+                        "newSigningSecret": {
+                          "type": "string",
+                        },
+                        "previousKeyExpiresAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                            },
+                            {
+                              "type": "null",
+                            },
+                          ],
+                        },
+                        "previousKeyId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                            },
+                            {
+                              "type": "null",
+                            },
+                          ],
+                        },
+                      },
+                      "required": [
+                        "activeKeyIds",
+                        "endpointId",
+                        "newPrimaryKeyId",
+                        "newSigningSecret",
+                      ],
+                      "type": "object",
+                    },
+                    "meta": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": {
+                            "type": "null",
+                          },
+                          "type": "object",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+                    "ok": {
+                      "enum": [
+                        true,
+                      ],
+                      "type": "boolean",
+                    },
+                  },
+                  "required": [
+                    "data",
+                    "ok",
+                  ],
+                  "type": "object",
+                },
+              },
+            },
+            "description": "Success",
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
+                },
+              },
+            },
+            "description": "The request or response did not match the expected schema",
+          },
+        },
+        "security": [
+          {
+            "BearerAuth": [],
+          },
+        ],
+        "summary": "Rotate webhook endpoint signing key",
+        "tags": [
+          "webhooks",
+        ],
+      },
+    },
     "/webhooks/inbound/resend": {
       "post": {
         "operationId": "webhooks_inbound_resend",

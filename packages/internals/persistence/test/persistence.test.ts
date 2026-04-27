@@ -200,6 +200,80 @@ describe(Persistence, () => {
 		});
 	});
 
+	it("persists webhook endpoint signing-key rotation with tenant isolation", async () => {
+		const dbPath = sqliteFile("webhook-rotation");
+		const seeded = await runForTenant(
+			dbPath,
+			"tenant-a",
+			Effect.gen(function* seedAndRotateWebhookEndpoint() {
+				const persistence = yield* Effect.service(Persistence);
+				const ensured = yield* persistence.webhookEndpoints.ensureConfigured({
+					createdAt: "2026-01-01T00:00:00.000Z",
+					id: "default",
+					keyId: "key-old",
+					signingSecret: "old-secret",
+					url: "https://tenant.example/webhook",
+				});
+				const activeBefore = yield* persistence.webhookEndpoints.listActiveKeys(
+					"default",
+					"2026-01-02T00:00:00.000Z"
+				);
+				const rotation = yield* persistence.webhookEndpoints.rotateSigningKey({
+					endpointId: "default",
+					graceExpiresAt: "2026-01-08T00:00:00.000Z",
+					newKeyId: "key-new",
+					newSecret: "new-secret",
+					rotatedAt: "2026-01-02T00:00:00.000Z",
+				});
+				const activeDuringGrace =
+					yield* persistence.webhookEndpoints.listActiveKeys(
+						"default",
+						"2026-01-03T00:00:00.000Z"
+					);
+				const activeAfterGrace =
+					yield* persistence.webhookEndpoints.listActiveKeys(
+						"default",
+						"2026-01-09T00:00:00.000Z"
+					);
+				return {
+					activeAfterGrace,
+					activeBefore,
+					activeDuringGrace,
+					ensured,
+					rotation,
+				};
+			})
+		);
+
+		expect(seeded.ensured.primaryKey.secret).toBe("old-secret");
+		expect(seeded.activeBefore.map((key) => key.id)).toStrictEqual(["key-old"]);
+		expect(seeded.rotation.previousPrimary?.id).toBe("key-old");
+		expect(seeded.rotation.previousPrimary?.role).toBe("secondary");
+		expect(seeded.rotation.previousPrimary?.expiresAt).toBe(
+			"2026-01-08T00:00:00.000Z"
+		);
+		expect(seeded.activeDuringGrace.map((key) => key.id)).toStrictEqual([
+			"key-new",
+			"key-old",
+		]);
+		expect(seeded.activeAfterGrace.map((key) => key.id)).toStrictEqual([
+			"key-new",
+		]);
+
+		const tenantBKeys = await runForTenant(
+			dbPath,
+			"tenant-b",
+			Effect.gen(function* listTenantBWebhookKeys() {
+				const persistence = yield* Effect.service(Persistence);
+				return yield* persistence.webhookEndpoints.listActiveKeys(
+					"default",
+					"2026-01-03T00:00:00.000Z"
+				);
+			})
+		);
+		expect(tenantBKeys).toHaveLength(0);
+	});
+
 	it("persists chat runtime state, subscriptions, and locks", async () => {
 		const dbPath = sqliteFile("chat-runtime-state");
 		const now = Date.now();

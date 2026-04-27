@@ -84,6 +84,25 @@ export interface MinimalPersistence {
 			requestId: string
 		) => Effect.Effect<readonly Record<string, unknown>[]>;
 	};
+	/** Outbound webhook endpoints and signing keys. */
+	readonly webhookEndpoints: {
+		readonly ensureConfigured: (
+			input: Record<string, unknown>
+		) => Effect.Effect<{
+			readonly endpoint: Record<string, unknown>;
+			readonly primaryKey: Record<string, unknown>;
+		}>;
+		readonly getById: (
+			id: string
+		) => Effect.Effect<Record<string, unknown>, Error>;
+		readonly listActiveKeys: (
+			endpointId: string,
+			now: string
+		) => Effect.Effect<readonly Record<string, unknown>[]>;
+		readonly rotateSigningKey: (
+			input: Record<string, unknown>
+		) => Effect.Effect<Record<string, unknown>, Error>;
+	};
 	/** Policy pack versions assigned to individual requests. */
 	readonly policyAssignments: {
 		readonly assign: (
@@ -153,6 +172,12 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 			[]
 		);
 		const notificationAttemptsRef = yield* Ref.make<Record<string, unknown>[]>(
+			[]
+		);
+		const webhookEndpointsRef = yield* Ref.make(
+			new Map<string, Record<string, unknown>>()
+		);
+		const webhookSigningKeysRef = yield* Ref.make<Record<string, unknown>[]>(
 			[]
 		);
 		const chatStateRef = yield* Ref.make(
@@ -526,6 +551,126 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 							)
 						)
 					),
+			},
+			webhookEndpoints: {
+				ensureConfigured: (input: Record<string, unknown>) =>
+					Effect.gen(function* ensureConfiguredWebhookEndpoint() {
+						const endpointId = String(input.id ?? "");
+						const createdAt = String(input.createdAt ?? "");
+						const endpoint = {
+							createdAt,
+							id: endpointId,
+							tenantId: "tenant-default",
+							updatedAt: createdAt,
+							url: String(input.url ?? ""),
+						};
+						yield* Ref.update(webhookEndpointsRef, (endpoints) =>
+							new Map(endpoints).set(endpointId, endpoint)
+						);
+						const primaryKey: Record<string, unknown> = yield* Ref.modify(
+							webhookSigningKeysRef,
+							(keys) => {
+								const current = keys.find(
+									(key) =>
+										key.endpointId === endpointId && key.role === "primary"
+								);
+								if (current) {
+									return [current, keys] as const;
+								}
+								const nextPrimary = {
+									createdAt,
+									endpointId,
+									id:
+										typeof input.keyId === "string"
+											? input.keyId
+											: `${endpointId}:primary`,
+									role: "primary",
+									secret: String(input.signingSecret ?? ""),
+									tenantId: "tenant-default",
+								};
+								return [
+									nextPrimary,
+									[...keys, nextPrimary] as Record<string, unknown>[],
+								] as const;
+							}
+						);
+						return { endpoint, primaryKey };
+					}),
+				getById: (id: string) =>
+					Ref.get(webhookEndpointsRef).pipe(
+						Effect.flatMap((endpoints) => {
+							const endpoint = endpoints.get(id);
+							return endpoint
+								? Effect.succeed(endpoint)
+								: Effect.fail(new Error(`Missing webhook endpoint ${id}`));
+						})
+					),
+				listActiveKeys: (endpointId: string, now: string) =>
+					Ref.get(webhookSigningKeysRef).pipe(
+						Effect.map((keys) =>
+							keys.filter(
+								(key) =>
+									key.endpointId === endpointId &&
+									(key.role === "primary" ||
+										typeof key.expiresAt !== "string" ||
+										key.expiresAt > now)
+							)
+						)
+					),
+				rotateSigningKey: (input: Record<string, unknown>) =>
+					Effect.gen(function* rotateSigningKey() {
+						const endpointId = String(input.endpointId ?? "");
+						const endpoints = yield* Ref.get(webhookEndpointsRef);
+						const endpoint = endpoints.get(endpointId);
+						if (!endpoint) {
+							return yield* Effect.fail(
+								new Error(`Missing webhook endpoint ${endpointId}`)
+							);
+						}
+						const rotatedAt = String(input.rotatedAt ?? "");
+						const graceExpiresAt = String(input.graceExpiresAt ?? "");
+						const newPrimary = {
+							createdAt: rotatedAt,
+							endpointId,
+							id: String(input.newKeyId ?? ""),
+							role: "primary",
+							secret: String(input.newSecret ?? ""),
+							tenantId: "tenant-default",
+						};
+						const previousPrimary = yield* Ref.modify(
+							webhookSigningKeysRef,
+							(keys) => {
+								let previous: Record<string, unknown> | undefined;
+								const demoted = keys.map((key) => {
+									if (key.endpointId === endpointId && key.role === "primary") {
+										previous = {
+											...key,
+											expiresAt: graceExpiresAt,
+											role: "secondary",
+										};
+										return previous;
+									}
+									return key;
+								});
+								return [
+									previous,
+									[...demoted, newPrimary] as Record<string, unknown>[],
+								] as const;
+							}
+						);
+						const activeKeys = yield* Ref.get(webhookSigningKeysRef).pipe(
+							Effect.map((keys) =>
+								keys.filter(
+									(key) =>
+										key.endpointId === endpointId &&
+										(key.role === "primary" ||
+											typeof key.expiresAt !== "string" ||
+											key.expiresAt > rotatedAt)
+								)
+							)
+						);
+						return { activeKeys, endpoint, newPrimary, previousPrimary };
+					}),
 			},
 		};
 	});

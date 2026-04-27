@@ -120,6 +120,11 @@ export const AppealDecideBodySchema = Schema.Struct({
 	explanation: Schema.optional(Schema.String),
 });
 
+/** POST /webhooks/endpoints/:id/rotate-key */
+export const WebhookRotateKeyBodySchema = Schema.Struct({
+	gracePeriodDays: Schema.optional(Schema.Number),
+});
+
 /** PUT /tenants/:tenantId/retention */
 export const RetentionUpdateBodySchema = Schema.Struct({
 	class: RetentionClassSchema,

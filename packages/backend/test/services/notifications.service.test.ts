@@ -9,6 +9,8 @@ import type {
 	CreateVerificationEvidenceInput,
 	PersistenceService,
 	UpdateRequestInput,
+	WebhookEndpointRecord,
+	WebhookSigningKeyRecord,
 } from "@dsar/persistence";
 import { describe, expect, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
@@ -51,6 +53,8 @@ const makeMemoryPersistence = (): {
 		readonly locale: string;
 		readonly createdAt: string;
 	}[] = [];
+	const webhookEndpoints = new Map<string, WebhookEndpointRecord>();
+	const webhookSigningKeys: WebhookSigningKeyRecord[] = [];
 	const attempts: {
 		readonly id: string;
 		readonly tenantId: string;
@@ -172,6 +176,94 @@ const makeMemoryPersistence = (): {
 				create: (_input: CreateVerificationEvidenceInput) =>
 					failNotImplemented("verificationEvidence.create"),
 				listByRequestId: () => Effect.succeed([]),
+			},
+			webhookEndpoints: {
+				ensureConfigured: (input) => {
+					const endpoint: WebhookEndpointRecord = {
+						createdAt:
+							webhookEndpoints.get(input.id)?.createdAt ?? input.createdAt,
+						id: input.id,
+						tenantId: "tenant-default",
+						updatedAt: input.createdAt,
+						url: input.url,
+					};
+					webhookEndpoints.set(input.id, endpoint);
+					let primaryKey = webhookSigningKeys.find(
+						(key) => key.endpointId === input.id && key.role === "primary"
+					);
+					if (!primaryKey) {
+						primaryKey = {
+							createdAt: input.createdAt,
+							endpointId: input.id,
+							id: input.keyId ?? `${input.id}:primary`,
+							role: "primary",
+							secret: input.signingSecret,
+							tenantId: "tenant-default",
+						};
+						webhookSigningKeys.push(primaryKey);
+					}
+					return Effect.succeed({ endpoint, primaryKey });
+				},
+				getById: (id) =>
+					Effect.fromNullishOr(webhookEndpoints.get(id)).pipe(
+						Effect.mapError(() => new Error(`missing webhook endpoint ${id}`))
+					),
+				listActiveKeys: (endpointId, now) =>
+					Effect.succeed(
+						webhookSigningKeys.filter(
+							(key) =>
+								key.endpointId === endpointId &&
+								(key.role === "primary" ||
+									key.expiresAt === undefined ||
+									key.expiresAt > now)
+						)
+					),
+				rotateSigningKey: (input) => {
+					const endpoint = webhookEndpoints.get(input.endpointId);
+					if (!endpoint) {
+						return Effect.fail(
+							new Error(`missing webhook endpoint ${input.endpointId}`)
+						);
+					}
+					const previousIndex = webhookSigningKeys.findIndex(
+						(key) =>
+							key.endpointId === input.endpointId && key.role === "primary"
+					);
+					const previousPrimary =
+						previousIndex === -1
+							? undefined
+							: {
+									...(webhookSigningKeys[
+										previousIndex
+									] as WebhookSigningKeyRecord),
+									expiresAt: input.graceExpiresAt,
+									role: "secondary" as const,
+								};
+					if (previousPrimary) {
+						webhookSigningKeys[previousIndex] = previousPrimary;
+					}
+					const newPrimary: WebhookSigningKeyRecord = {
+						createdAt: input.rotatedAt,
+						endpointId: input.endpointId,
+						id: input.newKeyId,
+						role: "primary",
+						secret: input.newSecret,
+						tenantId: "tenant-default",
+					};
+					webhookSigningKeys.push(newPrimary);
+					return Effect.succeed({
+						activeKeys: webhookSigningKeys.filter(
+							(key) =>
+								key.endpointId === input.endpointId &&
+								(key.role === "primary" ||
+									key.expiresAt === undefined ||
+									key.expiresAt > input.rotatedAt)
+						),
+						endpoint,
+						newPrimary,
+						previousPrimary,
+					});
+				},
 			},
 		},
 	};
@@ -483,6 +575,48 @@ describe("notification retry/backoff behavior", () => {
 			}).pipe(Effect.provideService(RuntimeServicesTag, services))
 		);
 		expect(sendCount).toBe(1);
+	});
+
+	it("signs fallback webhooks with persisted primary key id", async () => {
+		const { vi } = await import("vitest");
+		const memory = makeMemoryPersistence();
+		const receivedHeaders: Record<string, string> = {};
+		vi.stubGlobal(
+			"fetch",
+			vi.fn((_: string | URL | Request, init?: RequestInit) => {
+				const headers = new Headers(init?.headers);
+				for (const [key, value] of headers.entries()) {
+					receivedHeaders[key] = value;
+				}
+				return Promise.resolve(new Response(null, { status: 202 }));
+			})
+		);
+		try {
+			const services = makeServices({
+				disableBuiltInEmail: true,
+				dispatch: "stub",
+				persistence: memory.persistence,
+				retryDelayMs: 1,
+				retryMaxAttempts: 1,
+			});
+			await Effect.runPromise(
+				emitNotificationEvent({
+					draft: makeNotificationDraft({
+						eventType: "request_captured",
+						payload: { note: "signed webhook" },
+						requestId: "req-signed-webhook",
+					}),
+					idempotencyKey: "idem-signed-webhook",
+					tenantId: "tenant-default",
+				}).pipe(Effect.provideService(RuntimeServicesTag, services))
+			);
+			expect(receivedHeaders["x-dsar-signature"]).toMatch(/^[0-9a-f]+$/);
+			expect(receivedHeaders["x-dsar-signature-key-id"]).toBe(
+				"default:primary"
+			);
+		} finally {
+			vi.unstubAllGlobals();
+		}
 	});
 
 	it("uses capability-spec clock webhook event names for lifecycle derivation", () => {

@@ -73,6 +73,8 @@ const makeMemoryPersistence = (): PersistenceService => {
 		readonly createdAt: string;
 	}[] = [];
 	const chatState = new Map<string, unknown>();
+	const webhookEndpoints = new Map<string, Record<string, unknown>>();
+	const webhookSigningKeys: Record<string, unknown>[] = [];
 	const chatSubscriptions = new Set<string>();
 	const chatLocks = new Map<
 		string,
@@ -313,6 +315,77 @@ const makeMemoryPersistence = (): PersistenceService => {
 					)
 				),
 			listByRequestId: () => Effect.succeed([]),
+		},
+		webhookEndpoints: {
+			ensureConfigured: (input) => {
+				const endpoint = {
+					createdAt: input.createdAt,
+					id: input.id,
+					tenantId: "tenant-default",
+					updatedAt: input.createdAt,
+					url: input.url,
+				};
+				webhookEndpoints.set(input.id, endpoint);
+				let primaryKey = webhookSigningKeys.find(
+					(key) => key.endpointId === input.id && key.role === "primary"
+				);
+				if (!primaryKey) {
+					primaryKey = {
+						createdAt: input.createdAt,
+						endpointId: input.id,
+						id: input.keyId ?? `${input.id}:primary`,
+						role: "primary",
+						secret: input.signingSecret,
+						tenantId: "tenant-default",
+					};
+					webhookSigningKeys.push(primaryKey);
+				}
+				return Effect.succeed({ endpoint, primaryKey } as never);
+			},
+			getById: (id) =>
+				Effect.fromNullishOr(webhookEndpoints.get(id)).pipe(
+					Effect.mapError(() => new Error(`Missing webhook endpoint ${id}`))
+				) as never,
+			listActiveKeys: (endpointId, now) =>
+				Effect.succeed(
+					webhookSigningKeys.filter(
+						(key) =>
+							key.endpointId === endpointId &&
+							(key.role === "primary" ||
+								typeof key.expiresAt !== "string" ||
+								key.expiresAt > now)
+					)
+				) as never,
+			rotateSigningKey: (input) => {
+				const endpoint = webhookEndpoints.get(input.endpointId);
+				if (!endpoint) {
+					return Effect.fail(
+						new Error(`Missing webhook endpoint ${input.endpointId}`)
+					) as never;
+				}
+				const previousPrimary = webhookSigningKeys.find(
+					(key) => key.endpointId === input.endpointId && key.role === "primary"
+				);
+				if (previousPrimary) {
+					previousPrimary.role = "secondary";
+					previousPrimary.expiresAt = input.graceExpiresAt;
+				}
+				const newPrimary = {
+					createdAt: input.rotatedAt,
+					endpointId: input.endpointId,
+					id: input.newKeyId,
+					role: "primary",
+					secret: input.newSecret,
+					tenantId: "tenant-default",
+				};
+				webhookSigningKeys.push(newPrimary);
+				return Effect.succeed({
+					activeKeys: webhookSigningKeys,
+					endpoint,
+					newPrimary,
+					previousPrimary,
+				} as never);
+			},
 		},
 	};
 };

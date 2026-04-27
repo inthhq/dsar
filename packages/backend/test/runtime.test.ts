@@ -314,6 +314,82 @@ describe(dsarInstance, () => {
 		);
 	});
 
+	it("rotates configured webhook endpoint signing keys and audits the change", async () => {
+		const basePersistence = makeMemoryPersistence();
+		const auditEvents: unknown[] = [];
+		const baseAuditEvents = basePersistence.auditEvents;
+		const persistence = {
+			...basePersistence,
+			auditEvents: {
+				append: (input: Parameters<typeof baseAuditEvents.append>[0]) => {
+					auditEvents.push(input);
+					return baseAuditEvents.append(input);
+				},
+				listByRequestId: baseAuditEvents.listByRequestId,
+			},
+		};
+		const runtime = dsarInstance({
+			config: {
+				...TEST_RUNTIME_AUTH.config,
+				notificationWebhook: {
+					endpointId: "default",
+					retryDelayMs: 1,
+					retryMaxAttempts: 1,
+					signingSecret: "old-secret",
+					timeoutMs: 1000,
+					url: "https://tenant.example/webhook",
+				},
+			},
+			repos: { persistence },
+		});
+
+		const unauthorized = await runtime.handler(
+			new Request(
+				"https://example.test/webhooks/endpoints/default/rotate-key",
+				{ method: "POST" }
+			)
+		);
+		expect(unauthorized.status).toBe(401);
+
+		const response = await runtime.handler(
+			new Request(
+				"https://example.test/webhooks/endpoints/default/rotate-key",
+				{
+					body: JSON.stringify({ gracePeriodDays: 2 }),
+					headers: {
+						"content-type": "application/json",
+						...adminHeaders,
+					},
+					method: "POST",
+				}
+			)
+		);
+		const body = (await response.json()) as {
+			readonly data: {
+				readonly activeKeyIds: readonly string[];
+				readonly endpointId: string;
+				readonly newPrimaryKeyId: string;
+				readonly newSigningSecret: string;
+				readonly previousKeyExpiresAt?: string;
+				readonly previousKeyId?: string;
+			};
+		};
+
+		expect(response.status).toBe(200);
+		expect(body.data.endpointId).toBe("default");
+		expect(body.data.newSigningSecret).not.toBe("old-secret");
+		expect(body.data.previousKeyId).toBe("default:primary");
+		expect(body.data.previousKeyExpiresAt).toBeDefined();
+		expect(body.data.activeKeyIds).toContain(body.data.newPrimaryKeyId);
+		expect(JSON.stringify(body)).not.toContain("old-secret");
+		expect(auditEvents).toHaveLength(1);
+		expect(auditEvents[0]).toMatchObject({
+			action: "webhook_signing_key_rotated",
+			actor: "tester-admin",
+			object: "webhook_endpoint:default",
+		});
+	});
+
 	it("allows subject principals to read their own requests", async () => {
 		const persistence = makeMemoryPersistence();
 		await seedRequest(persistence);

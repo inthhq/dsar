@@ -156,6 +156,27 @@ export const runMigrations = (sql: Sql) =>
 			FOREIGN KEY (tenant_id, request_id) REFERENCES requests(tenant_id, id)
 		)`;
 
+		yield* sql`CREATE TABLE IF NOT EXISTS webhook_endpoints (
+			id TEXT NOT NULL,
+			tenant_id TEXT NOT NULL,
+			url TEXT NOT NULL,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			PRIMARY KEY (tenant_id, id)
+		)`;
+
+		yield* sql`CREATE TABLE IF NOT EXISTS webhook_signing_keys (
+			id TEXT NOT NULL,
+			tenant_id TEXT NOT NULL,
+			endpoint_id TEXT NOT NULL,
+			secret TEXT NOT NULL,
+			role TEXT NOT NULL,
+			expires_at TEXT,
+			created_at TEXT NOT NULL,
+			PRIMARY KEY (tenant_id, id),
+			FOREIGN KEY (tenant_id, endpoint_id) REFERENCES webhook_endpoints(tenant_id, id)
+		)`;
+
 		yield* sql`CREATE TABLE IF NOT EXISTS chat_state_entries (
 			tenant_id TEXT NOT NULL,
 			cache_key TEXT NOT NULL,
@@ -194,6 +215,11 @@ export const runMigrations = (sql: Sql) =>
 			ON notification_events(tenant_id, idempotency_key)`;
 		yield* sql`CREATE INDEX IF NOT EXISTS idx_notification_attempts_tenant_event
 			ON notification_delivery_attempts(tenant_id, notification_event_id)`;
+		yield* sql`CREATE INDEX IF NOT EXISTS idx_webhook_keys_tenant_endpoint
+			ON webhook_signing_keys(tenant_id, endpoint_id)`;
+		yield* sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_webhook_keys_primary
+			ON webhook_signing_keys(tenant_id, endpoint_id)
+			WHERE role = 'primary'`;
 		yield* sql`CREATE INDEX IF NOT EXISTS idx_chat_state_tenant_expiry
 			ON chat_state_entries(tenant_id, expires_at)`;
 		yield* sql`CREATE INDEX IF NOT EXISTS idx_chat_locks_tenant_expiry

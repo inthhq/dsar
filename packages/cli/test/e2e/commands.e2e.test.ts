@@ -135,6 +135,18 @@ const commandCases: readonly CommandCase[] = [
 		outputIncludes: ["Inbound adapter 'slack' is not configured."],
 	},
 	{
+		argv: [
+			"webhooks",
+			"rotate-key",
+			"default",
+			"--json",
+			'{"gracePeriodDays":7}',
+		],
+		expectedExitCode: 0,
+		id: "webhooks_endpoint_rotate_key",
+		outputIncludes: ['"endpointId":"default"', '"newSigningSecret"'],
+	},
+	{
 		argv: ["requests", "create", "--json", commonCreateBody],
 		expectedExitCode: 0,
 		id: "requests_create",

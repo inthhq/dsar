@@ -91,6 +91,13 @@ export const routeParityMap: readonly RouteParityDefinition[] = [
 		path: "/webhooks/inbound/slack",
 	},
 	{
+		command: ["webhooks", "rotate-key", ":id"],
+		description: "Rotate webhook endpoint signing key.",
+		id: "webhooks_endpoint_rotate_key",
+		method: "POST",
+		path: "/webhooks/endpoints/{id}/rotate-key",
+	},
+	{
 		command: ["requests", "create"],
 		description: "Create request.",
 		id: "requests_create",
