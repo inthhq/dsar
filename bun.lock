@@ -13,7 +13,7 @@
         "@changesets/changelog-github": "^0.5.1",
         "@changesets/cli": "^2.29.7",
         "@effect/vitest": "4.0.0-beta.25",
-        "@typescript/native-preview": "7.0.0-dev.20260225.1",
+        "@typescript/native-preview": "catalog:utils",
         "changeset-conventional-commits": "^0.2.5",
         "lefthook": "2.1.1",
         "oxfmt": "0.36.0",
@@ -35,6 +35,7 @@
       "devDependencies": {
         "@dsar/typescript-config": "workspace:*",
         "@types/node": "catalog:types",
+        "@typescript/native-preview": "catalog:utils",
       },
     },
     "packages/auth-unkey": {
@@ -46,6 +47,7 @@
       "devDependencies": {
         "@dsar/typescript-config": "workspace:*",
         "@effect/vitest": "catalog:effect",
+        "@typescript/native-preview": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
       },
@@ -66,6 +68,7 @@
         "@dsar/typescript-config": "workspace:*",
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
+        "@typescript/native-preview": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
       },
@@ -88,6 +91,7 @@
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
         "@types/node": "catalog:types",
+        "@typescript/native-preview": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
       },
@@ -109,6 +113,7 @@
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
         "@types/node": "catalog:types",
+        "@typescript/native-preview": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
       },
@@ -139,6 +144,7 @@
       "devDependencies": {
         "@dsar/typescript-config": "workspace:*",
         "@types/node": "catalog:types",
+        "@typescript/native-preview": "catalog:utils",
         "tsdown": "catalog:utils",
         "typescript": "catalog:utils",
       },
@@ -163,6 +169,7 @@
         "@dsar/typescript-config": "workspace:*",
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
+        "@typescript/native-preview": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
       },
@@ -184,6 +191,7 @@
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
         "@types/node": "catalog:types",
+        "@typescript/native-preview": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
       },
@@ -198,6 +206,7 @@
         "@dsar/typescript-config": "workspace:*",
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
+        "@typescript/native-preview": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
       },
@@ -213,6 +222,7 @@
         "@dsar/typescript-config": "workspace:*",
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
+        "@typescript/native-preview": "catalog:utils",
         "tsdown": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
@@ -229,6 +239,7 @@
         "@dsar/typescript-config": "workspace:*",
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
+        "@typescript/native-preview": "catalog:utils",
         "tsdown": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
@@ -247,6 +258,7 @@
         "@dsar/typescript-config": "workspace:*",
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
+        "@typescript/native-preview": "catalog:utils",
         "tsdown": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
@@ -264,6 +276,7 @@
         "@dsar/typescript-config": "workspace:*",
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
+        "@typescript/native-preview": "catalog:utils",
         "tsdown": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
@@ -281,6 +294,7 @@
         "@dsar/typescript-config": "workspace:*",
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
+        "@typescript/native-preview": "catalog:utils",
         "fast-check": "^4.5.3",
         "tsdown": "catalog:utils",
         "typescript": "catalog:utils",
@@ -310,6 +324,7 @@
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
         "@types/node": "catalog:types",
+        "@typescript/native-preview": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
       },
@@ -331,6 +346,7 @@
         "@dsar/typescript-config": "workspace:*",
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
+        "@typescript/native-preview": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
       },
@@ -348,6 +364,7 @@
         "@dsar/typescript-config": "workspace:*",
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
+        "@typescript/native-preview": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
       },
@@ -366,6 +383,7 @@
         "@dsar/typescript-config": "workspace:*",
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
+        "@typescript/native-preview": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
       },
@@ -384,6 +402,7 @@
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
         "@types/node": "catalog:types",
+        "@typescript/native-preview": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
       },
@@ -403,6 +422,7 @@
         "@dsar/typescript-config": "workspace:*",
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
+        "@typescript/native-preview": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
       },
@@ -421,6 +441,7 @@
         "@dsar/typescript-config": "workspace:*",
         "@effect/language-service": "catalog:effect",
         "@effect/vitest": "catalog:effect",
+        "@typescript/native-preview": "catalog:utils",
         "typescript": "catalog:utils",
         "vitest": "catalog:utils",
       },
@@ -442,8 +463,9 @@
       "@types/node": "25.3.0",
     },
     "utils": {
+      "@typescript/native-preview": "7.0.0-dev.20260421.2",
       "tsdown": "0.20.3",
-      "typescript": "6.0.0-beta",
+      "typescript": "6.0.3",
       "vitest": "4.0.18",
     },
   },
@@ -1178,21 +1200,21 @@
 
     "@types/ws": ["@types/ws@8.18.1", "", { "dependencies": { "@types/node": "*" } }, "sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg=="],
 
-    "@typescript/native-preview": ["@typescript/native-preview@7.0.0-dev.20260225.1", "", { "optionalDependencies": { "@typescript/native-preview-darwin-arm64": "7.0.0-dev.20260225.1", "@typescript/native-preview-darwin-x64": "7.0.0-dev.20260225.1", "@typescript/native-preview-linux-arm": "7.0.0-dev.20260225.1", "@typescript/native-preview-linux-arm64": "7.0.0-dev.20260225.1", "@typescript/native-preview-linux-x64": "7.0.0-dev.20260225.1", "@typescript/native-preview-win32-arm64": "7.0.0-dev.20260225.1", "@typescript/native-preview-win32-x64": "7.0.0-dev.20260225.1" }, "bin": { "tsgo": "bin/tsgo.js" } }, "sha512-mUf1aON+eZLupLorX4214n4W6uWIz/lvNv81ErzjJylD/GyJPEJkvDLmgIK3bbvLpMwTRWdVJLhpLCah5Qe8iA=="],
+    "@typescript/native-preview": ["@typescript/native-preview@7.0.0-dev.20260421.2", "", { "optionalDependencies": { "@typescript/native-preview-darwin-arm64": "7.0.0-dev.20260421.2", "@typescript/native-preview-darwin-x64": "7.0.0-dev.20260421.2", "@typescript/native-preview-linux-arm": "7.0.0-dev.20260421.2", "@typescript/native-preview-linux-arm64": "7.0.0-dev.20260421.2", "@typescript/native-preview-linux-x64": "7.0.0-dev.20260421.2", "@typescript/native-preview-win32-arm64": "7.0.0-dev.20260421.2", "@typescript/native-preview-win32-x64": "7.0.0-dev.20260421.2" }, "bin": { "tsgo": "bin/tsgo.js" } }, "sha512-CmajHI25HpVWE9R1XFoxr+cphJPxoYD3eFioQtAvXYkMFKnLdICMS9pXre9Pybizb75ejRxjKD5/CVG055rEIg=="],
 
-    "@typescript/native-preview-darwin-arm64": ["@typescript/native-preview-darwin-arm64@7.0.0-dev.20260225.1", "", { "os": "darwin", "cpu": "arm64" }, "sha512-3qSsqv7FmM4z09wEpEXdhmgMfiJF/OMOZa41AdgMsXTTRpX2/38hDg2KGhi3fc24M2T3MnLPLTqw6HyTOBaV1Q=="],
+    "@typescript/native-preview-darwin-arm64": ["@typescript/native-preview-darwin-arm64@7.0.0-dev.20260421.2", "", { "os": "darwin", "cpu": "arm64" }, "sha512-fHv1r3ZmVo6zxuAIFmuX3w9QxbcauoG0SsWhmDwm6VmRubLlOJIcmTtlmV3JAb9oOnq8LuzZljzT7Q39fSMQDw=="],
 
-    "@typescript/native-preview-darwin-x64": ["@typescript/native-preview-darwin-x64@7.0.0-dev.20260225.1", "", { "os": "darwin", "cpu": "x64" }, "sha512-F8ZCCX2UESHcbxvnkd1Dn5PTnOOgpGddFHYgn4usyWRMzNZLPP+YjyGALZe9zdR/D8L0uraND0Haok+TPq8xYg=="],
+    "@typescript/native-preview-darwin-x64": ["@typescript/native-preview-darwin-x64@7.0.0-dev.20260421.2", "", { "os": "darwin", "cpu": "x64" }, "sha512-KWTR6xbW9t+JS7D5DQIzo75pqVXVWUxF9PMv/+S6xsnOjCVd6g0ixHcFpFMJMKSUQpGPr8Z5f7b8ks6LHW01jg=="],
 
-    "@typescript/native-preview-linux-arm": ["@typescript/native-preview-linux-arm@7.0.0-dev.20260225.1", "", { "os": "linux", "cpu": "arm" }, "sha512-Iu5rnCmqwGIMUu//BXkl9VQaxAAsqVvFhU4mJoNexNkMxPqVcu9quqYAouY7tN/95WcKzUsPpyRfkThdbNFO/g=="],
+    "@typescript/native-preview-linux-arm": ["@typescript/native-preview-linux-arm@7.0.0-dev.20260421.2", "", { "os": "linux", "cpu": "arm" }, "sha512-BWLQO3nemLDSV5PoE5GPHe1dU9Dth77Kv8/cle9Ujcp4LhPo0KincdPqFH/qKeU/xvW25mgFueflZ1nc4rKuww=="],
 
-    "@typescript/native-preview-linux-arm64": ["@typescript/native-preview-linux-arm64@7.0.0-dev.20260225.1", "", { "os": "linux", "cpu": "arm64" }, "sha512-Up8Z/QNcwce5C4rWnbLNW5w7lRARdyKZcNbB1NMnaswaGOBdeDmdP0wbVsOgJMoDp6vnun+EkvrSft8hWLLhIg=="],
+    "@typescript/native-preview-linux-arm64": ["@typescript/native-preview-linux-arm64@7.0.0-dev.20260421.2", "", { "os": "linux", "cpu": "arm64" }, "sha512-VLMEuml3BhUb+jaL0TXQ4xvVODxJF+RhkI+tBWvlynsJI4khTXEiwWh+wPOJrsfBRYFRMXEu28Odl/HXkYze8w=="],
 
-    "@typescript/native-preview-linux-x64": ["@typescript/native-preview-linux-x64@7.0.0-dev.20260225.1", "", { "os": "linux", "cpu": "x64" }, "sha512-WWjIfHCWlcriempYYc/sPJ3HFt6znNZKp60nvDNih0+wmxNqEfT5Yzu5zAY0awIe7XLelFSY+bolkpzMYVWEIQ=="],
+    "@typescript/native-preview-linux-x64": ["@typescript/native-preview-linux-x64@7.0.0-dev.20260421.2", "", { "os": "linux", "cpu": "x64" }, "sha512-qUrJWTB5/wv4wnRG0TRXElAxc2kykNiRNyEIEqBbLmzDlrcvAW7RRy8MXoY1ZyTiKGMu14itZ3x9oW6+blFpRw=="],
 
-    "@typescript/native-preview-win32-arm64": ["@typescript/native-preview-win32-arm64@7.0.0-dev.20260225.1", "", { "os": "win32", "cpu": "arm64" }, "sha512-lmfQO+HdmPMk0dtPoNo8dZereTUYNQuapsAI7nFHCP8F25I8eGKKXY2nD1R8W1hp/LmVtske1pqKFNN6IOCt5g=="],
+    "@typescript/native-preview-win32-arm64": ["@typescript/native-preview-win32-arm64@7.0.0-dev.20260421.2", "", { "os": "win32", "cpu": "arm64" }, "sha512-Rc6NsWlZmCs5YUKVzKgwoBOoRUGsPzct4BDMRX0csD1devLBBc4AbUXWKsJRbpwIAnqMO1ld4sNHEb+wXgfNHQ=="],
 
-    "@typescript/native-preview-win32-x64": ["@typescript/native-preview-win32-x64@7.0.0-dev.20260225.1", "", { "os": "win32", "cpu": "x64" }, "sha512-e4eJyzR9ne0XreqYgQNqfX7SNuaePxggnUtVrLERgBv25QKwdQl72GnSXDhdxZHzrb97YwumiXWMQQJj9h8NCg=="],
+    "@typescript/native-preview-win32-x64": ["@typescript/native-preview-win32-x64@7.0.0-dev.20260421.2", "", { "os": "win32", "cpu": "x64" }, "sha512-GQv1+dya1t6EqF2Cpsb+xoozovdX10JUSf6Kl/8xNkTapzmlHd+uMr+8ku3jIASTxoRGn0Mklgjj3MDKrOTuLg=="],
 
     "@ungap/structured-clone": ["@ungap/structured-clone@1.3.0", "", {}, "sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g=="],
 
@@ -2028,7 +2050,7 @@
 
     "type-fest": ["type-fest@5.4.4", "", { "dependencies": { "tagged-tag": "^1.0.0" } }, "sha512-JnTrzGu+zPV3aXIUhnyWJj4z/wigMsdYajGLIYakqyOW1nPllzXEJee0QQbHj+CTIQtXGlAjuK0UY+2xTyjVAw=="],
 
-    "typescript": ["typescript@6.0.0-beta", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-CldZdztDpQRLM1HC6WDQjQkQN5Ub5zRau737a1diGh3lPmb9oRsaWHk1y5iqK0o7+1bNJ0oXfEGRkAogFZBL+Q=="],
+    "typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
 
     "ultracite": ["ultracite@7.2.4", "", { "dependencies": { "@clack/prompts": "^1.0.1", "commander": "^14.0.3", "deepmerge": "^4.3.1", "glob": "^13.0.3", "jsonc-parser": "^3.3.1", "nypm": "^0.6.5" }, "peerDependencies": { "oxlint": "^1.0.0" }, "optionalPeers": ["oxlint"], "bin": { "ultracite": "dist/index.js" } }, "sha512-3b2g2pwZMDSd+PBK8pxYCjEoYaqVSgXD22HS22BxR8GfbmRXJ3VpNu5Z5lNywIxZXsJleWdpGPHibOPYr/xmKg=="],
 

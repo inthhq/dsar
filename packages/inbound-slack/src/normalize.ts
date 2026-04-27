@@ -1,3 +1,4 @@
+import type { SlackEvent } from "@chat-adapter/slack";
 import { asNonEmptyString } from "@dsar/guards";
 
 import { makeSlackMessageParser, toSlackParsedMessageSnapshot } from "./chat";
@@ -29,33 +30,42 @@ const buildChannelName = (input: SlackEventBody): string => {
 	return `slack:${input.surface}`;
 };
 
+const toSlackEvent = (
+	rawEvent: Readonly<Record<string, unknown>>
+): SlackEvent | undefined => {
+	const type = asNonEmptyString(rawEvent.type);
+	if (!type) {
+		return undefined;
+	}
+	return { ...rawEvent, type } as SlackEvent;
+};
+
+const isMessageSurface = (surface: SlackEventBody["surface"]): boolean =>
+	surface === "app_mention" ||
+	surface === "direct_message" ||
+	surface === "message";
+
 const createMessageSnapshot = (
 	input: SlackEventBody,
 	config: ReturnType<typeof defaultSlackInboundConfig>,
 	dependencies: SlackInboundAdapterDependencies
 ): SlackNormalizedInboundPayload["chat"] => {
-	if (!input.rawEvent) {
-		return undefined;
-	}
-	if (
-		input.surface !== "app_mention" &&
-		input.surface !== "direct_message" &&
-		input.surface !== "message"
-	) {
+	if (!input.rawEvent || !isMessageSurface(input.surface)) {
 		return undefined;
 	}
 	if (dependencies.parseChatMessage) {
 		return dependencies.parseChatMessage({ rawEvent: input.rawEvent });
+	}
+	const rawEvent = toSlackEvent(input.rawEvent);
+	if (!rawEvent) {
+		return undefined;
 	}
 	const parser = makeSlackMessageParser({
 		botToken: config.botToken,
 		signingSecret: config.signingSecret,
 		userName: config.userName,
 	});
-	return toSlackParsedMessageSnapshot(
-		parser,
-		input.rawEvent as Readonly<Record<string, unknown>>
-	);
+	return toSlackParsedMessageSnapshot(parser, rawEvent);
 };
 
 const shouldIgnoreEvent = (input: SlackEventBody): boolean => {
