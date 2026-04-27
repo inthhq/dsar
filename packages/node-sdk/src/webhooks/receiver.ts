@@ -1,9 +1,5 @@
 import { isWebhookEventType } from "./types";
-import type {
-	WebhookEvent,
-	WebhookEventPayloadMap,
-	WebhookEventType,
-} from "./types";
+import type { WebhookEvent, WebhookEventType } from "./types";
 import { verifyWebhook, WebhookVerificationError } from "./verify";
 import type { VerifyWebhookInput } from "./verify";
 
@@ -138,7 +134,7 @@ const buildWebhookEvent = (
 ): WebhookEvent => ({
 	...requiredFields,
 	eventType,
-	payload: payload as WebhookEventPayloadMap[typeof eventType],
+	payload,
 });
 
 const parseWebhookEvent = (rawBody: string): ParsedWebhookEvent | undefined => {

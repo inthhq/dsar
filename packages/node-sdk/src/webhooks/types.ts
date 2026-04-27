@@ -28,14 +28,15 @@ export type WebhookEventType = (typeof webhookEventTypes)[number];
 /**
  * Compile-time check that the runtime event list matches backend events.
  */
-export const webhookEventTypeExhaustivenessCheck = true satisfies Exclude<
-	NotificationEventType,
-	WebhookEventType
-> extends never
-	? Exclude<WebhookEventType, NotificationEventType> extends never
-		? true
-		: never
-	: never;
+type AssertTrue<T extends true> = T;
+
+type _WebhookEventTypeExhaustivenessCheck = AssertTrue<
+	Exclude<NotificationEventType, WebhookEventType> extends never
+		? Exclude<WebhookEventType, NotificationEventType> extends never
+			? true
+			: false
+		: false
+>;
 
 /**
  * Per-event payload map for outbound DSAR webhooks.
@@ -74,14 +75,13 @@ export interface WebhookEventPayloadMap {
 /**
  * Compile-time check that the payload map covers every backend event.
  */
-export const webhookPayloadMapExhaustivenessCheck = true satisfies Exclude<
-	NotificationEventType,
-	keyof WebhookEventPayloadMap
-> extends never
-	? Exclude<keyof WebhookEventPayloadMap, NotificationEventType> extends never
-		? true
-		: never
-	: never;
+type _WebhookPayloadMapExhaustivenessCheck = AssertTrue<
+	Exclude<NotificationEventType, keyof WebhookEventPayloadMap> extends never
+		? Exclude<keyof WebhookEventPayloadMap, NotificationEventType> extends never
+			? true
+			: false
+		: false
+>;
 
 /**
  * Parsed outbound DSAR webhook event delivered to registered handlers.

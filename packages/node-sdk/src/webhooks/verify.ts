@@ -82,6 +82,10 @@ const constantTimeEqualHex = (expected: string, provided: string): boolean => {
 export const verifyWebhook = async (
 	input: VerifyWebhookInput
 ): Promise<void> => {
+	if (input.signingSecret.trim().length === 0) {
+		throw new Error("Webhook signing secret is required.");
+	}
+
 	const signature = input.signature.trim().toLowerCase();
 	if (signature.length === 0) {
 		throw new WebhookVerificationError("missing_signature");

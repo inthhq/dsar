@@ -35,6 +35,16 @@ describe("verifyWebhook", () => {
 		).rejects.toMatchObject({ code: "invalid_signature" });
 	});
 
+	it("rejects an empty signing secret before verification", async () => {
+		await expect(
+			verifyWebhook({
+				payload,
+				signature,
+				signingSecret: " ",
+			})
+		).rejects.toThrow("Webhook signing secret is required.");
+	});
+
 	it("rejects a missing signature with a specific error code", async () => {
 		const resultPromise = verifyWebhook({
 			payload,
