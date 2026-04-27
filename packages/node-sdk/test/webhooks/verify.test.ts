@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 
-import { verifyWebhook, WebhookVerificationError } from "#src/webhooks";
+import { verifyWebhook, WebhookVerificationError } from "#src/webhooks/verify";
 
 const payload =
 	'{"eventId":"evt_123","eventType":"request_captured","requestId":"req_123","correlationId":"corr_123","idempotencyKey":"idem_123","policyVersion":"2026-01","locale":"en-US","payload":{"source":"test"}}';
@@ -36,12 +36,28 @@ describe("verifyWebhook", () => {
 	});
 
 	it("rejects a missing signature with a specific error code", async () => {
+		const resultPromise = verifyWebhook({
+			payload,
+			signature: " ",
+			signingSecret,
+		});
+
+		await expect(resultPromise).rejects.toBeInstanceOf(
+			WebhookVerificationError
+		);
+		await expect(resultPromise).rejects.toMatchObject({
+			code: "missing_signature",
+		});
+	});
+
+	it("rejects signatures containing non-hex characters", async () => {
 		await expect(
-			verifyWebhook({ payload, signature: " ", signingSecret })
-		).rejects.toBeInstanceOf(WebhookVerificationError);
-		await expect(
-			verifyWebhook({ payload, signature: " ", signingSecret })
-		).rejects.toMatchObject({ code: "missing_signature" });
+			verifyWebhook({
+				payload,
+				signature: signature.replace("03", "3g"),
+				signingSecret,
+			})
+		).rejects.toMatchObject({ code: "invalid_signature" });
 	});
 
 	it("rejects non-matching signature lengths safely", async () => {

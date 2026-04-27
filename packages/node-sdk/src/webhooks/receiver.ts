@@ -4,7 +4,7 @@ import type {
 	WebhookEventPayloadMap,
 	WebhookEventType,
 } from "./types";
-import { verifyWebhook } from "./verify";
+import { verifyWebhook, WebhookVerificationError } from "./verify";
 import type { VerifyWebhookInput } from "./verify";
 
 /**
@@ -76,6 +76,10 @@ const asString = (value: unknown): string | undefined =>
 	typeof value === "string" && value.length > 0 ? value : undefined;
 
 type RequiredWebhookFields = Omit<WebhookEvent, "eventType" | "payload">;
+type ParsedWebhookEvent = RequiredWebhookFields & {
+	readonly eventType: string;
+	readonly payload: Record<string, unknown>;
+};
 
 const errorResult = (
 	status: 400 | 401 | 500,
@@ -137,20 +141,24 @@ const buildWebhookEvent = (
 	payload: payload as WebhookEventPayloadMap[typeof eventType],
 });
 
-const parseWebhookEvent = (rawBody: string): WebhookEvent | undefined => {
+const parseWebhookEvent = (rawBody: string): ParsedWebhookEvent | undefined => {
 	const parsed = asRecord(JSON.parse(rawBody) as unknown);
-	const eventType = parsed?.eventType;
+	const eventType = asString(parsed?.eventType);
 	const requiredFields = parsed ? readRequiredStrings(parsed) : undefined;
 	const payload = parsed ? asRecord(parsed.payload) : undefined;
-	if (!isWebhookEventType(eventType) || !requiredFields || !payload) {
+	if (!eventType || !requiredFields || !payload) {
 		return undefined;
 	}
-	return buildWebhookEvent(eventType, requiredFields, payload);
+	return {
+		...requiredFields,
+		eventType,
+		payload,
+	};
 };
 
 type ParseReceiverEventResult =
 	| {
-			readonly event: WebhookEvent;
+			readonly event: ParsedWebhookEvent;
 			readonly ok: true;
 	  }
 	| {
@@ -182,21 +190,26 @@ const verifyReceiverSignature = async (input: {
 			signingSecret: input.signingSecret,
 		});
 		return undefined;
-	} catch {
-		return errorResult(401, "invalid_signature");
+	} catch (error) {
+		return error instanceof WebhookVerificationError
+			? errorResult(401, error.code)
+			: errorResult(500, "verification_failed");
 	}
 };
 
 const dispatchEvent = async (
-	event: WebhookEvent,
+	event: ParsedWebhookEvent,
 	handlers: ReadonlyMap<WebhookEventType, WebhookEventHandler<WebhookEventType>>
 ): Promise<WebhookReceiverResult> => {
+	if (!isWebhookEventType(event.eventType)) {
+		return successResult();
+	}
 	const handler = handlers.get(event.eventType);
 	if (!handler) {
 		return successResult();
 	}
 	try {
-		await handler(event);
+		await handler(buildWebhookEvent(event.eventType, event, event.payload));
 		return successResult();
 	} catch {
 		return errorResult(500, "handler_failed");

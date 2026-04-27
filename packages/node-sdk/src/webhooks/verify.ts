@@ -36,6 +36,7 @@ export class WebhookVerificationError extends Error {
 }
 
 const textEncoder = new TextEncoder();
+const hexBytePattern = /^[0-9a-f]{2}$/i;
 
 const bytesToHex = (bytes: ArrayBuffer): string =>
 	[...new Uint8Array(bytes)]
@@ -48,11 +49,11 @@ const hexToBytes = (hex: string): Uint8Array | undefined => {
 	}
 	const bytes = new Uint8Array(hex.length / 2);
 	for (let index = 0; index < hex.length; index += 2) {
-		const byte = Number.parseInt(hex.slice(index, index + 2), 16);
-		if (!Number.isFinite(byte)) {
+		const pair = hex.slice(index, index + 2);
+		if (!hexBytePattern.test(pair)) {
 			return undefined;
 		}
-		bytes[index / 2] = byte;
+		bytes[index / 2] = Number.parseInt(pair, 16);
 	}
 	return bytes;
 };

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import type { Context } from "hono";
 
-import type { WebhookReceiver } from "#src/webhooks";
 import { honoWebhookHandler } from "#src/webhooks/hono";
+import type { WebhookReceiver } from "#src/webhooks/receiver";
 
 const makeReceiver = (status: 200 | 400 | 401 | 500): WebhookReceiver => ({
 	handle: vi.fn().mockResolvedValue({ body: { ok: status === 200 }, status }),

@@ -1,4 +1,4 @@
-import type { NotificationEventType } from "@dsar/backend";
+import type { NotificationEventType } from "@dsar/backend/events/contracts";
 
 /**
  * Runtime list of outbound DSAR webhook event type strings.

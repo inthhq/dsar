@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import type { Response } from "express";
 
-import type { WebhookReceiver } from "#src/webhooks";
 import { expressWebhookHandler } from "#src/webhooks/express";
 import type { ExpressWebhookRequest } from "#src/webhooks/express";
+import type { WebhookReceiver } from "#src/webhooks/receiver";
 
 const makeReceiver = (status: 200 | 400 | 401 | 500): WebhookReceiver => ({
 	handle: vi.fn().mockResolvedValue({ body: { ok: status === 200 }, status }),
@@ -28,6 +28,27 @@ const makeResponse = (): {
 };
 
 describe("expressWebhookHandler", () => {
+	it("passes a string body and signature to the receiver", async () => {
+		const receiver = makeReceiver(200);
+		const handler = expressWebhookHandler(receiver);
+		const { json, response, status } = makeResponse();
+
+		await handler(
+			{
+				body: '{"ok":true}',
+				headers: { "x-dsar-signature": "sig_123" },
+			} as ExpressWebhookRequest,
+			response
+		);
+
+		expect(receiver.handle).toHaveBeenCalledWith({
+			rawBody: '{"ok":true}',
+			signature: "sig_123",
+		});
+		expect(status).toHaveBeenCalledWith(200);
+		expect(json).toHaveBeenCalledWith({ ok: true });
+	});
+
 	it("passes the raw Buffer body and signature to the receiver", async () => {
 		const receiver = makeReceiver(200);
 		const handler = expressWebhookHandler(receiver);

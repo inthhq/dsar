@@ -1,5 +1,5 @@
-export { createWebhookReceiver } from "./receiver";
-export { verifyWebhook, WebhookVerificationError } from "./verify";
+export { createWebhookReceiver } from "./webhooks/receiver";
+export { verifyWebhook, WebhookVerificationError } from "./webhooks/verify";
 export type {
 	WebhookEventHandler,
 	WebhookReceiver,
@@ -7,13 +7,13 @@ export type {
 	WebhookReceiverOptions,
 	WebhookReceiverResponseBody,
 	WebhookReceiverResult,
-} from "./receiver";
+} from "./webhooks/receiver";
 export type {
 	WebhookEvent,
 	WebhookEventPayloadMap,
 	WebhookEventType,
-} from "./types";
+} from "./webhooks/types";
 export type {
 	VerifyWebhookInput,
 	WebhookVerificationErrorCode,
-} from "./verify";
+} from "./webhooks/verify";
