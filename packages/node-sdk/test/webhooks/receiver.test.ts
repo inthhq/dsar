@@ -81,6 +81,12 @@ describe("createWebhookReceiver verification", () => {
 		});
 	});
 
+	it("rejects an empty signing secret during construction", () => {
+		expect(() => createWebhookReceiver({ signingSecret: " " })).toThrow(
+			"Webhook signing secret is required."
+		);
+	});
+
 	it("supports a verify override for tests", async () => {
 		const rawBody = JSON.stringify(sampleEvent);
 		const verify = vi.fn().mockResolvedValue();

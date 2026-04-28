@@ -221,6 +221,10 @@ const dispatchEvent = async (
 export const createWebhookReceiver = (
 	options: WebhookReceiverOptions
 ): WebhookReceiver => {
+	if (options.signingSecret.trim().length === 0) {
+		throw new Error("Webhook signing secret is required.");
+	}
+
 	const verify = options.verify ?? verifyWebhook;
 	const handlers = new Map<
 		WebhookEventType,

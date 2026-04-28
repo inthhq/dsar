@@ -36,6 +36,7 @@ export class WebhookVerificationError extends Error {
 }
 
 const textEncoder = new TextEncoder();
+const emptyBytes = new Uint8Array(0);
 const hexBytePattern = /^[0-9a-f]{2}$/i;
 
 const bytesToHex = (bytes: ArrayBuffer): string =>
@@ -59,17 +60,19 @@ const hexToBytes = (hex: string): Uint8Array | undefined => {
 };
 
 const constantTimeEqualHex = (expected: string, provided: string): boolean => {
-	const expectedBytes = hexToBytes(expected);
-	const providedBytes = hexToBytes(provided);
-	if (!expectedBytes || !providedBytes) {
-		return false;
-	}
-	let difference =
-		expectedBytes.byteLength === providedBytes.byteLength ? 0 : 1;
-	for (let index = 0; index < expectedBytes.byteLength; index += 1) {
-		if ((expectedBytes[index] ?? 0) !== (providedBytes[index] ?? 0)) {
-			difference += 1;
-		}
+	const expectedBytes = hexToBytes(expected) ?? emptyBytes;
+	const providedBytes = hexToBytes(provided) ?? emptyBytes;
+	const maxLength = Math.max(
+		expectedBytes.byteLength,
+		providedBytes.byteLength
+	);
+	let difference = Math.abs(
+		expectedBytes.byteLength - providedBytes.byteLength
+	);
+	for (let index = 0; index < maxLength; index += 1) {
+		difference += Math.abs(
+			(expectedBytes[index] ?? 0) - (providedBytes[index] ?? 0)
+		);
 	}
 	return difference === 0;
 };
