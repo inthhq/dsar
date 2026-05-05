@@ -26,7 +26,9 @@ import type {
 	RetentionPoliciesRepository,
 	VerificationEvidenceRepository,
 	WebhookEndpointsRepository,
+	WebhookSigningKeyRecord,
 } from "../types/domain";
+import type { PersistenceError } from "../types/errors";
 import {
 	mapAuditEventRecord,
 	mapChatStateRecord,
@@ -55,8 +57,11 @@ import {
 	offsetWithFallback,
 } from "./persistence/shared";
 import type { Sql } from "./persistence/shared";
+import { makeWebhookSigningSecretCipher } from "./persistence/webhook-secret-encryption";
+import type { WebhookSigningSecretEncryptionOptions } from "./persistence/webhook-secret-encryption";
 
 export { runMigrations } from "./persistence/migrations";
+export type { WebhookSigningSecretEncryptionOptions } from "./persistence/webhook-secret-encryption";
 
 interface WebhookEndpointSqlRow {
 	readonly id: string;
@@ -70,7 +75,13 @@ interface WebhookSigningKeySqlRow {
 	readonly id: string;
 	readonly tenant_id: string;
 	readonly endpoint_id: string;
-	readonly secret: string;
+	readonly secret_ciphertext: string;
+	readonly secret_data_key_nonce: string;
+	readonly secret_data_key_tag: string;
+	readonly secret_encrypted_data_key: string;
+	readonly secret_key_id: string;
+	readonly secret_nonce: string;
+	readonly secret_tag: string;
 	readonly role: string;
 	readonly expires_at: string | null;
 	readonly created_at: string;
@@ -153,9 +164,15 @@ export interface PersistenceMigrationHooks {
 	readonly afterMigrations?: (sql: Sql) => Effect.Effect<void, unknown>;
 }
 
-const makePersistence = (hooks?: PersistenceMigrationHooks) =>
+const makePersistence = (
+	hooks?: PersistenceMigrationHooks,
+	webhookSigningSecretEncryption?: WebhookSigningSecretEncryptionOptions
+) =>
 	Effect.gen(function* makePersistenceService() {
 		const sql = yield* SqlClient.SqlClient;
+		const webhookSigningSecretCipher = makeWebhookSigningSecretCipher(
+			webhookSigningSecretEncryption
+		);
 		const dbCurrentTimestamp = sql.onDialectOrElse({
 			orElse: () => sql.literal("CURRENT_TIMESTAMP"),
 			pg: () =>
@@ -910,8 +927,27 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 			ensureConfigured: (input) =>
 				Effect.gen(function* ensureConfiguredWebhookEndpoint() {
 					const tenantId = yield* requireTenantId;
+					const mapWebhookSigningKeySqlRow = (
+						row: WebhookSigningKeySqlRow
+					): Effect.Effect<WebhookSigningKeyRecord, PersistenceError> =>
+						Effect.gen(function* decryptWebhookSigningKey() {
+							const secret = yield* webhookSigningSecretCipher.open(row, {
+								endpointId: row.endpoint_id,
+								signingKeyId: row.id,
+								tenantId: row.tenant_id,
+							});
+							return mapWebhookSigningKeyRecord({ ...row, secret });
+						});
 					return yield* sql.withTransaction(
 						Effect.gen(function* ensureConfiguredWebhookEndpointTransaction() {
+							const encryptedSecret = yield* webhookSigningSecretCipher.seal(
+								input.signingSecret,
+								{
+									endpointId: input.id,
+									signingKeyId: input.keyId ?? `${input.id}:primary`,
+									tenantId,
+								}
+							);
 							yield* sql`INSERT INTO webhook_endpoints ${sql.insert({
 								created_at: input.createdAt,
 								id: input.id,
@@ -928,8 +964,8 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 								expires_at: null,
 								id: input.keyId ?? `${input.id}:primary`,
 								role: "primary",
-								secret: input.signingSecret,
 								tenant_id: tenantId,
+								...encryptedSecret,
 							})}
 							ON CONFLICT DO NOTHING`;
 							const endpointRows = yield* sql<WebhookEndpointSqlRow>`SELECT *
@@ -954,7 +990,7 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 							);
 							return {
 								endpoint: mapWebhookEndpointRecord(endpointRow),
-								primaryKey: mapWebhookSigningKeyRecord(primaryRow),
+								primaryKey: yield* mapWebhookSigningKeySqlRow(primaryRow),
 							};
 						})
 					);
@@ -972,6 +1008,17 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 			listActiveKeys: (endpointId, now) =>
 				Effect.gen(function* listActiveWebhookSigningKeys() {
 					const tenantId = yield* requireTenantId;
+					const mapWebhookSigningKeySqlRow = (
+						row: WebhookSigningKeySqlRow
+					): Effect.Effect<WebhookSigningKeyRecord, PersistenceError> =>
+						Effect.gen(function* decryptWebhookSigningKey() {
+							const secret = yield* webhookSigningSecretCipher.open(row, {
+								endpointId: row.endpoint_id,
+								signingKeyId: row.id,
+								tenantId: row.tenant_id,
+							});
+							return mapWebhookSigningKeyRecord({ ...row, secret });
+						});
 					const rows =
 						yield* sql<WebhookSigningKeySqlRow>`SELECT * FROM webhook_signing_keys
 					WHERE tenant_id = ${tenantId}
@@ -985,7 +1032,7 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 						CASE role WHEN 'primary' THEN 0 ELSE 1 END ASC,
 						created_at DESC,
 						id ASC`;
-					return rows.map(mapWebhookSigningKeyRecord);
+					return yield* Effect.forEach(rows, mapWebhookSigningKeySqlRow);
 				}),
 			rollbackSigningKeyRotation: (input) =>
 				Effect.gen(function* rollbackWebhookSigningKeyRotation() {
@@ -1016,9 +1063,28 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 			rotateSigningKey: (input) =>
 				Effect.gen(function* rotateWebhookSigningKey() {
 					const tenantId = yield* requireTenantId;
+					const mapWebhookSigningKeySqlRow = (
+						row: WebhookSigningKeySqlRow
+					): Effect.Effect<WebhookSigningKeyRecord, PersistenceError> =>
+						Effect.gen(function* decryptWebhookSigningKey() {
+							const secret = yield* webhookSigningSecretCipher.open(row, {
+								endpointId: row.endpoint_id,
+								signingKeyId: row.id,
+								tenantId: row.tenant_id,
+							});
+							return mapWebhookSigningKeyRecord({ ...row, secret });
+						});
 					const rotateOnce = () =>
 						sql.withTransaction(
 							Effect.gen(function* rotateWebhookSigningKeyTransaction() {
+								const encryptedSecret = yield* webhookSigningSecretCipher.seal(
+									input.newSecret,
+									{
+										endpointId: input.endpointId,
+										signingKeyId: input.newKeyId,
+										tenantId,
+									}
+								);
 								const endpointRows =
 									yield* sql<WebhookEndpointSqlRow>`UPDATE webhook_endpoints
 							SET updated_at = updated_at
@@ -1043,8 +1109,8 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 									expires_at: null,
 									id: input.newKeyId,
 									role: "primary",
-									secret: input.newSecret,
 									tenant_id: tenantId,
+									...encryptedSecret,
 								})}`;
 								const newRows = yield* sql<WebhookSigningKeySqlRow>`SELECT *
 							FROM webhook_signing_keys
@@ -1064,17 +1130,24 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 									OR expires_at IS NULL
 									OR expires_at > ${input.rotatedAt}
 								)
-							ORDER BY
+								ORDER BY
 								CASE role WHEN 'primary' THEN 0 ELSE 1 END ASC,
 								created_at DESC,
 								id ASC`;
+								const newPrimary = yield* mapWebhookSigningKeySqlRow(newRow);
+								const [previousRow] = previousRows;
+								const previousPrimary = previousRow
+									? yield* mapWebhookSigningKeySqlRow(previousRow)
+									: undefined;
+								const activeKeys = yield* Effect.forEach(
+									activeRows,
+									mapWebhookSigningKeySqlRow
+								);
 								return {
-									activeKeys: activeRows.map(mapWebhookSigningKeyRecord),
+									activeKeys,
 									endpoint: mapWebhookEndpointRecord(endpointRow),
-									newPrimary: mapWebhookSigningKeyRecord(newRow),
-									previousPrimary: previousRows[0]
-										? mapWebhookSigningKeyRecord(previousRows[0])
-										: undefined,
+									newPrimary,
+									previousPrimary,
 								};
 							})
 						);
@@ -1287,10 +1360,17 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 export const makePersistenceLayer = (options: {
 	readonly driver: PersistenceDriver;
 	readonly migrationHooks?: PersistenceMigrationHooks;
+	readonly webhookSigningSecretEncryption?: WebhookSigningSecretEncryptionOptions;
 }): Layer.Layer<Persistence, never, TenantContext> =>
 	Layer.provide(
 		Layer.effect(Persistence)(
-			pipe(makePersistence(options.migrationHooks), Effect.orDie)
+			pipe(
+				makePersistence(
+					options.migrationHooks,
+					options.webhookSigningSecretEncryption
+				),
+				Effect.orDie
+			)
 		),
 		Layer.orDie(options.driver.layer)
 	);

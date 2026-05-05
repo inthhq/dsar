@@ -12,6 +12,11 @@ import type { Sql } from "../src/services/persistence/shared";
 const sqliteFile = (name: string): string =>
 	`/tmp/dsar-persistence-${name}-${crypto.randomUUID()}.sqlite`;
 
+const webhookSigningSecretEncryption = {
+	key: "test-webhook-signing-secret-encryption-key",
+	keyId: "test-key",
+} as const;
+
 const baseRequest = {
 	appeals: [],
 	authority: { status: "verified", type: "subject" },
@@ -134,7 +139,12 @@ const runForTenant = <A>(
 ) =>
 	Effect.runPromise(
 		program.pipe(
-			Effect.provide(makeSqlitePersistenceLayer({ filename })),
+			Effect.provide(
+				makeSqlitePersistenceLayer({
+					filename,
+					webhookSigningSecretEncryption,
+				})
+			),
 			withTenant(tenantId)
 		)
 	);
@@ -680,7 +690,13 @@ describe(Persistence, () => {
 										id,
 										tenant_id,
 										endpoint_id,
-										secret,
+										secret_ciphertext,
+										secret_key_id,
+										secret_nonce,
+										secret_tag,
+										secret_encrypted_data_key,
+										secret_data_key_nonce,
+										secret_data_key_tag,
 										role,
 										expires_at,
 										created_at
@@ -688,7 +704,13 @@ describe(Persistence, () => {
 										${"key-invalid"},
 										${"tenant-a"},
 										${"default"},
-										${"bad-secret"},
+										${"ciphertext"},
+										${"test-key"},
+										${"nonce"},
+										${"tag"},
+										${"encrypted-data-key"},
+										${"data-key-nonce"},
+										${"data-key-tag"},
 										${"invalid"},
 										${null},
 										${"2026-01-01T00:00:00.000Z"}

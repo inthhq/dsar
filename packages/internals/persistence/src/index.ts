@@ -7,6 +7,7 @@ export {
 export type {
 	PersistenceMigrationHooks,
 	PersistenceService,
+	WebhookSigningSecretEncryptionOptions,
 } from "./services/persistence";
 export type { PersistenceDriver, PersistenceDriverKind } from "./sql/driver";
 export { TenantContext, withTenant } from "./tenant/context";
