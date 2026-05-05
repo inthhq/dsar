@@ -443,6 +443,49 @@ describe(dsarInstance, () => {
 		).toStrictEqual(["req-subject-email", "req-subject-id"]);
 	});
 
+	it("falls back to request listing for legacy subject lookup repositories", async () => {
+		const basePersistence = makeMemoryPersistence();
+		const legacyRequests = { ...basePersistence.requests };
+		Reflect.deleteProperty(legacyRequests, "listBySubject");
+		const persistence = {
+			...basePersistence,
+			requests: legacyRequests,
+		};
+		await seedRequest(persistence, { id: "req-subject-id" });
+		await seedRequest(persistence, {
+			id: "req-subject-email",
+			requestorEmail: "subject-1",
+			subjectId: "other-subject",
+		});
+		await seedRequest(persistence, {
+			id: "req-other-subject",
+			subjectId: "other-subject",
+		});
+		const runtime = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			repos: { persistence },
+		});
+
+		const response = await runtime.handler(
+			new Request("https://example.test/subjects/subject-1", {
+				headers: actorHeaders,
+				method: "GET",
+			})
+		);
+		const body = (await response.json()) as {
+			readonly data: {
+				readonly requests: readonly { readonly id: string }[];
+			};
+			readonly ok: boolean;
+		};
+
+		expect(response.status).toBe(200);
+		expect(body.ok).toBe(true);
+		expect(
+			body.data.requests.map((request) => request.id).toSorted()
+		).toStrictEqual(["req-subject-email", "req-subject-id"]);
+	});
+
 	it("paginates and filters subject profile request lookup without using full request list", async () => {
 		const basePersistence = makeMemoryPersistence();
 		const persistence = {

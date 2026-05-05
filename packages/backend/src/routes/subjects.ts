@@ -1,5 +1,11 @@
 import { asNonEmptyString } from "@dsar/guards";
-import type { RequestSubjectCursor } from "@dsar/persistence";
+import type {
+	ListRequestsBySubjectInput,
+	RequestRecord,
+	RequestSubjectCursor,
+	RequestSubjectPage,
+	RequestsRepository,
+} from "@dsar/persistence";
 import { withTenant } from "@dsar/persistence";
 import { IsoTimestampSchema } from "@dsar/schema";
 import * as Effect from "effect/Effect";
@@ -25,6 +31,120 @@ import type { RouteDefinition } from "./types";
 const DEFAULT_SUBJECT_PAGE_SIZE = 50;
 const normalizeIdentifier = (value: string): string =>
 	value.trim().toLowerCase();
+
+type RequestsRepositoryWithOptionalSubjectLookup = Omit<
+	RequestsRepository,
+	"listBySubject"
+> &
+	Partial<Pick<RequestsRepository, "listBySubject">>;
+
+const asJsonRecord = (
+	value: unknown
+): Readonly<Record<string, unknown>> | undefined =>
+	typeof value === "object" && value !== null && !Array.isArray(value)
+		? (value as Readonly<Record<string, unknown>>)
+		: undefined;
+
+const normalizeUnknownIdentifier = (value: unknown): string | null =>
+	typeof value === "string" && value.trim().length > 0
+		? normalizeIdentifier(value)
+		: null;
+
+const requestMatchesSubjectIdentifiers = (
+	record: RequestRecord,
+	identifiers: ReadonlySet<string>
+): boolean => {
+	const capture = asJsonRecord(record.capture);
+	const subject = asJsonRecord(capture?.subject);
+	const requestor = asJsonRecord(record.requestor);
+	const recordIdentifiers = [
+		normalizeUnknownIdentifier(subject?.subjectId),
+		normalizeUnknownIdentifier(subject?.externalRef),
+		normalizeUnknownIdentifier(requestor?.email),
+	].filter((value): value is string => value !== null);
+	return recordIdentifiers.some((identifier) => identifiers.has(identifier));
+};
+
+const requestPolicyPack = (record: RequestRecord): string | undefined => {
+	const capture = asJsonRecord(record.capture);
+	const policy = asJsonRecord(capture?.policy);
+	return typeof policy?.policyPack === "string" && policy.policyPack.length > 0
+		? policy.policyPack
+		: undefined;
+};
+
+const legacyListRequestsBySubject = (
+	records: readonly RequestRecord[],
+	input: ListRequestsBySubjectInput
+): RequestSubjectPage => {
+	const identifiers = new Set(
+		input.identifiers
+			.map(normalizeIdentifier)
+			.filter((value) => value.length > 0)
+	);
+	const limit = input.limit ?? DEFAULT_SUBJECT_PAGE_SIZE;
+	if (identifiers.size === 0) {
+		return { items: [], limit };
+	}
+	const statuses = input.status ? new Set(input.status) : new Set<string>();
+	const matchingRecords = records
+		.filter((record) => {
+			if (!requestMatchesSubjectIdentifiers(record, identifiers)) {
+				return false;
+			}
+			if (statuses.size > 0 && !statuses.has(record.status)) {
+				return false;
+			}
+			if (input.createdAfter && record.createdAt <= input.createdAfter) {
+				return false;
+			}
+			if (input.createdBefore && record.createdAt >= input.createdBefore) {
+				return false;
+			}
+			if (input.policyPack && requestPolicyPack(record) !== input.policyPack) {
+				return false;
+			}
+			if (
+				input.cursor &&
+				!(
+					record.createdAt < input.cursor.createdAt ||
+					(record.createdAt === input.cursor.createdAt &&
+						record.id < input.cursor.id)
+				)
+			) {
+				return false;
+			}
+			return true;
+		})
+		.toSorted((left, right) => {
+			const createdOrder = right.createdAt.localeCompare(left.createdAt);
+			return createdOrder === 0
+				? right.id.localeCompare(left.id)
+				: createdOrder;
+		});
+	const items = matchingRecords.slice(0, limit);
+	const last = items.at(-1);
+	return {
+		items,
+		limit,
+		nextCursor:
+			matchingRecords.length > limit && last
+				? { createdAt: last.createdAt, id: last.id }
+				: undefined,
+	};
+};
+
+const listRequestsBySubject = (
+	requests: RequestsRepositoryWithOptionalSubjectLookup,
+	input: ListRequestsBySubjectInput
+): ReturnType<RequestsRepository["listBySubject"]> => {
+	if (typeof requests.listBySubject === "function") {
+		return requests.listBySubject(input);
+	}
+	return requests
+		.list({ limit: MAX_LIST_LIMIT })
+		.pipe(Effect.map((records) => legacyListRequestsBySubject(records, input)));
+};
 
 const parseStatusFilter = (value: string | null): readonly string[] =>
 	value
@@ -161,8 +281,10 @@ export const subjectRoutes: readonly RouteDefinition[] = [
 					});
 				}
 				const tenantId = yield* requireRequestTenantId(services.requestContext);
-				const page = yield* services.repos.persistence.requests
-					.listBySubject({
+				const page = yield* listRequestsBySubject(
+					services.repos.persistence
+						.requests as RequestsRepositoryWithOptionalSubjectLookup,
+					{
 						createdAfter,
 						createdBefore,
 						cursor,
@@ -170,8 +292,8 @@ export const subjectRoutes: readonly RouteDefinition[] = [
 						limit,
 						policyPack: asNonEmptyString(searchParams.get("policy_pack")),
 						status: parseStatusFilter(searchParams.get("status")),
-					})
-					.pipe(withTenant(tenantId));
+					}
+				).pipe(withTenant(tenantId));
 				return ok({
 					pagination: {
 						limit: page.limit,

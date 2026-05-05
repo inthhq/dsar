@@ -35,6 +35,7 @@ export type {
 	PaginationInput,
 	PolicyAssignmentRecord,
 	RequestRecord,
+	RequestsRepository,
 	RequestSubjectCursor,
 	RequestSubjectPage,
 	RequestTimelineEventRecord,
