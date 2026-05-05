@@ -12,6 +12,11 @@ import type { Sql } from "../src/services/persistence/shared";
 const sqliteFile = (name: string): string =>
 	`/tmp/dsar-persistence-${name}-${crypto.randomUUID()}.sqlite`;
 
+const webhookSigningSecretEncryption = {
+	key: "test-webhook-signing-secret-encryption-key",
+	keyId: "test-key",
+} as const;
+
 const baseRequest = {
 	appeals: [],
 	authority: { status: "verified", type: "subject" },
@@ -134,7 +139,12 @@ const runForTenant = <A>(
 ) =>
 	Effect.runPromise(
 		program.pipe(
-			Effect.provide(makeSqlitePersistenceLayer({ filename })),
+			Effect.provide(
+				makeSqlitePersistenceLayer({
+					filename,
+					webhookSigningSecretEncryption,
+				})
+			),
 			withTenant(tenantId)
 		)
 	);
@@ -485,6 +495,236 @@ describe(Persistence, () => {
 			]);
 			expect(result.attempts[1]?.status).toBe("failed");
 		});
+	});
+
+	it("persists webhook endpoint signing-key rotation with tenant isolation", async () => {
+		const dbPath = sqliteFile("webhook-rotation");
+		const seeded = await runForTenant(
+			dbPath,
+			"tenant-a",
+			Effect.gen(function* seedAndRotateWebhookEndpoint() {
+				const persistence = yield* Effect.service(Persistence);
+				const ensured = yield* persistence.webhookEndpoints.ensureConfigured({
+					createdAt: "2026-01-01T00:00:00.000Z",
+					id: "default",
+					keyId: "key-old",
+					signingSecret: "old-secret",
+					url: "https://tenant.example/webhook",
+				});
+				const activeBefore = yield* persistence.webhookEndpoints.listActiveKeys(
+					"default",
+					"2026-01-02T00:00:00.000Z"
+				);
+				const rotation = yield* persistence.webhookEndpoints.rotateSigningKey({
+					endpointId: "default",
+					graceExpiresAt: "2026-01-08T00:00:00.000Z",
+					newKeyId: "key-new",
+					newSecret: "new-secret",
+					rotatedAt: "2026-01-02T00:00:00.000Z",
+				});
+				const activeDuringGrace =
+					yield* persistence.webhookEndpoints.listActiveKeys(
+						"default",
+						"2026-01-03T00:00:00.000Z"
+					);
+				const activeAfterGrace =
+					yield* persistence.webhookEndpoints.listActiveKeys(
+						"default",
+						"2026-01-09T00:00:00.000Z"
+					);
+				return {
+					activeAfterGrace,
+					activeBefore,
+					activeDuringGrace,
+					ensured,
+					rotation,
+				};
+			})
+		);
+
+		expect(seeded.ensured.primaryKey.secret).toBe("old-secret");
+		expect(seeded.activeBefore.map((key) => key.id)).toStrictEqual(["key-old"]);
+		expect(seeded.rotation.previousPrimary?.id).toBe("key-old");
+		expect(seeded.rotation.previousPrimary?.role).toBe("secondary");
+		expect(seeded.rotation.previousPrimary?.expiresAt).toBe(
+			"2026-01-08T00:00:00.000Z"
+		);
+		expect(seeded.activeDuringGrace.map((key) => key.id)).toStrictEqual([
+			"key-new",
+			"key-old",
+		]);
+		expect(seeded.activeAfterGrace.map((key) => key.id)).toStrictEqual([
+			"key-new",
+		]);
+
+		const tenantBKeys = await runForTenant(
+			dbPath,
+			"tenant-b",
+			Effect.gen(function* listTenantBWebhookKeys() {
+				const persistence = yield* Effect.service(Persistence);
+				return yield* persistence.webhookEndpoints.listActiveKeys(
+					"default",
+					"2026-01-03T00:00:00.000Z"
+				);
+			})
+		);
+		expect(tenantBKeys).toHaveLength(0);
+	});
+
+	it("seeds webhook primary keys atomically", async () => {
+		const dbPath = sqliteFile("webhook-ensure-concurrency");
+		const ensureEndpoint = () =>
+			runForTenant(
+				dbPath,
+				"tenant-a",
+				Effect.gen(function* ensureWebhookEndpoint() {
+					const persistence = yield* Effect.service(Persistence);
+					return yield* persistence.webhookEndpoints.ensureConfigured({
+						createdAt: "2026-01-01T00:00:00.000Z",
+						id: "default",
+						signingSecret: "old-secret",
+						url: "https://tenant.example/webhook",
+					});
+				})
+			);
+
+		await Promise.all([ensureEndpoint(), ensureEndpoint()]);
+
+		const activeKeys = await runForTenant(
+			dbPath,
+			"tenant-a",
+			Effect.gen(function* listWebhookKeys() {
+				const persistence = yield* Effect.service(Persistence);
+				return yield* persistence.webhookEndpoints.listActiveKeys(
+					"default",
+					"2026-01-02T00:00:00.000Z"
+				);
+			})
+		);
+
+		expect(activeKeys.map((key) => key.id)).toStrictEqual(["default:primary"]);
+	});
+
+	it("rotates webhook signing keys transactionally under concurrency", async () => {
+		const dbPath = sqliteFile("webhook-rotate-concurrency");
+		await runForTenant(
+			dbPath,
+			"tenant-a",
+			Effect.gen(function* seedWebhookEndpoint() {
+				const persistence = yield* Effect.service(Persistence);
+				yield* persistence.webhookEndpoints.ensureConfigured({
+					createdAt: "2026-01-01T00:00:00.000Z",
+					id: "default",
+					keyId: "key-old",
+					signingSecret: "old-secret",
+					url: "https://tenant.example/webhook",
+				});
+			})
+		);
+		const rotateEndpoint = (newKeyId: string, rotatedAt: string) =>
+			runForTenant(
+				dbPath,
+				"tenant-a",
+				Effect.gen(function* rotateWebhookEndpoint() {
+					const persistence = yield* Effect.service(Persistence);
+					return yield* persistence.webhookEndpoints.rotateSigningKey({
+						endpointId: "default",
+						graceExpiresAt: "2026-01-08T00:00:00.000Z",
+						newKeyId,
+						newSecret: `${newKeyId}-secret`,
+						rotatedAt,
+					});
+				})
+			);
+
+		await Promise.all([
+			rotateEndpoint("key-new-a", "2026-01-02T00:00:00.000Z"),
+			rotateEndpoint("key-new-b", "2026-01-02T00:00:01.000Z"),
+		]);
+
+		const activeKeys = await runForTenant(
+			dbPath,
+			"tenant-a",
+			Effect.gen(function* listWebhookKeys() {
+				const persistence = yield* Effect.service(Persistence);
+				return yield* persistence.webhookEndpoints.listActiveKeys(
+					"default",
+					"2026-01-03T00:00:00.000Z"
+				);
+			})
+		);
+
+		expect(activeKeys.filter((key) => key.role === "primary")).toHaveLength(1);
+		expect(activeKeys[0]?.role).toBe("primary");
+	});
+
+	it("rejects invalid webhook signing key roles at the database layer", async () => {
+		const dbPath = sqliteFile("webhook-role-check");
+		let rejectedInvalidRole = false;
+		await Effect.runPromise(
+			Effect.gen(function* initializePersistence() {
+				const persistence = yield* Effect.service(Persistence);
+				return yield* persistence.requests.list();
+			}).pipe(
+				Effect.provide(
+					makeSqlitePersistenceLayer({
+						filename: dbPath,
+						migrationHooks: {
+							afterMigrations: (sql) =>
+								Effect.gen(function* insertInvalidWebhookSigningKey() {
+									yield* sql`INSERT INTO webhook_endpoints (
+										id,
+										tenant_id,
+										url,
+										created_at,
+										updated_at
+									) VALUES (
+										${"default"},
+										${"tenant-a"},
+										${"https://tenant.example/webhook"},
+										${"2026-01-01T00:00:00.000Z"},
+										${"2026-01-01T00:00:00.000Z"}
+									)`;
+									const result =
+										yield* Effect.result(sql`INSERT INTO webhook_signing_keys (
+										id,
+										tenant_id,
+										endpoint_id,
+										secret_ciphertext,
+										secret_key_id,
+										secret_nonce,
+										secret_tag,
+										secret_encrypted_data_key,
+										secret_data_key_nonce,
+										secret_data_key_tag,
+										role,
+										expires_at,
+										created_at
+									) VALUES (
+										${"key-invalid"},
+										${"tenant-a"},
+										${"default"},
+										${"ciphertext"},
+										${"test-key"},
+										${"nonce"},
+										${"tag"},
+										${"encrypted-data-key"},
+										${"data-key-nonce"},
+										${"data-key-tag"},
+										${"invalid"},
+										${null},
+										${"2026-01-01T00:00:00.000Z"}
+									)`);
+									rejectedInvalidRole = result._tag === "Failure";
+								}),
+						},
+					})
+				),
+				withTenant("tenant-a")
+			)
+		);
+
+		expect(rejectedInvalidRole).toBe(true);
 	});
 
 	it("persists chat runtime state, subscriptions, and locks", async () => {

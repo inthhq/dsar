@@ -1,3 +1,4 @@
+import { PersistenceInvalidRecordError, withTenant } from "@dsar/persistence";
 import { describe, expect, expectTypeOf, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 
@@ -331,6 +332,236 @@ describe(dsarInstance, () => {
 		expect(badPayloadBody.error.docsUrl).toContain(
 			"https://dsar-sdk.dev/errors/"
 		);
+	});
+
+	it("rotates configured webhook endpoint signing keys and audits the change", async () => {
+		const basePersistence = makeMemoryPersistence();
+		const auditEvents: unknown[] = [];
+		const baseAuditEvents = basePersistence.auditEvents;
+		const persistence = {
+			...basePersistence,
+			auditEvents: {
+				append: (input: Parameters<typeof baseAuditEvents.append>[0]) => {
+					auditEvents.push(input);
+					return baseAuditEvents.append(input);
+				},
+				listByRequestId: baseAuditEvents.listByRequestId,
+			},
+		};
+		const runtime = dsarInstance({
+			config: {
+				...TEST_RUNTIME_AUTH.config,
+				notificationWebhook: {
+					endpointId: "default",
+					retryDelayMs: 1,
+					retryMaxAttempts: 1,
+					signingSecret: "old-secret",
+					tenantScoped: true,
+					timeoutMs: 1000,
+					url: "https://tenant.example/webhook",
+				},
+			},
+			repos: { persistence },
+		});
+
+		const unauthorized = await runtime.handler(
+			new Request(
+				"https://example.test/webhooks/endpoints/default/rotate-key",
+				{ method: "POST" }
+			)
+		);
+		expect(unauthorized.status).toBe(401);
+
+		const forbiddenSubject = await runtime.handler(
+			new Request(
+				"https://example.test/webhooks/endpoints/default/rotate-key",
+				{
+					body: "{}",
+					headers: {
+						"content-type": "application/json",
+						...subjectHeaders,
+					},
+					method: "POST",
+				}
+			)
+		);
+		expect(forbiddenSubject.status).toBe(403);
+
+		for (const invalidGracePeriod of [-1, 1.5, Number.MAX_SAFE_INTEGER]) {
+			const invalid = await runtime.handler(
+				new Request(
+					"https://example.test/webhooks/endpoints/default/rotate-key",
+					{
+						body: JSON.stringify({ gracePeriodDays: invalidGracePeriod }),
+						headers: {
+							"content-type": "application/json",
+							...adminHeaders,
+						},
+						method: "POST",
+					}
+				)
+			);
+			expect(invalid.status).toBe(400);
+		}
+
+		const response = await runtime.handler(
+			new Request(
+				"https://example.test/webhooks/endpoints/default/rotate-key",
+				{
+					body: JSON.stringify({ gracePeriodDays: 0 }),
+					headers: {
+						"content-type": "application/json",
+						...adminHeaders,
+					},
+					method: "POST",
+				}
+			)
+		);
+		const body = (await response.json()) as {
+			readonly data: {
+				readonly activeKeyIds: readonly string[];
+				readonly endpointId: string;
+				readonly newPrimaryKeyId: string;
+				readonly newSigningSecret: string;
+				readonly previousKeyExpiresAt?: string;
+				readonly previousKeyId?: string;
+			};
+		};
+
+		expect(response.status).toBe(200);
+		expect(body.data.endpointId).toBe("default");
+		expect(body.data.newSigningSecret).not.toBe("old-secret");
+		expect(body.data.previousKeyId).toBe("default:primary");
+		expect(body.data.previousKeyExpiresAt).toBeDefined();
+		expect(body.data.activeKeyIds).toContain(body.data.newPrimaryKeyId);
+		expect(JSON.stringify(body)).not.toContain("old-secret");
+		expect(auditEvents).toHaveLength(1);
+		expect(auditEvents[0]).toMatchObject({
+			action: "webhook_signing_key_rotated",
+			actor: "tester-admin",
+			object: "webhook_endpoint:default",
+		});
+	});
+
+	it("defaults omitted webhook signing key rotation grace period", async () => {
+		const runtime = dsarInstance({
+			config: {
+				...TEST_RUNTIME_AUTH.config,
+				notificationWebhook: {
+					endpointId: "default",
+					retryDelayMs: 1,
+					retryMaxAttempts: 1,
+					signingSecret: "old-secret",
+					tenantScoped: true,
+					timeoutMs: 1000,
+					url: "https://tenant.example/webhook",
+				},
+			},
+			repos: { persistence: makeMemoryPersistence() },
+		});
+
+		const response = await runtime.handler(
+			new Request(
+				"https://example.test/webhooks/endpoints/default/rotate-key",
+				{
+					headers: adminHeaders,
+					method: "POST",
+				}
+			)
+		);
+		const body = (await response.json()) as {
+			readonly data: { readonly previousKeyExpiresAt?: string };
+		};
+
+		expect(response.status).toBe(200);
+		expect(body.data.previousKeyExpiresAt).toBeDefined();
+	});
+
+	it("returns not found when rotating a missing webhook endpoint", async () => {
+		const runtime = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			repos: { persistence: makeMemoryPersistence() },
+		});
+
+		const response = await runtime.handler(
+			new Request(
+				"https://example.test/webhooks/endpoints/missing/rotate-key",
+				{
+					body: "{}",
+					headers: {
+						"content-type": "application/json",
+						...adminHeaders,
+					},
+					method: "POST",
+				}
+			)
+		);
+		const body = (await response.json()) as ErrorEnvelope;
+
+		expect(response.status).toBe(404);
+		expect(body.error.code).toBe("PERSISTENCE_ENTITY_NOT_FOUND");
+	});
+
+	it("rolls back webhook signing key rotation when audit append fails", async () => {
+		const basePersistence = makeMemoryPersistence();
+		const baseAuditEvents = basePersistence.auditEvents;
+		const persistence = {
+			...basePersistence,
+			auditEvents: {
+				append: (_input: Parameters<typeof baseAuditEvents.append>[0]) =>
+					Effect.fail(
+						new PersistenceInvalidRecordError({
+							entity: "audit_events",
+							field: "hash",
+							value: "audit unavailable",
+						})
+					),
+				listByRequestId: baseAuditEvents.listByRequestId,
+			},
+		};
+		const runtime = dsarInstance({
+			config: {
+				...TEST_RUNTIME_AUTH.config,
+				notificationWebhook: {
+					endpointId: "default",
+					retryDelayMs: 1,
+					retryMaxAttempts: 1,
+					signingSecret: "old-secret",
+					tenantScoped: true,
+					timeoutMs: 1000,
+					url: "https://tenant.example/webhook",
+				},
+			},
+			repos: { persistence },
+		});
+
+		const response = await runtime.handler(
+			new Request(
+				"https://example.test/webhooks/endpoints/default/rotate-key",
+				{
+					body: "{}",
+					headers: {
+						"content-type": "application/json",
+						...adminHeaders,
+					},
+					method: "POST",
+				}
+			)
+		);
+		const activeKeys = await Effect.runPromise(
+			basePersistence.webhookEndpoints
+				.listActiveKeys("default", new Date().toISOString())
+				.pipe(withTenant("tenant-default"))
+		);
+
+		expect(response.status).toBe(500);
+		expect(activeKeys).toStrictEqual([
+			expect.objectContaining({
+				id: "default:primary",
+				role: "primary",
+				secret: "old-secret",
+			}),
+		]);
 	});
 
 	it("allows subject principals to read their own requests", async () => {

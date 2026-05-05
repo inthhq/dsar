@@ -39,6 +39,7 @@ const requiredPaths = [
 	"/policies/custom/activate",
 	"/policies/custom/deactivate",
 	"/webhooks/inbound/resend",
+	"/webhooks/endpoints/{id}/rotate-key",
 ] as const;
 
 describe("@dsar/node-sdk parity checks", () => {
@@ -95,5 +96,6 @@ describe("@dsar/node-sdk parity checks", () => {
 		expectTypeOf(sdk.status).toBeFunction();
 		expectTypeOf(sdk.init).toBeFunction();
 		expectTypeOf(sdk.webhooks.inboundResend).toBeFunction();
+		expectTypeOf(sdk.webhooks.rotateKey).toBeFunction();
 	});
 });

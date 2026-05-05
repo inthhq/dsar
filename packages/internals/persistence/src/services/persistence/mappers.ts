@@ -14,6 +14,8 @@ import type {
 	RequestTimelineEventRecord,
 	RetentionPolicyRecord,
 	VerificationEvidenceRecord,
+	WebhookEndpointRecord,
+	WebhookSigningKeyRecord,
 } from "../../types/domain";
 import type { PersistenceInvalidRecordError } from "../../types/errors";
 import {
@@ -378,3 +380,47 @@ export const mapNotificationDeliveryAttemptRecordEffect = (row: {
 		status,
 		tenantId: row.tenant_id,
 	}));
+
+/**
+ * Maps a SQL row into a webhook endpoint domain record.
+ *
+ * @param row - SQL row selected from `webhook_endpoints`.
+ * @returns Decoded webhook endpoint domain record.
+ */
+export const mapWebhookEndpointRecord = (row: {
+	readonly id: string;
+	readonly tenant_id: string;
+	readonly url: string;
+	readonly created_at: string;
+	readonly updated_at: string;
+}): WebhookEndpointRecord => ({
+	createdAt: row.created_at,
+	id: row.id,
+	tenantId: row.tenant_id,
+	updatedAt: row.updated_at,
+	url: row.url,
+});
+
+/**
+ * Maps a SQL row into a webhook signing-key domain record.
+ *
+ * @param row - SQL row selected from `webhook_signing_keys`.
+ * @returns Decoded webhook signing-key domain record.
+ */
+export const mapWebhookSigningKeyRecord = (row: {
+	readonly id: string;
+	readonly tenant_id: string;
+	readonly endpoint_id: string;
+	readonly secret: string;
+	readonly role: string;
+	readonly expires_at: string | null;
+	readonly created_at: string;
+}): WebhookSigningKeyRecord => ({
+	createdAt: row.created_at,
+	endpointId: row.endpoint_id,
+	expiresAt: row.expires_at ?? undefined,
+	id: row.id,
+	role: row.role === "secondary" ? "secondary" : "primary",
+	secret: row.secret,
+	tenantId: row.tenant_id,
+});

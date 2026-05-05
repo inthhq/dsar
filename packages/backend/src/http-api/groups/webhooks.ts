@@ -2,7 +2,8 @@ import * as Schema from "effect/Schema";
 import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 
-import { publicOperation, s202 } from "../common";
+import { WebhookRotateKeyPayloadSchema } from "../../webhook-schemas";
+import { protectedOperation, publicOperation, s202 } from "../common";
 import {
 	SlackWebhookAcceptedResponseSchema,
 	SlackWebhookChallengeResponseSchema,
@@ -16,6 +17,15 @@ const ResendWebhookPayloadSchema = Schema.Struct({
 });
 
 const SlackWebhookPayloadSchema = Schema.Unknown;
+
+const WebhookRotateKeyResponseSchema = Schema.Struct({
+	activeKeyIds: Schema.Array(Schema.String),
+	endpointId: Schema.String,
+	newPrimaryKeyId: Schema.String,
+	newSigningSecret: Schema.String,
+	previousKeyExpiresAt: Schema.optional(Schema.String),
+	previousKeyId: Schema.optional(Schema.String),
+});
 
 /** OpenAPI group describing public inbound webhook endpoints. */
 export const webhooksGroup = HttpApiGroup.make("webhooks", { topLevel: true })
@@ -56,5 +66,19 @@ export const webhooksGroup = HttpApiGroup.make("webhooks", { topLevel: true })
 				}
 			),
 			"Receive Slack inbound webhook"
+		)
+	)
+	.add(
+		protectedOperation(
+			HttpApiEndpoint.post(
+				"webhooks_endpoint_rotate_key",
+				"/webhooks/endpoints/:id/rotate-key",
+				{
+					params: { id: Schema.String },
+					payload: WebhookRotateKeyPayloadSchema,
+					success: successEnvelope(WebhookRotateKeyResponseSchema),
+				}
+			),
+			"Rotate webhook endpoint signing key"
 		)
 	);

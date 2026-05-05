@@ -7,6 +7,7 @@ import type {
 	PersistenceMigrationHooks,
 	PersistenceService,
 	TenantContext,
+	WebhookSigningSecretEncryptionOptions,
 } from "@dsar/persistence";
 import type { Layer } from "effect";
 
@@ -28,6 +29,8 @@ export interface SqlitePersistenceLayerOptions extends SqliteDriverConfig {
 	 * pragmas) or post-migration seeding.
 	 */
 	readonly migrationHooks?: PersistenceMigrationHooks;
+	/** Encryption key material used for persisted webhook signing secrets. */
+	readonly webhookSigningSecretEncryption?: WebhookSigningSecretEncryptionOptions;
 }
 
 /**
@@ -57,6 +60,7 @@ export const makeSqlitePersistenceLayer = (
 			transformResultNames: options?.transformResultNames,
 		}),
 		migrationHooks: options?.migrationHooks,
+		webhookSigningSecretEncryption: options?.webhookSigningSecretEncryption,
 	});
 
 /**

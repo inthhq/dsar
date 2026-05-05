@@ -135,6 +135,32 @@ export interface WebhookInboundResendResponse {
 export type WebhookInboundSlackPayload = unknown;
 
 /**
+ * Payload accepted by webhook signing-key rotation.
+ */
+export interface WebhookRotateKeyPayload {
+	/** Grace-window duration in days for the demoted previous primary key. */
+	readonly gracePeriodDays?: number;
+}
+
+/**
+ * Response returned after rotating a webhook endpoint signing key.
+ */
+export interface WebhookRotateKeyResponse {
+	/** Key ids currently valid for this endpoint after rotation. */
+	readonly activeKeyIds: readonly string[];
+	/** Endpoint whose key was rotated. */
+	readonly endpointId: string;
+	/** New primary key identifier. */
+	readonly newPrimaryKeyId: string;
+	/** Newly generated signing secret, returned once. */
+	readonly newSigningSecret: string;
+	/** Grace-window expiry for the demoted previous primary key. */
+	readonly previousKeyExpiresAt?: string;
+	/** Previous primary key identifier, when one existed. */
+	readonly previousKeyId?: string;
+}
+
+/**
  * Slack inbound webhook may either echo a challenge or return a normal DSAR
  * capture/ignore response envelope.
  */

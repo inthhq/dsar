@@ -1,3 +1,6 @@
+import { Buffer } from "node:buffer";
+import { timingSafeEqual } from "node:crypto";
+
 import type { DsarResult, RequestOptions } from "../types";
 import type {
 	EndpointContext,
@@ -5,7 +8,142 @@ import type {
 	WebhookInboundResendResponse,
 	WebhookInboundSlackPayload,
 	WebhookInboundSlackResponse,
+	WebhookRotateKeyPayload,
+	WebhookRotateKeyResponse,
 } from "./types";
+
+const HEX_SHA256_SIGNATURE_PATTERN = /^[\da-f]{64}$/i;
+const EMPTY_SHA256_SIGNATURE = Buffer.alloc(32);
+
+/**
+ * Active webhook signing secret plus optional key metadata.
+ */
+export interface WebhookVerificationSecret {
+	/** Optional key id associated with this secret. */
+	readonly id?: string;
+	/** HMAC secret used to verify the signature. */
+	readonly secret: string;
+}
+
+/**
+ * Secrets returned directly or by a webhook signing-secret lookup function.
+ */
+export type WebhookSecretLookupResult =
+	| readonly string[]
+	| readonly WebhookVerificationSecret[];
+
+/**
+ * Resolves active webhook signing secrets for an endpoint and optional key id.
+ */
+export type WebhookSecretLookup = (input: {
+	readonly endpointId?: string;
+	readonly keyId?: string;
+}) => Promise<WebhookSecretLookupResult> | WebhookSecretLookupResult;
+
+/**
+ * Input used to verify a DSAR outbound webhook signature.
+ */
+export interface VerifyWebhookInput {
+	/** Raw request body exactly as signed by DSAR. */
+	readonly body: string | Uint8Array;
+	/** Hex-encoded HMAC-SHA256 signature from `x-dsar-signature`. */
+	readonly signature: string;
+	/** Optional endpoint id used by lookup functions. */
+	readonly endpointId?: string;
+	/** Optional key id from `x-dsar-signature-key-id`. */
+	readonly keyId?: string;
+	/** Active secrets or key/secret pairs to try. */
+	readonly secrets?: WebhookSecretLookupResult;
+	/** Lazy resolver for active secrets or key/secret pairs. */
+	readonly lookupSecrets?: WebhookSecretLookup;
+}
+
+/**
+ * Result returned after verifying a DSAR outbound webhook signature.
+ */
+export interface VerifyWebhookResult {
+	/** Whether any supplied secret matched the signature. */
+	readonly verified: boolean;
+	/** Matched key id when available from the input or secret metadata. */
+	readonly keyId?: string;
+}
+
+const toArrayBuffer = (body: string | Uint8Array): ArrayBuffer => {
+	const bytes =
+		typeof body === "string" ? new TextEncoder().encode(body) : body;
+	const copy = new Uint8Array(bytes.byteLength);
+	copy.set(bytes);
+	return copy.buffer;
+};
+
+const normalizeSecrets = (
+	secrets: WebhookSecretLookupResult
+): readonly WebhookVerificationSecret[] =>
+	secrets.map((entry) =>
+		typeof entry === "string" ? { secret: entry } : entry
+	);
+
+const toHex = (bytes: ArrayBuffer): string =>
+	[...new Uint8Array(bytes)]
+		.map((byte) => byte.toString(16).padStart(2, "0"))
+		.join("");
+
+const signBody = async (
+	body: string | Uint8Array,
+	secret: string
+): Promise<string> => {
+	const key = await crypto.subtle.importKey(
+		"raw",
+		new TextEncoder().encode(secret),
+		{ hash: "SHA-256", name: "HMAC" },
+		false,
+		["sign"]
+	);
+	const signature = await crypto.subtle.sign("HMAC", key, toArrayBuffer(body));
+	return toHex(signature);
+};
+
+const constantTimeEqual = (
+	expectedHex: string,
+	suppliedHex: string
+): boolean => {
+	const expected = Buffer.from(expectedHex, "hex");
+	const hasValidShape = HEX_SHA256_SIGNATURE_PATTERN.test(suppliedHex);
+	const supplied = hasValidShape
+		? Buffer.from(suppliedHex, "hex")
+		: EMPTY_SHA256_SIGNATURE;
+	const matched = timingSafeEqual(expected, supplied);
+	return hasValidShape && matched;
+};
+
+/**
+ * Verifies a DSAR outbound webhook HMAC signature against active secrets.
+ *
+ * @param input - Body, signature, optional key metadata, and either a direct
+ *   secret list or a lookup function.
+ * @returns Verification result with matched key id when available.
+ */
+export const verifyWebhook = async (
+	input: VerifyWebhookInput
+): Promise<VerifyWebhookResult> => {
+	const suppliedSecrets =
+		input.secrets ??
+		(await input.lookupSecrets?.({
+			endpointId: input.endpointId,
+			keyId: input.keyId,
+		})) ??
+		[];
+	for (const entry of normalizeSecrets(suppliedSecrets)) {
+		const expected = await signBody(input.body, entry.secret);
+		if (constantTimeEqual(expected, input.signature)) {
+			return {
+				keyId: entry.id ?? input.keyId,
+				verified: true,
+			};
+		}
+	}
+	return { verified: false };
+};
 
 /**
  * Client interface for the Webhooks API namespace.
@@ -41,6 +179,14 @@ export interface WebhooksApi {
 		payload: WebhookInboundSlackPayload,
 		options?: RequestOptions
 	) => Promise<DsarResult<WebhookInboundSlackResponse>>;
+	/**
+	 * Rotates an outbound webhook endpoint signing key.
+	 */
+	readonly rotateKey: (
+		endpointId: string,
+		payload?: WebhookRotateKeyPayload,
+		options?: RequestOptions
+	) => Promise<DsarResult<WebhookRotateKeyResponse>>;
 }
 
 /**
@@ -65,5 +211,12 @@ export const makeWebhooksApi = (ctx: EndpointContext): WebhooksApi => ({
 			method: "POST",
 			options,
 			path: "/webhooks/inbound/slack",
+		}),
+	rotateKey: (endpointId, payload, options) =>
+		ctx.call({
+			body: payload ?? {},
+			method: "POST",
+			options,
+			path: `/webhooks/endpoints/${encodeURIComponent(endpointId)}/rotate-key`,
 		}),
 });

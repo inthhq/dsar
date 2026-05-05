@@ -16,6 +16,15 @@ const E2E_RUNTIME_AUTH = {
 				},
 			},
 		},
+		notificationWebhook: {
+			endpointId: "default",
+			retryDelayMs: 1,
+			retryMaxAttempts: 1,
+			signingSecret: "cli-e2e-secret",
+			tenantScoped: true,
+			timeoutMs: 1000,
+			url: "https://tenant.example/webhook",
+		},
 	},
 } as const;
 

@@ -7,4 +7,5 @@ import { makeRouteCommands } from "../commands/factory";
 export const webhooksCommands = makeRouteCommands([
 	"webhooks_inbound_resend",
 	"webhooks_inbound_slack",
+	"webhooks_endpoint_rotate_key",
 ] as const);
