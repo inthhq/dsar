@@ -44,6 +44,54 @@ export interface PaginationInput {
 }
 
 /**
+ * Stable cursor for request subject lookup pages.
+ *
+ * @public
+ */
+export interface RequestSubjectCursor {
+	/** Creation timestamp of the last item returned to the caller. */
+	readonly createdAt: string;
+	/** Request id of the last item returned to the caller. */
+	readonly id: string;
+}
+
+/**
+ * Filter contract for indexed subject request lookup.
+ *
+ * @public
+ */
+export interface ListRequestsBySubjectInput {
+	/** Normalized subject identifiers to match against subject id, external ref, or requestor email. */
+	readonly identifiers: readonly string[];
+	/** Optional lifecycle statuses to include. */
+	readonly status?: readonly string[];
+	/** Return records created strictly after this ISO timestamp. */
+	readonly createdAfter?: string;
+	/** Return records created strictly before this ISO timestamp. */
+	readonly createdBefore?: string;
+	/** Optional active policy pack id filter. */
+	readonly policyPack?: string;
+	/** Cursor returned by the previous page. */
+	readonly cursor?: RequestSubjectCursor;
+	/** Maximum rows to read for a single page. */
+	readonly limit?: number;
+}
+
+/**
+ * Cursor-paginated request page.
+ *
+ * @public
+ */
+export interface RequestSubjectPage {
+	/** Matching request records in descending creation order. */
+	readonly items: readonly RequestRecord[];
+	/** Cursor for the next page when more records are available. */
+	readonly nextCursor?: RequestSubjectCursor;
+	/** Bounded page size used by the query. */
+	readonly limit: number;
+}
+
+/**
  * Persistent request row with capability-upgrade fields.
  *
  * @public
@@ -928,6 +976,22 @@ export interface RequestsRepository {
 		pagination?: PaginationInput
 	) => Effect.Effect<
 		readonly RequestRecord[],
+		PersistenceError | SqlError,
+		TenantContext
+	>;
+	/**
+	 * Lists request records for subject profile lookup using indexed,
+	 * tenant-scoped request metadata.
+	 *
+	 * @param input - Subject identifiers, filters, cursor, and page size.
+	 * @returns A cursor-paginated page of matching request records.
+	 * @throws {@link PersistenceError} on mapping failures.
+	 * @throws {@link SqlError} on underlying database failures.
+	 */
+	readonly listBySubject: (
+		input: ListRequestsBySubjectInput
+	) => Effect.Effect<
+		RequestSubjectPage,
 		PersistenceError | SqlError,
 		TenantContext
 	>;

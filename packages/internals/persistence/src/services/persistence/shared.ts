@@ -33,6 +33,69 @@ export const BOOTSTRAP_TENANT_ID = "__dsar_bootstrap__";
  */
 export const jsonEncode = (value: JsonValue) => JSON.stringify(value);
 
+const asJsonRecord = (
+	value: JsonValue | undefined
+): Readonly<Record<string, JsonValue>> | undefined => {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) {
+		return undefined;
+	}
+	return value as Readonly<Record<string, JsonValue>>;
+};
+
+const asNonEmptyString = (value: JsonValue | undefined): string | undefined =>
+	typeof value === "string" && value.trim().length > 0
+		? value.trim()
+		: undefined;
+
+/**
+ * Normalizes subject lookup identifiers for case-insensitive matching.
+ *
+ * @param value - Raw subject id, external ref, or email value.
+ * @returns Lower-cased trimmed identifier, or `null` when blank.
+ */
+export const normalizeSubjectLookupIdentifier = (
+	value: string | undefined
+): string | null => {
+	if (typeof value !== "string") {
+		return null;
+	}
+	const normalized = value.trim().toLowerCase();
+	return normalized.length > 0 ? normalized : null;
+};
+
+/**
+ * Extracts indexed request lookup fields from JSON request payloads.
+ *
+ * @param input - Request capture and requestor JSON values.
+ * @returns Normalized lookup metadata persisted alongside the request row.
+ */
+export const extractRequestLookupFields = (input: {
+	readonly capture: JsonValue;
+	readonly requestor: JsonValue;
+}): {
+	readonly policyPack: string | null;
+	readonly requestorEmail: string | null;
+	readonly subjectExternalRef: string | null;
+	readonly subjectId: string | null;
+} => {
+	const capture = asJsonRecord(input.capture);
+	const subject = asJsonRecord(capture?.subject);
+	const policy = asJsonRecord(capture?.policy);
+	const requestor = asJsonRecord(input.requestor);
+	return {
+		policyPack: asNonEmptyString(policy?.policyPack) ?? null,
+		requestorEmail: normalizeSubjectLookupIdentifier(
+			asNonEmptyString(requestor?.email)
+		),
+		subjectExternalRef: normalizeSubjectLookupIdentifier(
+			asNonEmptyString(subject?.externalRef)
+		),
+		subjectId: normalizeSubjectLookupIdentifier(
+			asNonEmptyString(subject?.subjectId)
+		),
+	};
+};
+
 const isJsonValue = (value: unknown): value is JsonValue => {
 	if (value === null) {
 		return true;

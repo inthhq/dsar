@@ -268,6 +268,11 @@ const makeMemoryPersistence = (): PersistenceService => {
 					Effect.mapError(() => new Error(`Missing request ${id}`))
 				),
 			list: () => Effect.succeed([...requests.values()]),
+			listBySubject: () =>
+				Effect.succeed({
+					items: [],
+					limit: 50,
+				}),
 			remove: (id: string) =>
 				Effect.sync(() => {
 					requests.delete(id);

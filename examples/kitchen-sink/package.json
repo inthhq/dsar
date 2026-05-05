@@ -17,6 +17,7 @@
 	},
 	"devDependencies": {
 		"@dsar/typescript-config": "workspace:*",
-		"@types/node": "catalog:types"
+		"@types/node": "catalog:types",
+		"@typescript/native-preview": "catalog:utils"
 	}
 }

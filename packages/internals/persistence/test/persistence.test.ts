@@ -3,6 +3,11 @@ import * as Effect from "effect/Effect";
 
 import { makeSqlitePersistenceLayer } from "../../persistence-sqlite/src";
 import { Persistence, withTenant } from "../src";
+import {
+	extractRequestLookupFields,
+	jsonEncode,
+} from "../src/services/persistence/shared";
+import type { Sql } from "../src/services/persistence/shared";
 
 const sqliteFile = (name: string): string =>
 	`/tmp/dsar-persistence-${name}-${crypto.randomUUID()}.sqlite`;
@@ -17,6 +22,110 @@ const baseRequest = {
 	requestor: { type: "subject" },
 	status: "received",
 } as const;
+
+const subjectLookupSeedRequests = [
+	{
+		id: "req-subject-0",
+		policyPack: "pack-a",
+		receivedAt: "2026-01-01T00:00:00.000Z",
+		status: "received",
+	},
+	{
+		id: "req-subject-1",
+		policyPack: "pack-a",
+		receivedAt: "2026-01-02T00:00:00.000Z",
+		status: "fulfilled",
+	},
+	{
+		id: "req-subject-2",
+		policyPack: "pack-a",
+		receivedAt: "2026-01-03T00:00:00.000Z",
+		status: "received",
+	},
+	{
+		id: "req-subject-3",
+		policyPack: "pack-b",
+		receivedAt: "2026-01-04T00:00:00.000Z",
+		status: "received",
+	},
+] as const;
+
+const toSubjectLookupCreateInput = (
+	seedRequest: (typeof subjectLookupSeedRequests)[number]
+) => ({
+	...baseRequest,
+	capture: {
+		policy: {
+			policyPack: seedRequest.policyPack,
+		},
+		subject: {
+			externalRef: "external-subject",
+			subjectId: "subject-indexed",
+		},
+	},
+	id: seedRequest.id,
+	receivedAt: seedRequest.receivedAt,
+	status: seedRequest.status,
+});
+
+const scaledSubjectLookupSeedInput = (scale: number, index: number) => ({
+	...baseRequest,
+	capture: {
+		policy: {
+			policyPack: index % 4 === 0 ? "pack-scale" : "pack-other",
+		},
+		subject: {
+			subjectId: index % 100 === 0 ? "subject-scale" : "subject-other",
+		},
+	},
+	id: `req-scale-${scale}-${index.toString().padStart(5, "0")}`,
+	receivedAt: `2026-03-${((index % 28) + 1).toString().padStart(2, "0")}T00:00:00.000Z`,
+	status: index % 2 === 0 ? "in_progress" : "fulfilled",
+});
+
+const SQLITE_INSERT_BATCH_SIZE = 500;
+
+const seedRequestsDirectly = (scale: number) => (sql: Sql) =>
+	sql.withTransaction(
+		Effect.forEach(
+			Array.from(
+				{ length: Math.ceil(scale / SQLITE_INSERT_BATCH_SIZE) },
+				(_, batchIndex) => batchIndex
+			),
+			(batchIndex) => {
+				const start = batchIndex * SQLITE_INSERT_BATCH_SIZE;
+				const rows = Array.from(
+					{
+						length: Math.min(SQLITE_INSERT_BATCH_SIZE, scale - start),
+					},
+					(_, offset) => {
+						const input = scaledSubjectLookupSeedInput(scale, start + offset);
+						const lookupFields = extractRequestLookupFields(input);
+						return {
+							appeals_json: jsonEncode(input.appeals),
+							authority_json: jsonEncode(input.authority),
+							capture_json: jsonEncode(input.capture),
+							clock_mode: input.clockMode,
+							created_at: input.receivedAt,
+							due_at: input.dueAt,
+							id: input.id,
+							policy_pack: lookupFields.policyPack,
+							received_at: input.receivedAt,
+							requestor_email: lookupFields.requestorEmail,
+							requestor_json: jsonEncode(input.requestor),
+							status: input.status,
+							subject_external_ref: lookupFields.subjectExternalRef,
+							subject_id: lookupFields.subjectId,
+							tenant_id: "tenant-a",
+							updated_at: input.receivedAt,
+						};
+					}
+				);
+				return sql`INSERT INTO requests ${sql.insert(rows)}`;
+			},
+			{ concurrency: 1, discard: true }
+		)
+	);
 
 const runForTenant = <A>(
 	filename: string,
@@ -87,6 +196,184 @@ describe(Persistence, () => {
 
 		expect(Array.isArray(requestList)).toBeTruthy();
 		expect(requestList).toHaveLength(0);
+	});
+
+	it("backfills indexed subject lookup columns for existing request rows", async () => {
+		const dbPath = sqliteFile("subject-backfill");
+		const requestList = await Effect.runPromise(
+			Effect.gen(function* listBackfilledSubjectRequests() {
+				const persistence = yield* Effect.service(Persistence);
+				return yield* persistence.requests.listBySubject({
+					identifiers: ["subject-backfill"],
+					limit: 10,
+				});
+			}).pipe(
+				Effect.provide(
+					makeSqlitePersistenceLayer({
+						filename: dbPath,
+						migrationHooks: {
+							beforeMigrations: (sql) =>
+								Effect.gen(function* seedOldSchema() {
+									yield* sql`CREATE TABLE IF NOT EXISTS requests (
+										id TEXT NOT NULL,
+										tenant_id TEXT NOT NULL,
+										status TEXT NOT NULL,
+										received_at TEXT NOT NULL,
+										due_at TEXT NOT NULL,
+										clock_mode TEXT NOT NULL,
+										requestor_json TEXT NOT NULL,
+										authority_json TEXT NOT NULL,
+										capture_json TEXT NOT NULL,
+										appeals_json TEXT NOT NULL,
+										created_at TEXT NOT NULL,
+										updated_at TEXT NOT NULL,
+										PRIMARY KEY (tenant_id, id)
+									)`;
+									yield* sql`INSERT INTO requests (
+										id,
+										tenant_id,
+										status,
+										received_at,
+										due_at,
+										clock_mode,
+										requestor_json,
+										authority_json,
+										capture_json,
+										appeals_json,
+										created_at,
+										updated_at
+									) VALUES (
+										'req-backfilled',
+										'tenant-a',
+										'received',
+										'2026-01-01T00:00:00.000Z',
+										'2026-02-01T00:00:00.000Z',
+										'calendar_days',
+										'{"type":"subject","email":"backfill@example.com"}',
+										'{}',
+										'{"subject":{"subjectId":"subject-backfill"},"policy":{"policyPack":"pack-backfill"}}',
+										'[]',
+										'2026-01-01T00:00:00.000Z',
+										'2026-01-01T00:00:00.000Z'
+									)`;
+								}),
+						},
+					})
+				),
+				withTenant("tenant-a")
+			)
+		);
+
+		expect(requestList.items.map((request) => request.id)).toStrictEqual([
+			"req-backfilled",
+		]);
+	});
+
+	it("lists subject requests with indexed filters and cursor pagination", async () => {
+		const dbPath = sqliteFile("subject-lookup");
+		const page = await runForTenant(
+			dbPath,
+			"tenant-a",
+			Effect.gen(function* subjectLookupProgram() {
+				const persistence = yield* Effect.service(Persistence);
+				for (const seedRequest of subjectLookupSeedRequests) {
+					yield* persistence.requests.create(
+						toSubjectLookupCreateInput(seedRequest)
+					);
+				}
+				return yield* persistence.requests.listBySubject({
+					identifiers: ["external-subject"],
+					limit: 2,
+					policyPack: "pack-a",
+					status: ["received"],
+				});
+			})
+		);
+
+		expect(page.items.map((request) => request.id)).toStrictEqual([
+			"req-subject-2",
+			"req-subject-0",
+		]);
+		expect(page.nextCursor).toBeUndefined();
+	});
+
+	it("continues subject request lookup from the returned cursor", async () => {
+		const dbPath = sqliteFile("subject-lookup-cursor");
+		const pages = await runForTenant(
+			dbPath,
+			"tenant-a",
+			Effect.gen(function* subjectLookupCursorProgram() {
+				const persistence = yield* Effect.service(Persistence);
+				for (const seedRequest of subjectLookupSeedRequests) {
+					yield* persistence.requests.create(
+						toSubjectLookupCreateInput(seedRequest)
+					);
+				}
+				const firstPage = yield* persistence.requests.listBySubject({
+					identifiers: ["external-subject"],
+					limit: 1,
+					policyPack: "pack-a",
+					status: ["received"],
+				});
+				const secondPage = yield* persistence.requests.listBySubject({
+					cursor: firstPage.nextCursor,
+					identifiers: ["external-subject"],
+					limit: 1,
+					policyPack: "pack-a",
+					status: ["received"],
+				});
+				return { firstPage, secondPage };
+			})
+		);
+
+		expect(pages.firstPage.items.map((request) => request.id)).toStrictEqual([
+			"req-subject-2",
+		]);
+		expect(pages.firstPage.nextCursor).toBeDefined();
+		expect(pages.secondPage.items.map((request) => request.id)).toStrictEqual([
+			"req-subject-0",
+		]);
+		expect(pages.secondPage.nextCursor).toBeUndefined();
+	});
+
+	it("keeps real SQLite subject lookup latency bounded at 100, 1k, and 10k request scale", async () => {
+		const scales = [100, 1000, 10_000] as const;
+		const thresholdsMs: Readonly<Record<(typeof scales)[number], number>> = {
+			100: 100,
+			1000: 250,
+			10_000: 1500,
+		};
+		for (const scale of scales) {
+			const dbPath = sqliteFile(`subject-scale-${scale}`);
+			const result = await Effect.runPromise(
+				Effect.gen(function* subjectLookupScaleProgram() {
+					const persistence = yield* Effect.service(Persistence);
+					const started = performance.now();
+					const page = yield* persistence.requests.listBySubject({
+						identifiers: ["subject-scale"],
+						limit: 25,
+						policyPack: "pack-scale",
+						status: ["in_progress"],
+					});
+					return { elapsedMs: performance.now() - started, page };
+				}).pipe(
+					Effect.provide(
+						makeSqlitePersistenceLayer({
+							filename: dbPath,
+							migrationHooks: {
+								afterMigrations: seedRequestsDirectly(scale),
+							},
+						})
+					),
+					withTenant("tenant-a")
+				)
+			);
+
+			expect(result.page.items).toHaveLength(
+				Math.min(Math.ceil(scale / 100), 25)
+			);
+			expect(result.elapsedMs).toBeLessThan(thresholdsMs[scale]);
+		}
 	});
 
 	it("persists and lists clock segments in deterministic order", async () => {

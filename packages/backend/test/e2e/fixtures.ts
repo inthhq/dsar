@@ -12,6 +12,7 @@ import type {
 	CreateVerificationEvidenceInput,
 	FulfillmentArtifactRecord,
 	JsonValue,
+	ListRequestsBySubjectInput,
 	NotificationDeliveryAttemptRecord,
 	NotificationEventRecord,
 	PersistenceService,
@@ -40,6 +41,44 @@ const compareActiveWebhookKeys = (
 	return left.createdAt === right.createdAt
 		? left.id.localeCompare(right.id)
 		: right.createdAt.localeCompare(left.createdAt);
+};
+
+const normalizeIdentifier = (value: unknown): string | null => {
+	if (typeof value !== "string") {
+		return null;
+	}
+	const normalized = value.trim().toLowerCase();
+	return normalized.length > 0 ? normalized : null;
+};
+
+const asRecord = (
+	value: unknown
+): Readonly<Record<string, unknown>> | undefined =>
+	typeof value === "object" && value !== null && !Array.isArray(value)
+		? (value as Readonly<Record<string, unknown>>)
+		: undefined;
+
+const requestMatchesSubjectLookup = (
+	record: RequestRecord,
+	identifiers: ReadonlySet<string>
+): boolean => {
+	const capture = asRecord(record.capture);
+	const subject = asRecord(capture?.subject);
+	const requestor = asRecord(record.requestor);
+	const recordIdentifiers = [
+		normalizeIdentifier(subject?.subjectId),
+		normalizeIdentifier(subject?.externalRef),
+		normalizeIdentifier(requestor?.email),
+	].filter((value): value is string => value !== null);
+	return recordIdentifiers.some((identifier) => identifiers.has(identifier));
+};
+
+const requestPolicyPack = (record: RequestRecord): string | undefined => {
+	const capture = asRecord(record.capture);
+	const policy = asRecord(capture?.policy);
+	return typeof policy?.policyPack === "string" && policy.policyPack.length > 0
+		? policy.policyPack
+		: undefined;
 };
 
 export const BASE_JSON_BODY = {
@@ -367,6 +406,71 @@ export const makeMemoryPersistence = (): PersistenceService => {
 					Effect.mapError(() => new Error(`Missing request ${id}`))
 				),
 			list: () => Effect.succeed([...requests.values()]),
+			listBySubject: (input: ListRequestsBySubjectInput) => {
+				const identifiers = new Set(
+					input.identifiers
+						.map(normalizeIdentifier)
+						.filter((value): value is string => value !== null)
+				);
+				const limit = Math.max(1, Math.min(500, Math.trunc(input.limit ?? 50)));
+				if (identifiers.size === 0) {
+					return Effect.succeed({ items: [], limit });
+				}
+				const statuses = input.status
+					? new Set(input.status)
+					: new Set<string>();
+				const items = [...requests.values()]
+					.filter((record) => {
+						if (!requestMatchesSubjectLookup(record, identifiers)) {
+							return false;
+						}
+						if (statuses.size > 0 && !statuses.has(record.status)) {
+							return false;
+						}
+						if (input.createdAfter && record.createdAt <= input.createdAfter) {
+							return false;
+						}
+						if (
+							input.createdBefore &&
+							record.createdAt >= input.createdBefore
+						) {
+							return false;
+						}
+						if (
+							input.policyPack &&
+							requestPolicyPack(record) !== input.policyPack
+						) {
+							return false;
+						}
+						if (
+							input.cursor &&
+							!(
+								record.createdAt < input.cursor.createdAt ||
+								(record.createdAt === input.cursor.createdAt &&
+									record.id < input.cursor.id)
+							)
+						) {
+							return false;
+						}
+						return true;
+					})
+					.toSorted((left, right) => {
+						const createdOrder = right.createdAt.localeCompare(left.createdAt);
+						return createdOrder === 0
+							? right.id.localeCompare(left.id)
+							: createdOrder;
+					});
+				const pageItems = items.slice(0, limit);
+				const last = pageItems.at(-1);
+				return Effect.succeed({
+					items: pageItems,
+					limit,
+					nextCursor:
+						items.length > limit && last
+							? { createdAt: last.createdAt, id: last.id }
+							: undefined,
+				});
+			},
 			remove: (id: string) =>
 				Effect.sync(() => {
 					requests.delete(id);

@@ -9230,6 +9230,96 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               "type": "string",
             },
           },
+          {
+            "in": "query",
+            "name": "created_after",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "created_before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "policy_pack",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
         ],
         "responses": {
           "200": {
@@ -9241,6 +9331,50 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "data": {
                       "additionalProperties": false,
                       "properties": {
+                        "pagination": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "limit": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                              ],
+                            },
+                            "nextCursor": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                },
+                                {
+                                  "type": "null",
+                                },
+                              ],
+                            },
+                          },
+                          "required": [
+                            "limit",
+                          ],
+                          "type": "object",
+                        },
                         "requests": {
                           "items": {
                             "additionalProperties": false,
@@ -9275,6 +9409,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         },
                       },
                       "required": [
+                        "pagination",
                         "requests",
                         "subjectId",
                       ],

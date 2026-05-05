@@ -30,6 +30,7 @@
 	"devDependencies": {
 		"@dsar/typescript-config": "workspace:*",
 		"@effect/vitest": "catalog:effect",
+		"@typescript/native-preview": "catalog:utils",
 		"typescript": "catalog:utils",
 		"vitest": "catalog:utils"
 	}

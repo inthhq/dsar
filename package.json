@@ -11,9 +11,10 @@
 		],
 		"catalogs": {
 			"utils": {
-				"typescript": "6.0.0-beta",
+				"typescript": "6.0.3",
 				"vitest": "4.0.18",
-				"tsdown": "0.20.3"
+				"tsdown": "0.20.3",
+				"@typescript/native-preview": "7.0.0-dev.20260421.2"
 			},
 			"effect": {
 				"effect": "4.0.0-beta.25",
@@ -37,7 +38,7 @@
 		"check:error-docs": "bun ./scripts/check-error-doc-coverage.ts",
 		"check:tsdoc": "bun ./scripts/check-tsdoc-coverage.ts",
 		"check:workspace": "turbo run check",
-		"check-types": "turbo check-types",
+		"check-types": "turbo run typecheck",
 		"ci:publish": "bunx changeset tag && bun publish",
 		"ci:version": "bun changeset version",
 		"dev": "turbo run dev",
@@ -68,7 +69,7 @@
 		"@changesets/changelog-github": "^0.5.1",
 		"@changesets/cli": "^2.29.7",
 		"@effect/vitest": "4.0.0-beta.25",
-		"@typescript/native-preview": "7.0.0-dev.20260225.1",
+		"@typescript/native-preview": "catalog:utils",
 		"changeset-conventional-commits": "^0.2.5",
 		"lefthook": "2.1.1",
 		"oxfmt": "0.36.0",
