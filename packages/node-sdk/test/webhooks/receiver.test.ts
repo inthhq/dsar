@@ -1,6 +1,6 @@
 import { createHmac } from "node:crypto";
 
-import { describe, expect, it, vi } from "@effect/vitest";
+import { afterEach, describe, expect, it, vi } from "@effect/vitest";
 
 import { createWebhookReceiver } from "#src/webhooks/receiver";
 import type { WebhookEvent } from "#src/webhooks/types";
@@ -20,6 +20,10 @@ const sampleEvent = {
 
 const signBody = (body: string): string =>
 	createHmac("sha256", signingSecret).update(body).digest("hex");
+
+afterEach(() => {
+	vi.restoreAllMocks();
+});
 
 describe("createWebhookReceiver verification", () => {
 	it("dispatches a valid signed event to the matching handler", async () => {
@@ -103,7 +107,9 @@ describe("createWebhookReceiver verification", () => {
 
 	it("returns 500 when a verify override fails unexpectedly", async () => {
 		const rawBody = JSON.stringify(sampleEvent);
-		const verify = vi.fn().mockRejectedValue(new Error("crypto unavailable"));
+		const verificationError = new Error("crypto unavailable");
+		const consoleError = vi.spyOn(console, "error").mockReturnValue();
+		const verify = vi.fn().mockRejectedValue(verificationError);
 		const receiver = createWebhookReceiver({ signingSecret, verify });
 
 		await expect(
@@ -112,6 +118,23 @@ describe("createWebhookReceiver verification", () => {
 			body: { error: "verification_failed", ok: false },
 			status: 500,
 		});
+		expect(consoleError).toHaveBeenCalledWith(
+			"Unexpected webhook verification error",
+			{
+				context: {
+					webhook: {
+						eventId: sampleEvent.eventId,
+						eventType: sampleEvent.eventType,
+						rawBodyLength: rawBody.length,
+						requestId: sampleEvent.requestId,
+					},
+				},
+				error: {
+					message: verificationError.message,
+					stack: expect.any(String),
+				},
+			}
+		);
 	});
 });
 
@@ -144,10 +167,12 @@ describe("createWebhookReceiver dispatch", () => {
 
 	it("returns 500 when a handler fails", async () => {
 		const rawBody = JSON.stringify(sampleEvent);
+		const consoleError = vi.spyOn(console, "error").mockReturnValue();
+		const handlerError = new Error("boom");
 		const receiver = createWebhookReceiver({ signingSecret }).on(
 			"request_captured",
 			() => {
-				throw new Error("boom");
+				throw handlerError;
 			}
 		);
 
@@ -157,6 +182,20 @@ describe("createWebhookReceiver dispatch", () => {
 			body: { error: "handler_failed", ok: false },
 			status: 500,
 		});
+		expect(consoleError).toHaveBeenCalledWith(
+			"Unexpected webhook handler error",
+			{
+				context: {
+					eventId: sampleEvent.eventId,
+					eventType: sampleEvent.eventType,
+					requestId: sampleEvent.requestId,
+				},
+				error: {
+					message: handlerError.message,
+					stack: expect.any(String),
+				},
+			}
+		);
 	});
 
 	it("returns 400 for invalid event shape", async () => {

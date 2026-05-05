@@ -91,6 +91,49 @@ const successResult = (): WebhookReceiverResult => ({
 	status: 200,
 });
 
+const toErrorLogFields = (
+	error: unknown
+): { readonly message: string; readonly stack?: string } => {
+	if (error instanceof Error) {
+		return { message: error.message, stack: error.stack };
+	}
+	return { message: String(error) };
+};
+
+const readWebhookLogContext = (
+	rawBody: string
+):
+	| {
+			readonly eventId?: string;
+			readonly eventType?: string;
+			readonly rawBodyLength: number;
+			readonly requestId?: string;
+	  }
+	| { readonly rawBodyLength: number } => {
+	try {
+		const parsed = asRecord(JSON.parse(rawBody));
+		return {
+			eventId: asString(parsed?.eventId),
+			eventType: asString(parsed?.eventType),
+			rawBodyLength: rawBody.length,
+			requestId: asString(parsed?.requestId),
+		};
+	} catch {
+		return { rawBodyLength: rawBody.length };
+	}
+};
+
+const logInternalError = (
+	message: string,
+	error: unknown,
+	context: Record<string, unknown>
+): void => {
+	console.error(message, {
+		context,
+		error: toErrorLogFields(error),
+	});
+};
+
 const readRequiredStrings = (
 	parsed: Record<string, unknown>
 ): RequiredWebhookFields | undefined => {
@@ -188,9 +231,13 @@ const verifyReceiverSignature = async (input: {
 		});
 		return undefined;
 	} catch (error) {
-		return error instanceof WebhookVerificationError
-			? errorResult(401, error.code)
-			: errorResult(500, "verification_failed");
+		if (error instanceof WebhookVerificationError) {
+			return errorResult(401, error.code);
+		}
+		logInternalError("Unexpected webhook verification error", error, {
+			webhook: readWebhookLogContext(input.rawBody),
+		});
+		return errorResult(500, "verification_failed");
 	}
 };
 
@@ -208,7 +255,12 @@ const dispatchEvent = async (
 	try {
 		await handler(buildWebhookEvent(event.eventType, event, event.payload));
 		return successResult();
-	} catch {
+	} catch (error) {
+		logInternalError("Unexpected webhook handler error", error, {
+			eventId: event.eventId,
+			eventType: event.eventType,
+			requestId: event.requestId,
+		});
 		return errorResult(500, "handler_failed");
 	}
 };
