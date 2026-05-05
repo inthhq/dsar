@@ -114,6 +114,8 @@ export interface RuntimeConfig {
 		readonly url: string;
 		/** Shared secret used to sign outbound webhook payloads. */
 		readonly signingSecret: string;
+		/** Marks the webhook config as resolved for the active tenant scope. */
+		readonly tenantScoped?: boolean;
 		/** Maximum attempts before webhook delivery is marked failed. */
 		readonly retryMaxAttempts: number;
 		/** Delay between webhook retry attempts to reduce burst pressure. */

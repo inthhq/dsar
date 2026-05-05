@@ -91,7 +91,8 @@ const ensureConfiguredEndpoint = (endpointId: string) =>
 			tenantId &&
 			webhookConfig &&
 			webhookConfig.url.length > 0 &&
-			endpointId === configuredEndpointId
+			endpointId === configuredEndpointId &&
+			webhookConfig.tenantScoped === true
 		) {
 			yield* services.repos.persistence.webhookEndpoints
 				.ensureConfigured({
@@ -160,8 +161,7 @@ const rollbackRotationOrIgnoreFailure = (
 const toAuditAppendFailureError = (
 	error: RequestValidationError
 ): InternalRuntimeError | RequestValidationError =>
-	error instanceof RequestValidationError &&
-	error.message === "Failed to append immutable audit event."
+	error instanceof RequestValidationError
 		? new InternalRuntimeError({ message: error.message })
 		: error;
 

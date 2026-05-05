@@ -752,35 +752,50 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 							updatedAt,
 							url: String(input.url ?? ""),
 						};
+						const primaryKeyId =
+							typeof input.keyId === "string"
+								? input.keyId
+								: `${endpointId}:primary`;
+						const signingKeys = yield* Ref.get(webhookSigningKeysRef);
+						const currentPrimary = signingKeys.find(
+							(signingKey) =>
+								signingKey.tenantId === tenantId &&
+								signingKey.endpointId === endpointId &&
+								signingKey.role === "primary"
+						);
+						if (
+							!currentPrimary &&
+							signingKeys.some(
+								(signingKey) =>
+									signingKey.tenantId === tenantId &&
+									signingKey.id === primaryKeyId
+							)
+						) {
+							throw new Error(`Duplicate webhook signing key ${primaryKeyId}`);
+						}
 						yield* Ref.update(webhookEndpointsRef, (currentEndpoints) =>
 							new Map(currentEndpoints).set(endpointKey, endpoint)
 						);
 						const primaryKey: Record<string, unknown> = yield* Ref.modify(
 							webhookSigningKeysRef,
-							(signingKeys) => {
-								const current = signingKeys.find(
-									(signingKey) =>
-										signingKey.tenantId === tenantId &&
-										signingKey.endpointId === endpointId &&
-										signingKey.role === "primary"
-								);
-								if (current) {
-									return [current, signingKeys] as const;
+							(currentSigningKeys) => {
+								if (currentPrimary) {
+									return [currentPrimary, currentSigningKeys] as const;
 								}
 								const nextPrimary = {
 									createdAt,
 									endpointId,
-									id:
-										typeof input.keyId === "string"
-											? input.keyId
-											: `${endpointId}:primary`,
+									id: primaryKeyId,
 									role: "primary",
 									secret: String(input.signingSecret ?? ""),
 									tenantId,
 								};
 								return [
 									nextPrimary,
-									[...signingKeys, nextPrimary] as Record<string, unknown>[],
+									[...currentSigningKeys, nextPrimary] as Record<
+										string,
+										unknown
+									>[],
 								] as const;
 							}
 						);
@@ -881,6 +896,16 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 							secret: String(input.newSecret ?? ""),
 							tenantId,
 						};
+						const signingKeys = yield* Ref.get(webhookSigningKeysRef);
+						if (
+							signingKeys.some(
+								(signingKey) =>
+									signingKey.tenantId === tenantId &&
+									signingKey.id === newPrimary.id
+							)
+						) {
+							throw new Error(`Duplicate webhook signing key ${newPrimary.id}`);
+						}
 						const { activeKeys, previousPrimary } = yield* Ref.modify(
 							webhookSigningKeysRef,
 							(keys) => {

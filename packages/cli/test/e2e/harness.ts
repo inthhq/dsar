@@ -21,6 +21,7 @@ const E2E_RUNTIME_AUTH = {
 			retryDelayMs: 1,
 			retryMaxAttempts: 1,
 			signingSecret: "cli-e2e-secret",
+			tenantScoped: true,
 			timeoutMs: 1000,
 			url: "https://tenant.example/webhook",
 		},

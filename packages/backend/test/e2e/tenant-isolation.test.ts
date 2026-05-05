@@ -1484,6 +1484,7 @@ describe("api e2e tenant isolation", () => {
 						retryDelayMs: 1,
 						retryMaxAttempts: 1,
 						signingSecret: "tenant-a-webhook-secret",
+						tenantScoped: true,
 						timeoutMs: 1000,
 						url: "https://tenant-a.example.test/webhook",
 					},
