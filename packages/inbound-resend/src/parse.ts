@@ -27,8 +27,11 @@ const DSAR_INTENT_TOKENS = [
 
 const DSAR_WORD_BOUNDARY_TOKENS = ["sar"] as const;
 
+const escapeRegExp = (value: string): string =>
+	value.replaceAll(/[\\^$.*+?()[\]{}|]/gu, "\\$&");
+
 const DSAR_WORD_BOUNDARY_MATCHERS = DSAR_WORD_BOUNDARY_TOKENS.map((token) => ({
-	pattern: new RegExp(`\\b${token}\\b`, "u"),
+	pattern: new RegExp(`\\b${escapeRegExp(token)}\\b`, "u"),
 	token,
 }));
 

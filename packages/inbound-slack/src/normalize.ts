@@ -30,6 +30,13 @@ const buildChannelName = (input: SlackEventBody): string => {
 	return `slack:${input.surface}`;
 };
 
+/**
+ * Converts the parsed Slack raw event record into a Chat SDK `SlackEvent`.
+ *
+ * `toSlackEvent` validates `SlackEvent.type` with `asNonEmptyString` because
+ * the `@chat-adapter/slack` type requires only `type`; message details such as
+ * `channel`, `text`, `ts`, and `user` are optional and are preserved as parsed.
+ */
 const toSlackEvent = (
 	rawEvent: Readonly<Record<string, unknown>>
 ): SlackEvent | undefined => {
