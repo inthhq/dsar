@@ -58,7 +58,10 @@ import {
 } from "./persistence/shared";
 import type { Sql } from "./persistence/shared";
 import { makeWebhookSigningSecretCipher } from "./persistence/webhook-secret-encryption";
-import type { WebhookSigningSecretEncryptionOptions } from "./persistence/webhook-secret-encryption";
+import type {
+	WebhookSigningSecretCipher,
+	WebhookSigningSecretEncryptionOptions,
+} from "./persistence/webhook-secret-encryption";
 
 export { runMigrations } from "./persistence/migrations";
 export type { WebhookSigningSecretEncryptionOptions } from "./persistence/webhook-secret-encryption";
@@ -96,6 +99,19 @@ const isUniqueConstraintSqlError = (error: unknown): error is SqlError => {
 	const message = `${error.message ?? ""} ${cause}`;
 	return /constraint|duplicate|unique/i.test(message);
 };
+
+const mapWebhookSigningKeySqlRow = (
+	row: WebhookSigningKeySqlRow,
+	cipher: WebhookSigningSecretCipher
+): Effect.Effect<WebhookSigningKeyRecord, PersistenceError> =>
+	Effect.gen(function* decryptWebhookSigningKey() {
+		const secret = yield* cipher.open(row, {
+			endpointId: row.endpoint_id,
+			signingKeyId: row.id,
+			tenantId: row.tenant_id,
+		});
+		return mapWebhookSigningKeyRecord({ ...row, secret });
+	});
 
 /**
  * Effect service surface for all tenant-scoped persistence repositories.
@@ -927,17 +943,6 @@ const makePersistence = (
 			ensureConfigured: (input) =>
 				Effect.gen(function* ensureConfiguredWebhookEndpoint() {
 					const tenantId = yield* requireTenantId;
-					const mapWebhookSigningKeySqlRow = (
-						row: WebhookSigningKeySqlRow
-					): Effect.Effect<WebhookSigningKeyRecord, PersistenceError> =>
-						Effect.gen(function* decryptWebhookSigningKey() {
-							const secret = yield* webhookSigningSecretCipher.open(row, {
-								endpointId: row.endpoint_id,
-								signingKeyId: row.id,
-								tenantId: row.tenant_id,
-							});
-							return mapWebhookSigningKeyRecord({ ...row, secret });
-						});
 					return yield* sql.withTransaction(
 						Effect.gen(function* ensureConfiguredWebhookEndpointTransaction() {
 							const encryptedSecret = yield* webhookSigningSecretCipher.seal(
@@ -990,7 +995,10 @@ const makePersistence = (
 							);
 							return {
 								endpoint: mapWebhookEndpointRecord(endpointRow),
-								primaryKey: yield* mapWebhookSigningKeySqlRow(primaryRow),
+								primaryKey: yield* mapWebhookSigningKeySqlRow(
+									primaryRow,
+									webhookSigningSecretCipher
+								),
 							};
 						})
 					);
@@ -1008,17 +1016,6 @@ const makePersistence = (
 			listActiveKeys: (endpointId, now) =>
 				Effect.gen(function* listActiveWebhookSigningKeys() {
 					const tenantId = yield* requireTenantId;
-					const mapWebhookSigningKeySqlRow = (
-						row: WebhookSigningKeySqlRow
-					): Effect.Effect<WebhookSigningKeyRecord, PersistenceError> =>
-						Effect.gen(function* decryptWebhookSigningKey() {
-							const secret = yield* webhookSigningSecretCipher.open(row, {
-								endpointId: row.endpoint_id,
-								signingKeyId: row.id,
-								tenantId: row.tenant_id,
-							});
-							return mapWebhookSigningKeyRecord({ ...row, secret });
-						});
 					const rows =
 						yield* sql<WebhookSigningKeySqlRow>`SELECT * FROM webhook_signing_keys
 					WHERE tenant_id = ${tenantId}
@@ -1032,7 +1029,9 @@ const makePersistence = (
 						CASE role WHEN 'primary' THEN 0 ELSE 1 END ASC,
 						created_at DESC,
 						id ASC`;
-					return yield* Effect.forEach(rows, mapWebhookSigningKeySqlRow);
+					return yield* Effect.forEach(rows, (row) =>
+						mapWebhookSigningKeySqlRow(row, webhookSigningSecretCipher)
+					);
 				}),
 			rollbackSigningKeyRotation: (input) =>
 				Effect.gen(function* rollbackWebhookSigningKeyRotation() {
@@ -1063,17 +1062,6 @@ const makePersistence = (
 			rotateSigningKey: (input) =>
 				Effect.gen(function* rotateWebhookSigningKey() {
 					const tenantId = yield* requireTenantId;
-					const mapWebhookSigningKeySqlRow = (
-						row: WebhookSigningKeySqlRow
-					): Effect.Effect<WebhookSigningKeyRecord, PersistenceError> =>
-						Effect.gen(function* decryptWebhookSigningKey() {
-							const secret = yield* webhookSigningSecretCipher.open(row, {
-								endpointId: row.endpoint_id,
-								signingKeyId: row.id,
-								tenantId: row.tenant_id,
-							});
-							return mapWebhookSigningKeyRecord({ ...row, secret });
-						});
 					const rotateOnce = () =>
 						sql.withTransaction(
 							Effect.gen(function* rotateWebhookSigningKeyTransaction() {
@@ -1134,14 +1122,19 @@ const makePersistence = (
 								CASE role WHEN 'primary' THEN 0 ELSE 1 END ASC,
 								created_at DESC,
 								id ASC`;
-								const newPrimary = yield* mapWebhookSigningKeySqlRow(newRow);
+								const newPrimary = yield* mapWebhookSigningKeySqlRow(
+									newRow,
+									webhookSigningSecretCipher
+								);
 								const [previousRow] = previousRows;
 								const previousPrimary = previousRow
-									? yield* mapWebhookSigningKeySqlRow(previousRow)
+									? yield* mapWebhookSigningKeySqlRow(
+											previousRow,
+											webhookSigningSecretCipher
+										)
 									: undefined;
-								const activeKeys = yield* Effect.forEach(
-									activeRows,
-									mapWebhookSigningKeySqlRow
+								const activeKeys = yield* Effect.forEach(activeRows, (row) =>
+									mapWebhookSigningKeySqlRow(row, webhookSigningSecretCipher)
 								);
 								return {
 									activeKeys,

@@ -105,6 +105,8 @@ const asBase64 = (value: Buffer): string => value.toString("base64");
 
 const fromBase64 = (value: string): Buffer => Buffer.from(value, "base64");
 
+// normalizeMasterKey uses raw AES_256_KEY_BYTES keys directly; any other
+// length is SHA-256 hashed to produce a 32-byte AES key.
 const normalizeMasterKey = (key: string | Uint8Array): Buffer => {
 	const keyBytes =
 		typeof key === "string" ? Buffer.from(key, "utf8") : Buffer.from(key);
