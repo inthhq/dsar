@@ -1,6 +1,56 @@
 import * as Effect from "effect/Effect";
 import * as Ref from "effect/Ref";
 
+const DEFAULT_LIST_LIMIT = 50;
+const MAX_LIST_LIMIT = 500;
+
+const normalizeIdentifier = (value: unknown): string | null => {
+	if (typeof value !== "string") {
+		return null;
+	}
+	const normalized = value.trim().toLowerCase();
+	return normalized.length > 0 ? normalized : null;
+};
+
+const asRecord = (
+	value: unknown
+): Readonly<Record<string, unknown>> | undefined =>
+	typeof value === "object" && value !== null && !Array.isArray(value)
+		? (value as Readonly<Record<string, unknown>>)
+		: undefined;
+
+const requestMatchesSubjectLookup = (
+	record: Record<string, unknown>,
+	identifiers: ReadonlySet<string>
+): boolean => {
+	const capture = asRecord(record.capture);
+	const subject = asRecord(capture?.subject);
+	const requestor = asRecord(record.requestor);
+	const recordIdentifiers = [
+		normalizeIdentifier(subject?.subjectId),
+		normalizeIdentifier(subject?.externalRef),
+		normalizeIdentifier(requestor?.email),
+	].filter((value): value is string => value !== null);
+	return recordIdentifiers.some((identifier) => identifiers.has(identifier));
+};
+
+const requestPolicyPack = (
+	record: Record<string, unknown>
+): string | undefined => {
+	const capture = asRecord(record.capture);
+	const policy = asRecord(capture?.policy);
+	return typeof policy?.policyPack === "string" && policy.policyPack.length > 0
+		? policy.policyPack
+		: undefined;
+};
+
+const boundedLimit = (value: unknown): number => {
+	if (typeof value !== "number" || !Number.isFinite(value)) {
+		return DEFAULT_LIST_LIMIT;
+	}
+	return Math.max(1, Math.min(MAX_LIST_LIMIT, Math.trunc(value)));
+};
+
 /**
  * Minimal in-memory persistence surface used by backend tests.
  */
@@ -102,6 +152,11 @@ export interface MinimalPersistence {
 			id: string
 		) => Effect.Effect<Record<string, unknown>, Error>;
 		readonly list: () => Effect.Effect<readonly Record<string, unknown>[]>;
+		readonly listBySubject: (input: Record<string, unknown>) => Effect.Effect<{
+			readonly items: readonly Record<string, unknown>[];
+			readonly limit: number;
+			readonly nextCursor?: { readonly createdAt: string; readonly id: string };
+		}>;
 		readonly remove: (id: string) => Effect.Effect<void>;
 		readonly update: (
 			id: string,
@@ -452,6 +507,99 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 					),
 				list: () =>
 					Ref.get(requestsRef).pipe(Effect.map((map) => [...map.values()])),
+				listBySubject: (input: Record<string, unknown>) =>
+					Ref.get(requestsRef).pipe(
+						Effect.map((map) => {
+							const identifiers = new Set(
+								(Array.isArray(input.identifiers) ? input.identifiers : [])
+									.map(normalizeIdentifier)
+									.filter((value): value is string => value !== null)
+							);
+							const limit = boundedLimit(input.limit);
+							if (identifiers.size === 0) {
+								return { items: [], limit };
+							}
+							const status = new Set(
+								(Array.isArray(input.status) ? input.status : []).filter(
+									(value): value is string => typeof value === "string"
+								)
+							);
+							const cursor = asRecord(input.cursor);
+							const cursorCreatedAt =
+								typeof cursor?.createdAt === "string"
+									? cursor.createdAt
+									: undefined;
+							const cursorId =
+								typeof cursor?.id === "string" ? cursor.id : undefined;
+							const items = [...map.values()]
+								.filter((record) => {
+									if (!requestMatchesSubjectLookup(record, identifiers)) {
+										return false;
+									}
+									if (
+										status.size > 0 &&
+										(typeof record.status !== "string" ||
+											!status.has(record.status))
+									) {
+										return false;
+									}
+									if (
+										typeof input.createdAfter === "string" &&
+										typeof record.createdAt === "string" &&
+										record.createdAt <= input.createdAfter
+									) {
+										return false;
+									}
+									if (
+										typeof input.createdBefore === "string" &&
+										typeof record.createdAt === "string" &&
+										record.createdAt >= input.createdBefore
+									) {
+										return false;
+									}
+									if (
+										typeof input.policyPack === "string" &&
+										requestPolicyPack(record) !== input.policyPack
+									) {
+										return false;
+									}
+									if (
+										cursorCreatedAt &&
+										cursorId &&
+										typeof record.createdAt === "string" &&
+										typeof record.id === "string" &&
+										!(
+											record.createdAt < cursorCreatedAt ||
+											(record.createdAt === cursorCreatedAt &&
+												record.id < cursorId)
+										)
+									) {
+										return false;
+									}
+									return true;
+								})
+								.toSorted((left, right) => {
+									const createdOrder = String(right.createdAt).localeCompare(
+										String(left.createdAt)
+									);
+									return createdOrder === 0
+										? String(right.id).localeCompare(String(left.id))
+										: createdOrder;
+								});
+							const pageItems = items.slice(0, limit);
+							const last = pageItems.at(-1);
+							return {
+								items: pageItems,
+								limit,
+								nextCursor:
+									items.length > limit &&
+									typeof last?.createdAt === "string" &&
+									typeof last.id === "string"
+										? { createdAt: last.createdAt, id: last.id }
+										: undefined,
+							};
+						})
+					),
 				remove: (id: string) =>
 					Ref.update(requestsRef, (map) => {
 						const next = new Map(map);

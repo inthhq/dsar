@@ -15,6 +15,7 @@ import type {
 	CreateNotificationDeliveryAttemptInput,
 	CreateNotificationEventInput,
 	FulfillmentArtifactsRepository,
+	ListRequestsBySubjectInput,
 	NotificationDeliveryAttemptsRepository,
 	NotificationEventsRepository,
 	PaginationInput,
@@ -42,9 +43,11 @@ import {
 import { runMigrations } from "./persistence/migrations";
 import {
 	BOOTSTRAP_TENANT_ID,
+	extractRequestLookupFields,
 	findRequired,
 	jsonEncode,
 	limitWithFallback,
+	normalizeSubjectLookupIdentifier,
 	offsetWithFallback,
 } from "./persistence/shared";
 import type { Sql } from "./persistence/shared";
@@ -139,6 +142,7 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 			create: (input) =>
 				Effect.gen(function* createRequest() {
 					const tenantId = yield* requireTenantId;
+					const lookupFields = extractRequestLookupFields(input);
 					yield* sql`INSERT INTO requests ${sql.insert({
 						appeals_json: jsonEncode(input.appeals),
 						authority_json: jsonEncode(input.authority),
@@ -147,9 +151,13 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 						created_at: input.receivedAt,
 						due_at: input.dueAt,
 						id: input.id,
+						policy_pack: lookupFields.policyPack,
 						received_at: input.receivedAt,
+						requestor_email: lookupFields.requestorEmail,
 						requestor_json: jsonEncode(input.requestor),
 						status: input.status,
+						subject_external_ref: lookupFields.subjectExternalRef,
+						subject_id: lookupFields.subjectId,
 						tenant_id: tenantId,
 						updated_at: input.receivedAt,
 					})}`;
@@ -200,6 +208,82 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 						OFFSET ${offset}`;
 					return rows.map(mapRequestRecord);
 				}),
+			listBySubject: (input: ListRequestsBySubjectInput) =>
+				Effect.gen(function* listRequestsBySubject() {
+					const tenantId = yield* requireTenantId;
+					const identifiers = [
+						...new Set(
+							input.identifiers
+								.map(normalizeSubjectLookupIdentifier)
+								.filter((value): value is string => value !== null)
+						),
+					];
+					if (identifiers.length === 0) {
+						return { items: [], limit: limitWithFallback(input.limit) };
+					}
+					const limit = limitWithFallback(input.limit);
+					const pageLimit = limit + 1;
+					const statusValues = [
+						...new Set(
+							(input.status ?? [])
+								.map((value) => value.trim())
+								.filter((value) => value.length > 0)
+						),
+					];
+					const clauses = [
+						sql`tenant_id = ${tenantId}`,
+						sql.or([
+							sql.in("subject_id", identifiers),
+							sql.in("subject_external_ref", identifiers),
+							sql.in("requestor_email", identifiers),
+						]),
+					];
+					if (statusValues.length > 0) {
+						clauses.push(sql.in("status", statusValues));
+					}
+					if (input.createdAfter) {
+						clauses.push(sql`created_at > ${input.createdAfter}`);
+					}
+					if (input.createdBefore) {
+						clauses.push(sql`created_at < ${input.createdBefore}`);
+					}
+					if (input.policyPack) {
+						clauses.push(sql`policy_pack = ${input.policyPack}`);
+					}
+					if (input.cursor) {
+						clauses.push(
+							sql`(created_at < ${input.cursor.createdAt} OR (created_at = ${input.cursor.createdAt} AND id < ${input.cursor.id}))`
+						);
+					}
+					const rows = yield* sql<{
+						readonly id: string;
+						readonly tenant_id: string;
+						readonly status: string;
+						readonly received_at: string;
+						readonly due_at: string;
+						readonly clock_mode: string;
+						readonly requestor_json: string;
+						readonly authority_json: string;
+						readonly capture_json: string;
+						readonly appeals_json: string;
+						readonly created_at: string;
+						readonly updated_at: string;
+					}>`SELECT * FROM requests
+						WHERE ${sql.and(clauses)}
+						ORDER BY created_at DESC, id DESC
+						LIMIT ${pageLimit}`;
+					const mapped = rows.map(mapRequestRecord);
+					const items = mapped.slice(0, limit);
+					const last = items.at(-1);
+					return {
+						items,
+						limit,
+						nextCursor:
+							mapped.length > limit && last
+								? { createdAt: last.createdAt, id: last.id }
+								: undefined,
+					};
+				}),
 			remove: (id) =>
 				Effect.gen(function* removeRequest() {
 					const tenantId = yield* requireTenantId;
@@ -209,14 +293,24 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 				Effect.gen(function* updateRequest() {
 					const tenantId = yield* requireTenantId;
 					const current = yield* requests.getById(id);
+					const nextCapture = input.capture ?? current.capture;
+					const nextRequestor = input.requestor ?? current.requestor;
+					const lookupFields = extractRequestLookupFields({
+						capture: nextCapture,
+						requestor: nextRequestor,
+					});
 					yield* sql`UPDATE requests SET ${sql.update({
 						appeals_json: jsonEncode(input.appeals ?? current.appeals),
 						authority_json: jsonEncode(input.authority ?? current.authority),
-						capture_json: jsonEncode(input.capture ?? current.capture),
+						capture_json: jsonEncode(nextCapture),
 						clock_mode: input.clockMode ?? current.clockMode,
 						due_at: input.dueAt ?? current.dueAt,
-						requestor_json: jsonEncode(input.requestor ?? current.requestor),
+						policy_pack: lookupFields.policyPack,
+						requestor_email: lookupFields.requestorEmail,
+						requestor_json: jsonEncode(nextRequestor),
 						status: input.status ?? current.status,
+						subject_external_ref: lookupFields.subjectExternalRef,
+						subject_id: lookupFields.subjectId,
 						updated_at: input.updatedAt,
 					})} WHERE tenant_id = ${tenantId} AND id = ${id}`;
 					return yield* requests.getById(id);

@@ -12,8 +12,20 @@ export const subjectsGroup = HttpApiGroup.make("subjects", {
 	protectedOperation(
 		HttpApiEndpoint.get("subjects_get_profile", "/subjects/:subjectId", {
 			params: { subjectId: Schema.String },
+			query: {
+				created_after: Schema.optional(Schema.String),
+				created_before: Schema.optional(Schema.String),
+				cursor: Schema.optional(Schema.String),
+				limit: Schema.optional(Schema.NumberFromString),
+				policy_pack: Schema.optional(Schema.String),
+				status: Schema.optional(Schema.String),
+			},
 			success: successEnvelope(
 				Schema.Struct({
+					pagination: Schema.Struct({
+						limit: Schema.Number,
+						nextCursor: Schema.optional(Schema.String),
+					}),
 					requests: Schema.Array(
 						Schema.Struct({
 							id: Schema.String,

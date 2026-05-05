@@ -163,12 +163,38 @@ export type WebhookInboundSlackResponse =
 export interface SubjectProfileResponse {
 	/** Subject identifier used to correlate profile and request history. */
 	readonly subjectId: string;
+	/** Cursor pagination metadata for the associated request summaries. */
+	readonly pagination: {
+		/** Bounded page size used by the backend. */
+		readonly limit: number;
+		/** Cursor to pass on the next call when more records are available. */
+		readonly nextCursor?: string;
+	};
 	/** Summaries of DSAR requests associated with this subject. */
 	readonly requests: readonly {
 		readonly id: string;
 		readonly status: string;
 		readonly receivedAt: string;
 	}[];
+}
+
+/**
+ * Query parameters accepted by subject profile request lookup.
+ */
+export interface SubjectProfileQuery {
+	readonly [key: string]: string | number | boolean | undefined;
+	/** Cursor returned by a previous subject profile lookup page. */
+	readonly cursor?: string;
+	/** Maximum request summaries to return. */
+	readonly limit?: number;
+	/** Optional comma-separated lifecycle status filter. */
+	readonly status?: string;
+	/** Return requests created strictly after this ISO timestamp. */
+	readonly created_after?: string;
+	/** Return requests created strictly before this ISO timestamp. */
+	readonly created_before?: string;
+	/** Optional active policy pack filter. */
+	readonly policy_pack?: string;
 }
 
 /**
