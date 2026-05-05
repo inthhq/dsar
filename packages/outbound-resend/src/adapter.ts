@@ -383,14 +383,16 @@ export const makeOutboundResendAdapter = (
 			Effect.suspend(() => {
 				const parsed = parseOutboundResendAdapterConfig(input);
 				if (parsed._tag === "Failure") {
-					return Effect.fail(
-						createInvocationError({
+					return Effect.fail({
+						...createInvocationError({
 							category: "config",
 							details: { parseError: Cause.pretty(parsed.cause) },
 							message: "Invalid outbound resend adapter configuration.",
 							retriable: false,
-						})
-					);
+						}),
+						category: "config" as const,
+						retriable: false,
+					});
 				}
 				return Effect.void;
 			}),

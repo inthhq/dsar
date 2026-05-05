@@ -62,6 +62,7 @@
 		"@effect/language-service": "catalog:effect",
 		"@effect/vitest": "catalog:effect",
 		"@types/node": "catalog:types",
+		"@typescript/native-preview": "catalog:utils",
 		"typescript": "catalog:utils",
 		"vitest": "catalog:utils"
 	}
