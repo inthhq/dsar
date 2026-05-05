@@ -63,10 +63,11 @@ export interface WebhookReceiver {
 	handle(input: WebhookReceiverHandleInput): Promise<WebhookReceiverResult>;
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+	value !== null && typeof value === "object" && !Array.isArray(value);
+
 const asRecord = (value: unknown): Record<string, unknown> | undefined =>
-	value && typeof value === "object" && !Array.isArray(value)
-		? (value as Record<string, unknown>)
-		: undefined;
+	isRecord(value) ? value : undefined;
 
 const asString = (value: unknown): string | undefined =>
 	typeof value === "string" && value.length > 0 ? value : undefined;
@@ -138,7 +139,7 @@ const buildWebhookEvent = (
 });
 
 const parseWebhookEvent = (rawBody: string): ParsedWebhookEvent | undefined => {
-	const parsed = asRecord(JSON.parse(rawBody) as unknown);
+	const parsed = asRecord(JSON.parse(rawBody));
 	const eventType = asString(parsed?.eventType);
 	const requiredFields = parsed ? readRequiredStrings(parsed) : undefined;
 	const payload = parsed ? asRecord(parsed.payload) : undefined;
