@@ -1,14 +1,14 @@
 import { withTenant } from "@dsar/persistence";
 import { describe, expect, it } from "@effect/vitest";
-import * as Effect from "effect/Effect";
+import { runPromise } from "effect/Effect";
 
 import { makeMinimalPersistence } from "../../src/testing/minimal-persistence";
 
 describe(makeMinimalPersistence, () => {
 	it("isolates webhook endpoint signing keys by tenant", async () => {
-		const persistence = await Effect.runPromise(makeMinimalPersistence());
+		const persistence = await runPromise(makeMinimalPersistence());
 
-		await Effect.runPromise(
+		await runPromise(
 			persistence.webhookEndpoints
 				.ensureConfigured({
 					createdAt: "2026-01-01T00:00:00.000Z",
@@ -18,7 +18,7 @@ describe(makeMinimalPersistence, () => {
 				})
 				.pipe(withTenant("tenant-a"))
 		);
-		await Effect.runPromise(
+		await runPromise(
 			persistence.webhookEndpoints
 				.ensureConfigured({
 					createdAt: "2026-01-01T00:00:00.000Z",
@@ -31,22 +31,22 @@ describe(makeMinimalPersistence, () => {
 
 		const [tenantAEndpoint, tenantAKeys, tenantBEndpoint, tenantBKeys] =
 			await Promise.all([
-				Effect.runPromise(
+				runPromise(
 					persistence.webhookEndpoints
 						.getById("default")
 						.pipe(withTenant("tenant-a"))
 				),
-				Effect.runPromise(
+				runPromise(
 					persistence.webhookEndpoints
 						.listActiveKeys("default", "2026-01-02T00:00:00.000Z")
 						.pipe(withTenant("tenant-a"))
 				),
-				Effect.runPromise(
+				runPromise(
 					persistence.webhookEndpoints
 						.getById("default")
 						.pipe(withTenant("tenant-b"))
 				),
-				Effect.runPromise(
+				runPromise(
 					persistence.webhookEndpoints
 						.listActiveKeys("default", "2026-01-02T00:00:00.000Z")
 						.pipe(withTenant("tenant-b"))
@@ -76,8 +76,8 @@ describe(makeMinimalPersistence, () => {
 	});
 
 	it("returns rotation active keys from the same atomic update", async () => {
-		const persistence = await Effect.runPromise(makeMinimalPersistence());
-		await Effect.runPromise(
+		const persistence = await runPromise(makeMinimalPersistence());
+		await runPromise(
 			persistence.webhookEndpoints
 				.ensureConfigured({
 					createdAt: "2026-01-01T00:00:00.000Z",
@@ -88,7 +88,7 @@ describe(makeMinimalPersistence, () => {
 				.pipe(withTenant("tenant-a"))
 		);
 
-		const rotation = await Effect.runPromise(
+		const rotation = await runPromise(
 			persistence.webhookEndpoints
 				.rotateSigningKey({
 					endpointId: "default",

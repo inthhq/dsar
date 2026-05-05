@@ -372,6 +372,43 @@ const makeMemoryPersistence = (): PersistenceService => {
 						)
 						.toSorted(compareActiveWebhookKeys)
 				),
+			rollbackSigningKeyRotation: (input) => {
+				const removedPrimary = webhookSigningKeys.some(
+					(key) =>
+						key.endpointId === input.endpointId &&
+						key.id === input.newKeyId &&
+						key.role === "primary"
+				);
+				const retainedKeys = webhookSigningKeys.filter(
+					(key) =>
+						!(
+							key.endpointId === input.endpointId &&
+							key.id === input.newKeyId &&
+							key.role === "primary"
+						)
+				);
+				webhookSigningKeys.splice(
+					0,
+					webhookSigningKeys.length,
+					...retainedKeys
+				);
+				if (!(removedPrimary && input.previousPrimary)) {
+					return Effect.void;
+				}
+				const previousIndex = webhookSigningKeys.findIndex(
+					(key) =>
+						key.endpointId === input.endpointId &&
+						key.id === input.previousPrimary?.id
+				);
+				if (previousIndex !== -1) {
+					webhookSigningKeys[previousIndex] = {
+						...input.previousPrimary,
+						expiresAt: undefined,
+						role: "primary",
+					};
+				}
+				return Effect.void;
+			},
 			rotateSigningKey: (input) => {
 				const endpoint = webhookEndpoints.get(input.endpointId);
 				if (!endpoint) {

@@ -893,6 +893,32 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 						id ASC`;
 					return rows.map(mapWebhookSigningKeyRecord);
 				}),
+			rollbackSigningKeyRotation: (input) =>
+				Effect.gen(function* rollbackWebhookSigningKeyRotation() {
+					const tenantId = yield* requireTenantId;
+					yield* sql.withTransaction(
+						Effect.gen(
+							function* rollbackWebhookSigningKeyRotationTransaction() {
+								const deletedRows = yield* sql<{ readonly id: string }>`DELETE
+								FROM webhook_signing_keys
+								WHERE tenant_id = ${tenantId}
+									AND endpoint_id = ${input.endpointId}
+									AND id = ${input.newKeyId}
+									AND role = 'primary'
+								RETURNING id`;
+								if (deletedRows.length === 0 || !input.previousPrimary) {
+									return;
+								}
+								yield* sql`UPDATE webhook_signing_keys
+								SET role = 'primary',
+									expires_at = NULL
+								WHERE tenant_id = ${tenantId}
+									AND endpoint_id = ${input.endpointId}
+									AND id = ${input.previousPrimary.id}`;
+							}
+						)
+					);
+				}),
 			rotateSigningKey: (input) =>
 				Effect.gen(function* rotateWebhookSigningKey() {
 					const tenantId = yield* requireTenantId;

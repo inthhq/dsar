@@ -40,6 +40,12 @@ const sortWebhookSigningKeys = (
 			: right.createdAt.localeCompare(left.createdAt);
 	});
 
+const getFetchHeaders = (
+	input: string | URL | Request,
+	init: RequestInit | undefined
+): HeadersInit | undefined =>
+	input instanceof Request ? input.headers : init?.headers;
+
 const makeMemoryPersistence = (): {
 	readonly persistence: PersistenceService;
 	readonly getAttempts: () => readonly {
@@ -235,6 +241,43 @@ const makeMemoryPersistence = (): {
 							)
 						)
 					),
+				rollbackSigningKeyRotation: (input) => {
+					const removedPrimary = webhookSigningKeys.some(
+						(key) =>
+							key.endpointId === input.endpointId &&
+							key.id === input.newKeyId &&
+							key.role === "primary"
+					);
+					const retainedKeys = webhookSigningKeys.filter(
+						(key) =>
+							!(
+								key.endpointId === input.endpointId &&
+								key.id === input.newKeyId &&
+								key.role === "primary"
+							)
+					);
+					webhookSigningKeys.splice(
+						0,
+						webhookSigningKeys.length,
+						...retainedKeys
+					);
+					if (!(removedPrimary && input.previousPrimary)) {
+						return Effect.void;
+					}
+					const previousIndex = webhookSigningKeys.findIndex(
+						(key) =>
+							key.endpointId === input.endpointId &&
+							key.id === input.previousPrimary?.id
+					);
+					if (previousIndex !== -1) {
+						webhookSigningKeys[previousIndex] = {
+							...input.previousPrimary,
+							expiresAt: undefined,
+							role: "primary",
+						};
+					}
+					return Effect.void;
+				},
 				rotateSigningKey: (input) => {
 					const endpoint = webhookEndpoints.get(input.endpointId);
 					if (!endpoint) {
@@ -602,8 +645,8 @@ describe("notification retry/backoff behavior", () => {
 		const receivedHeaders: Record<string, string> = {};
 		vi.stubGlobal(
 			"fetch",
-			vi.fn((_: string | URL | Request, init?: RequestInit) => {
-				const headers = new Headers(init?.headers);
+			vi.fn((input: string | URL | Request, init?: RequestInit) => {
+				const headers = new Headers(getFetchHeaders(input, init));
 				for (const [key, value] of headers.entries()) {
 					receivedHeaders[key] = value;
 				}

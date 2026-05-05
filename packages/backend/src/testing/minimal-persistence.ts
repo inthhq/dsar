@@ -133,6 +133,9 @@ export interface MinimalPersistence {
 		readonly rotateSigningKey: (
 			input: Record<string, unknown>
 		) => Effect.Effect<Record<string, unknown>, Error>;
+		readonly rollbackSigningKeyRotation: (
+			input: Record<string, unknown>
+		) => Effect.Effect<void>;
 	};
 	/** Policy pack versions assigned to individual requests. */
 	readonly policyAssignments: {
@@ -588,28 +591,34 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 					Effect.gen(function* ensureConfiguredWebhookEndpoint() {
 						const tenantId = yield* currentTenantId;
 						const endpointId = String(input.id ?? "");
-						const createdAt = String(input.createdAt ?? "");
+						const endpointKey = scopedKey(tenantId, endpointId);
+						const endpointRecords = yield* Ref.get(webhookEndpointsRef);
+						const existing = endpointRecords.get(endpointKey);
+						const createdAt = String(
+							existing?.createdAt ?? input.createdAt ?? ""
+						);
+						const updatedAt = String(input.updatedAt ?? input.createdAt ?? "");
 						const endpoint = {
 							createdAt,
 							id: endpointId,
 							tenantId,
-							updatedAt: createdAt,
+							updatedAt,
 							url: String(input.url ?? ""),
 						};
-						yield* Ref.update(webhookEndpointsRef, (endpoints) =>
-							new Map(endpoints).set(scopedKey(tenantId, endpointId), endpoint)
+						yield* Ref.update(webhookEndpointsRef, (currentEndpoints) =>
+							new Map(currentEndpoints).set(endpointKey, endpoint)
 						);
 						const primaryKey: Record<string, unknown> = yield* Ref.modify(
 							webhookSigningKeysRef,
-							(keys) => {
-								const current = keys.find(
-									(key) =>
-										key.tenantId === tenantId &&
-										key.endpointId === endpointId &&
-										key.role === "primary"
+							(signingKeys) => {
+								const current = signingKeys.find(
+									(signingKey) =>
+										signingKey.tenantId === tenantId &&
+										signingKey.endpointId === endpointId &&
+										signingKey.role === "primary"
 								);
 								if (current) {
-									return [current, keys] as const;
+									return [current, signingKeys] as const;
 								}
 								const nextPrimary = {
 									createdAt,
@@ -624,7 +633,7 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 								};
 								return [
 									nextPrimary,
-									[...keys, nextPrimary] as Record<string, unknown>[],
+									[...signingKeys, nextPrimary] as Record<string, unknown>[],
 								] as const;
 							}
 						);
@@ -656,6 +665,53 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 										key.expiresAt > now)
 							)
 							.toSorted(compareActiveWebhookKeys);
+					}),
+				rollbackSigningKeyRotation: (input: Record<string, unknown>) =>
+					Effect.gen(function* rollbackSigningKeyRotation() {
+						const tenantId = yield* currentTenantId;
+						const endpointId = String(input.endpointId ?? "");
+						const newKeyId = String(input.newKeyId ?? "");
+						yield* Ref.update(webhookSigningKeysRef, (keys) => {
+							const removedPrimary = keys.some(
+								(key) =>
+									key.tenantId === tenantId &&
+									key.endpointId === endpointId &&
+									key.id === newKeyId &&
+									key.role === "primary"
+							);
+							const withoutNewPrimary = keys.filter(
+								(key) =>
+									!(
+										key.tenantId === tenantId &&
+										key.endpointId === endpointId &&
+										key.id === newKeyId &&
+										key.role === "primary"
+									)
+							);
+							const previousPrimary =
+								typeof input.previousPrimary === "object" &&
+								input.previousPrimary !== null
+									? input.previousPrimary
+									: undefined;
+							if (!(removedPrimary && previousPrimary)) {
+								return withoutNewPrimary;
+							}
+							const restoredPrimary = {
+								...(previousPrimary as Record<string, unknown>),
+								expiresAt: undefined,
+								role: "primary",
+							};
+							const previousPrimaryId = String(
+								(previousPrimary as Record<string, unknown>).id ?? ""
+							);
+							return withoutNewPrimary.map((key) =>
+								key.tenantId === tenantId &&
+								key.endpointId === endpointId &&
+								key.id === previousPrimaryId
+									? restoredPrimary
+									: key
+							);
+						});
 					}),
 				rotateSigningKey: (input: Record<string, unknown>) =>
 					Effect.gen(function* rotateSigningKey() {

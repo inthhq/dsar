@@ -1,10 +1,14 @@
-import { withTenant } from "@dsar/persistence";
+import { PersistenceEntityNotFoundError, withTenant } from "@dsar/persistence";
+import type { RotateWebhookSigningKeyResult } from "@dsar/persistence";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
 import { appendAuditEvent } from "../../audit/service";
 import { makeRequestId } from "../../middleware/auth-context";
-import { RequestValidationError } from "../../types/errors";
+import {
+	InternalRuntimeError,
+	RequestValidationError,
+} from "../../types/errors";
 import { RuntimeServicesTag } from "../../types/runtime";
 import {
 	requirePrincipalKinds,
@@ -20,6 +24,12 @@ const DEFAULT_GRACE_PERIOD_DAYS = 7;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const MAX_DATE_MS = 8_640_000_000_000_000;
 const SECRET_BYTES = 32;
+
+const hasErrorTag = (error: unknown, tag: string): boolean =>
+	typeof error === "object" &&
+	error !== null &&
+	"_tag" in error &&
+	error._tag === tag;
 
 const generateSigningSecret = (): string => {
 	const bytes = new Uint8Array(SECRET_BYTES);
@@ -108,6 +118,53 @@ const definedObject = (
 	return output;
 };
 
+const isMissingWebhookEndpointError = (
+	error: unknown,
+	endpointId: string
+): boolean => {
+	if (hasErrorTag(error, "PersistenceEntityNotFoundError")) {
+		return true;
+	}
+	return (
+		error instanceof Error &&
+		error.message.includes(`Missing webhook endpoint ${endpointId}`)
+	);
+};
+
+const toMissingWebhookEndpointError = (endpointId: string) =>
+	new PersistenceEntityNotFoundError({
+		entity: "webhook_endpoints",
+		id: endpointId,
+	});
+
+const rollbackRotation = (
+	rotation: RotateWebhookSigningKeyResult,
+	tenantId: string
+) =>
+	Effect.gen(function* rollbackWebhookSigningKeyRotation() {
+		const services = yield* Effect.service(RuntimeServicesTag);
+		yield* services.repos.persistence.webhookEndpoints
+			.rollbackSigningKeyRotation({
+				endpointId: rotation.endpoint.id,
+				newKeyId: rotation.newPrimary.id,
+				previousPrimary: rotation.previousPrimary,
+			})
+			.pipe(withTenant(tenantId));
+	});
+
+const rollbackRotationOrIgnoreFailure = (
+	rotation: RotateWebhookSigningKeyResult,
+	tenantId: string
+) => rollbackRotation(rotation, tenantId).pipe(Effect.catch(() => Effect.void));
+
+const toAuditAppendFailureError = (
+	error: RequestValidationError
+): InternalRuntimeError | RequestValidationError =>
+	error instanceof RequestValidationError &&
+	error.message === "Failed to append immutable audit event."
+		? new InternalRuntimeError({ message: error.message })
+		: error;
+
 /** Route definition for rotating outbound webhook signing keys. */
 export const rotateWebhookKeyRoute: RouteDefinition = {
 	handler: ({ params, request }) =>
@@ -156,7 +213,14 @@ export const rotateWebhookKeyRoute: RouteDefinition = {
 					newSecret: generateSigningSecret(),
 					rotatedAt,
 				})
-				.pipe(withTenant(tenantId));
+				.pipe(
+					withTenant(tenantId),
+					Effect.mapError((error) =>
+						isMissingWebhookEndpointError(error, endpointId)
+							? toMissingWebhookEndpointError(endpointId)
+							: error
+					)
+				);
 
 			yield* appendAuditEvent({
 				action: "webhook_signing_key_rotated",
@@ -176,7 +240,13 @@ export const rotateWebhookKeyRoute: RouteDefinition = {
 					previousKeyExpiresAt: rotation.previousPrimary?.expiresAt,
 				}),
 				tenantId,
-			});
+			}).pipe(
+				Effect.catch((error) =>
+					rollbackRotationOrIgnoreFailure(rotation, tenantId).pipe(
+						Effect.flatMap(() => Effect.fail(toAuditAppendFailureError(error)))
+					)
+				)
+			);
 
 			return ok({
 				activeKeyIds: rotation.activeKeys.map((key) => key.id),

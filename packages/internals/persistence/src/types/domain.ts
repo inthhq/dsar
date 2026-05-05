@@ -735,6 +735,20 @@ export interface RotateWebhookSigningKeyResult {
 }
 
 /**
+ * Input used to undo a failed signing-key rotation side effect.
+ *
+ * @public
+ */
+export interface RollbackWebhookSigningKeyRotationInput {
+	/** Endpoint whose rotation should be undone. */
+	readonly endpointId: string;
+	/** Newly inserted primary key that should be removed. */
+	readonly newKeyId: string;
+	/** Previous primary key to promote back when one existed. */
+	readonly previousPrimary?: WebhookSigningKeyRecord;
+}
+
+/**
  * Cached chat runtime state entry persisted for subscriptions, dedupe, and
  * per-thread state.
  *
@@ -1387,4 +1401,14 @@ export interface WebhookEndpointsRepository {
 		PersistenceError | SqlError,
 		TenantContext
 	>;
+	/**
+	 * Rolls back a completed signing-key rotation after a coupled side effect fails.
+	 *
+	 * @param input - Newly inserted key and prior primary metadata to restore.
+	 * @throws {@link PersistenceError} on mapping failures.
+	 * @throws {@link SqlError} on underlying database failures.
+	 */
+	readonly rollbackSigningKeyRotation: (
+		input: RollbackWebhookSigningKeyRotationInput
+	) => Effect.Effect<void, PersistenceError | SqlError, TenantContext>;
 }

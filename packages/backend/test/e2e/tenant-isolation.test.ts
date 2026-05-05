@@ -553,6 +553,47 @@ const makeTenantScopedMemoryPersistence = (): PersistenceService => {
 						)
 						.toSorted(compareActiveWebhookKeys);
 				}),
+			rollbackSigningKeyRotation: (input) =>
+				Effect.gen(function* rollbackSigningKeyRotation() {
+					const tenantId = yield* currentTenantId;
+					const removedPrimary = webhookSigningKeys.some(
+						(signingKey) =>
+							signingKey.tenantId === tenantId &&
+							signingKey.endpointId === input.endpointId &&
+							signingKey.id === input.newKeyId &&
+							signingKey.role === "primary"
+					);
+					const retainedKeys = webhookSigningKeys.filter(
+						(signingKey) =>
+							!(
+								signingKey.tenantId === tenantId &&
+								signingKey.endpointId === input.endpointId &&
+								signingKey.id === input.newKeyId &&
+								signingKey.role === "primary"
+							)
+					);
+					webhookSigningKeys.splice(
+						0,
+						webhookSigningKeys.length,
+						...retainedKeys
+					);
+					if (!(removedPrimary && input.previousPrimary)) {
+						return;
+					}
+					const previousIndex = webhookSigningKeys.findIndex(
+						(signingKey) =>
+							signingKey.tenantId === tenantId &&
+							signingKey.endpointId === input.endpointId &&
+							signingKey.id === input.previousPrimary?.id
+					);
+					if (previousIndex !== -1) {
+						webhookSigningKeys[previousIndex] = {
+							...input.previousPrimary,
+							expiresAt: undefined,
+							role: "primary",
+						};
+					}
+				}),
 			rotateSigningKey: (input) =>
 				Effect.gen(function* rotateWebhookSigningKey() {
 					const tenantId = yield* currentTenantId;

@@ -1,3 +1,4 @@
+import { PersistenceInvalidRecordError, withTenant } from "@dsar/persistence";
 import { describe, expect, expectTypeOf, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 
@@ -453,6 +454,92 @@ describe(dsarInstance, () => {
 
 		expect(response.status).toBe(200);
 		expect(body.data.previousKeyExpiresAt).toBeDefined();
+	});
+
+	it("returns not found when rotating a missing webhook endpoint", async () => {
+		const runtime = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			repos: { persistence: makeMemoryPersistence() },
+		});
+
+		const response = await runtime.handler(
+			new Request(
+				"https://example.test/webhooks/endpoints/missing/rotate-key",
+				{
+					body: "{}",
+					headers: {
+						"content-type": "application/json",
+						...adminHeaders,
+					},
+					method: "POST",
+				}
+			)
+		);
+		const body = (await response.json()) as ErrorEnvelope;
+
+		expect(response.status).toBe(404);
+		expect(body.error.code).toBe("PERSISTENCE_ENTITY_NOT_FOUND");
+	});
+
+	it("rolls back webhook signing key rotation when audit append fails", async () => {
+		const basePersistence = makeMemoryPersistence();
+		const baseAuditEvents = basePersistence.auditEvents;
+		const persistence = {
+			...basePersistence,
+			auditEvents: {
+				append: (_input: Parameters<typeof baseAuditEvents.append>[0]) =>
+					Effect.fail(
+						new PersistenceInvalidRecordError({
+							entity: "audit_events",
+							field: "hash",
+							value: "audit unavailable",
+						})
+					),
+				listByRequestId: baseAuditEvents.listByRequestId,
+			},
+		};
+		const runtime = dsarInstance({
+			config: {
+				...TEST_RUNTIME_AUTH.config,
+				notificationWebhook: {
+					endpointId: "default",
+					retryDelayMs: 1,
+					retryMaxAttempts: 1,
+					signingSecret: "old-secret",
+					timeoutMs: 1000,
+					url: "https://tenant.example/webhook",
+				},
+			},
+			repos: { persistence },
+		});
+
+		const response = await runtime.handler(
+			new Request(
+				"https://example.test/webhooks/endpoints/default/rotate-key",
+				{
+					body: "{}",
+					headers: {
+						"content-type": "application/json",
+						...adminHeaders,
+					},
+					method: "POST",
+				}
+			)
+		);
+		const activeKeys = await Effect.runPromise(
+			basePersistence.webhookEndpoints
+				.listActiveKeys("default", new Date().toISOString())
+				.pipe(withTenant("tenant-default"))
+		);
+
+		expect(response.status).toBe(500);
+		expect(activeKeys).toStrictEqual([
+			expect.objectContaining({
+				id: "default:primary",
+				role: "primary",
+				secret: "old-secret",
+			}),
+		]);
 	});
 
 	it("allows subject principals to read their own requests", async () => {

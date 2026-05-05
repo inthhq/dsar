@@ -38,6 +38,7 @@ export type {
 	RequestTimelineEventRecord,
 	RetentionClass,
 	RetentionPolicyRecord,
+	RollbackWebhookSigningKeyRotationInput,
 	RotateWebhookSigningKeyInput,
 	RotateWebhookSigningKeyResult,
 	TenantScope,
