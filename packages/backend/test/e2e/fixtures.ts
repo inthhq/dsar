@@ -30,6 +30,18 @@ import * as Effect from "effect/Effect";
 const isExpired = (expiresAt: string | undefined, nowMs: number): boolean =>
 	expiresAt !== undefined && Date.parse(expiresAt) <= nowMs;
 
+const compareActiveWebhookKeys = (
+	left: WebhookSigningKeyRecord,
+	right: WebhookSigningKeyRecord
+): number => {
+	if (left.role !== right.role) {
+		return left.role === "primary" ? -1 : 1;
+	}
+	return left.createdAt === right.createdAt
+		? left.id.localeCompare(right.id)
+		: right.createdAt.localeCompare(left.createdAt);
+};
+
 export const BASE_JSON_BODY = {
 	challengeId: "challenge-1",
 	channel: "email",
@@ -468,12 +480,7 @@ export const makeMemoryPersistence = (): PersistenceService => {
 									key.expiresAt === undefined ||
 									key.expiresAt > now)
 						)
-						.toSorted((left, right) => {
-							if (left.role === right.role) {
-								return right.createdAt.localeCompare(left.createdAt);
-							}
-							return left.role === "primary" ? -1 : 1;
-						})
+						.toSorted(compareActiveWebhookKeys)
 				),
 			rotateSigningKey: (input) => {
 				const endpoint = webhookEndpoints.get(input.endpointId);
@@ -516,12 +523,7 @@ export const makeMemoryPersistence = (): PersistenceService => {
 									key.expiresAt === undefined ||
 									key.expiresAt > input.rotatedAt)
 						)
-						.toSorted((left, right) => {
-							if (left.role === right.role) {
-								return right.createdAt.localeCompare(left.createdAt);
-							}
-							return left.role === "primary" ? -1 : 1;
-						}),
+						.toSorted(compareActiveWebhookKeys),
 					endpoint,
 					newPrimary,
 					previousPrimary,

@@ -106,6 +106,18 @@ const currentTenantId = Effect.service(TenantContext).pipe(
 
 const scopedKey = (tenantId: string, id: string): string => `${tenantId}:${id}`;
 
+const compareActiveWebhookKeys = (
+	left: WebhookSigningKeyRecord,
+	right: WebhookSigningKeyRecord
+): number => {
+	if (left.role !== right.role) {
+		return left.role === "primary" ? -1 : 1;
+	}
+	return left.createdAt === right.createdAt
+		? left.id.localeCompare(right.id)
+		: right.createdAt.localeCompare(left.createdAt);
+};
+
 const notFound = (entity: string, id: string): Error =>
 	new Error(`Missing ${entity} ${id}`);
 
@@ -539,12 +551,7 @@ const makeTenantScopedMemoryPersistence = (): PersistenceService => {
 									signingKey.expiresAt === undefined ||
 									signingKey.expiresAt > now)
 						)
-						.toSorted((left, right) => {
-							if (left.role === right.role) {
-								return right.createdAt.localeCompare(left.createdAt);
-							}
-							return left.role === "primary" ? -1 : 1;
-						});
+						.toSorted(compareActiveWebhookKeys);
 				}),
 			rotateSigningKey: (input) =>
 				Effect.gen(function* rotateWebhookSigningKey() {
@@ -595,12 +602,7 @@ const makeTenantScopedMemoryPersistence = (): PersistenceService => {
 										signingKey.expiresAt === undefined ||
 										signingKey.expiresAt > input.rotatedAt)
 							)
-							.toSorted((left, right) => {
-								if (left.role === right.role) {
-									return right.createdAt.localeCompare(left.createdAt);
-								}
-								return left.role === "primary" ? -1 : 1;
-							}),
+							.toSorted(compareActiveWebhookKeys),
 						endpoint,
 						newPrimary,
 						previousPrimary,

@@ -32,10 +32,12 @@ const sortWebhookSigningKeys = (
 	keys: readonly WebhookSigningKeyRecord[]
 ): readonly WebhookSigningKeyRecord[] =>
 	keys.toSorted((left, right) => {
-		if (left.role === right.role) {
-			return right.createdAt.localeCompare(left.createdAt);
+		if (left.role !== right.role) {
+			return left.role === "primary" ? -1 : 1;
 		}
-		return left.role === "primary" ? -1 : 1;
+		return left.createdAt === right.createdAt
+			? left.id.localeCompare(right.id)
+			: right.createdAt.localeCompare(left.createdAt);
 	});
 
 const makeMemoryPersistence = (): {

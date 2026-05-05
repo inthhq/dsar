@@ -8,6 +8,8 @@ import type {
 	RequestRecord,
 	RequestTimelineEventRecord,
 	UpdateRequestInput,
+	WebhookEndpointRecord,
+	WebhookSigningKeyRecord,
 } from "@dsar/persistence";
 import { describe, expect, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
@@ -16,6 +18,18 @@ import { dsarInstance } from "../../src";
 import { TEST_MEMBER_HEADERS, TEST_RUNTIME_AUTH } from "../auth";
 
 const actorHeaders = TEST_MEMBER_HEADERS;
+
+const compareActiveWebhookKeys = (
+	left: WebhookSigningKeyRecord,
+	right: WebhookSigningKeyRecord
+): number => {
+	if (left.role !== right.role) {
+		return left.role === "primary" ? -1 : 1;
+	}
+	return left.createdAt === right.createdAt
+		? left.id.localeCompare(right.id)
+		: right.createdAt.localeCompare(left.createdAt);
+};
 
 const makeMemoryPersistence = (): PersistenceService => {
 	const requests = new Map<string, RequestRecord>();
@@ -73,8 +87,8 @@ const makeMemoryPersistence = (): PersistenceService => {
 		readonly createdAt: string;
 	}[] = [];
 	const chatState = new Map<string, unknown>();
-	const webhookEndpoints = new Map<string, Record<string, unknown>>();
-	const webhookSigningKeys: Record<string, unknown>[] = [];
+	const webhookEndpoints = new Map<string, WebhookEndpointRecord>();
+	const webhookSigningKeys: WebhookSigningKeyRecord[] = [];
 	const chatSubscriptions = new Set<string>();
 	const chatLocks = new Map<
 		string,
@@ -318,7 +332,7 @@ const makeMemoryPersistence = (): PersistenceService => {
 		},
 		webhookEndpoints: {
 			ensureConfigured: (input) => {
-				const endpoint = {
+				const endpoint: WebhookEndpointRecord = {
 					createdAt: input.createdAt,
 					id: input.id,
 					tenantId: "tenant-default",
@@ -340,12 +354,12 @@ const makeMemoryPersistence = (): PersistenceService => {
 					};
 					webhookSigningKeys.push(primaryKey);
 				}
-				return Effect.succeed({ endpoint, primaryKey } as never);
+				return Effect.succeed({ endpoint, primaryKey });
 			},
 			getById: (id) =>
 				Effect.fromNullishOr(webhookEndpoints.get(id)).pipe(
 					Effect.mapError(() => new Error(`Missing webhook endpoint ${id}`))
-				) as never,
+				),
 			listActiveKeys: (endpointId, now) =>
 				Effect.succeed(
 					webhookSigningKeys
@@ -356,30 +370,32 @@ const makeMemoryPersistence = (): PersistenceService => {
 									typeof key.expiresAt !== "string" ||
 									key.expiresAt > now)
 						)
-						.toSorted((left, right) => {
-							if (left.role === right.role) {
-								return String(right.createdAt).localeCompare(
-									String(left.createdAt)
-								);
-							}
-							return left.role === "primary" ? -1 : 1;
-						})
-				) as never,
+						.toSorted(compareActiveWebhookKeys)
+				),
 			rotateSigningKey: (input) => {
 				const endpoint = webhookEndpoints.get(input.endpointId);
 				if (!endpoint) {
 					return Effect.fail(
 						new Error(`Missing webhook endpoint ${input.endpointId}`)
-					) as never;
+					);
 				}
-				const previousPrimary = webhookSigningKeys.find(
+				const previousIndex = webhookSigningKeys.findIndex(
 					(key) => key.endpointId === input.endpointId && key.role === "primary"
 				);
+				const previousPrimary =
+					previousIndex === -1
+						? undefined
+						: {
+								...(webhookSigningKeys[
+									previousIndex
+								] as WebhookSigningKeyRecord),
+								expiresAt: input.graceExpiresAt,
+								role: "secondary" as const,
+							};
 				if (previousPrimary) {
-					previousPrimary.role = "secondary";
-					previousPrimary.expiresAt = input.graceExpiresAt;
+					webhookSigningKeys[previousIndex] = previousPrimary;
 				}
-				const newPrimary = {
+				const newPrimary: WebhookSigningKeyRecord = {
 					createdAt: input.rotatedAt,
 					endpointId: input.endpointId,
 					id: input.newKeyId,
@@ -397,18 +413,11 @@ const makeMemoryPersistence = (): PersistenceService => {
 									typeof key.expiresAt !== "string" ||
 									key.expiresAt > input.rotatedAt)
 						)
-						.toSorted((left, right) => {
-							if (left.role === right.role) {
-								return String(right.createdAt).localeCompare(
-									String(left.createdAt)
-								);
-							}
-							return left.role === "primary" ? -1 : 1;
-						}),
+						.toSorted(compareActiveWebhookKeys),
 					endpoint,
 					newPrimary,
 					previousPrimary,
-				} as never);
+				});
 			},
 		},
 	};

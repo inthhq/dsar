@@ -18,6 +18,7 @@ import type { RouteDefinition } from "../types";
 const DEFAULT_WEBHOOK_ENDPOINT_ID = "default";
 const DEFAULT_GRACE_PERIOD_DAYS = 7;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const MAX_DATE_MS = 8_640_000_000_000_000;
 const SECRET_BYTES = 32;
 
 const generateSigningSecret = (): string => {
@@ -56,9 +57,13 @@ const parseBody = (request: Request) =>
 
 const resolveGracePeriodDays = (value: number | undefined): number => {
 	const days = value ?? DEFAULT_GRACE_PERIOD_DAYS;
-	if (!Number.isSafeInteger(days) || days < 0) {
+	const maxGracePeriodDays = Math.floor(
+		(MAX_DATE_MS - Date.now()) / MS_PER_DAY
+	);
+	if (!Number.isSafeInteger(days) || days < 0 || days > maxGracePeriodDays) {
 		throw new RequestValidationError({
-			message: "gracePeriodDays must be a non-negative integer.",
+			message:
+				"gracePeriodDays must be a non-negative integer within the supported date range.",
 			reasonCode: "REQUEST_VALIDATION_FAILED",
 		});
 	}

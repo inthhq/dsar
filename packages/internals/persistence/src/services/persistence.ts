@@ -4,6 +4,7 @@ import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as ServiceMap from "effect/ServiceMap";
 import * as SqlClient from "effect/unstable/sql/SqlClient";
+import { SqlError } from "effect/unstable/sql/SqlError";
 
 import type { PersistenceDriver } from "../sql/driver";
 import { TenantContext, requireTenantId } from "../tenant/context";
@@ -71,6 +72,16 @@ interface WebhookSigningKeySqlRow {
 	readonly expires_at: string | null;
 	readonly created_at: string;
 }
+
+const isUniqueConstraintSqlError = (error: unknown): error is SqlError => {
+	if (!(error instanceof SqlError)) {
+		return false;
+	}
+	const cause =
+		error.cause instanceof Error ? error.cause.message : String(error.cause);
+	const message = `${error.message ?? ""} ${cause}`;
+	return /constraint|duplicate|unique/i.test(message);
+};
 
 /**
  * Effect service surface for all tenant-scoped persistence repositories.
@@ -885,45 +896,46 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 			rotateSigningKey: (input) =>
 				Effect.gen(function* rotateWebhookSigningKey() {
 					const tenantId = yield* requireTenantId;
-					return yield* sql.withTransaction(
-						Effect.gen(function* rotateWebhookSigningKeyTransaction() {
-							const endpointRows =
-								yield* sql<WebhookEndpointSqlRow>`UPDATE webhook_endpoints
+					const rotateOnce = () =>
+						sql.withTransaction(
+							Effect.gen(function* rotateWebhookSigningKeyTransaction() {
+								const endpointRows =
+									yield* sql<WebhookEndpointSqlRow>`UPDATE webhook_endpoints
 							SET updated_at = updated_at
 							WHERE tenant_id = ${tenantId} AND id = ${input.endpointId}
 							RETURNING *`;
-							const endpointRow = yield* findRequired(
-								endpointRows[0],
-								"webhook_endpoints",
-								input.endpointId
-							);
-							const previousRows =
-								yield* sql<WebhookSigningKeySqlRow>`UPDATE webhook_signing_keys
+								const endpointRow = yield* findRequired(
+									endpointRows[0],
+									"webhook_endpoints",
+									input.endpointId
+								);
+								const previousRows =
+									yield* sql<WebhookSigningKeySqlRow>`UPDATE webhook_signing_keys
 							SET role = 'secondary',
 								expires_at = ${input.graceExpiresAt}
 							WHERE tenant_id = ${tenantId}
 								AND endpoint_id = ${input.endpointId}
 								AND role = 'primary'
 							RETURNING *`;
-							yield* sql`INSERT INTO webhook_signing_keys ${sql.insert({
-								created_at: input.rotatedAt,
-								endpoint_id: input.endpointId,
-								expires_at: null,
-								id: input.newKeyId,
-								role: "primary",
-								secret: input.newSecret,
-								tenant_id: tenantId,
-							})}`;
-							const newRows = yield* sql<WebhookSigningKeySqlRow>`SELECT *
+								yield* sql`INSERT INTO webhook_signing_keys ${sql.insert({
+									created_at: input.rotatedAt,
+									endpoint_id: input.endpointId,
+									expires_at: null,
+									id: input.newKeyId,
+									role: "primary",
+									secret: input.newSecret,
+									tenant_id: tenantId,
+								})}`;
+								const newRows = yield* sql<WebhookSigningKeySqlRow>`SELECT *
 							FROM webhook_signing_keys
 							WHERE tenant_id = ${tenantId} AND id = ${input.newKeyId}
 							LIMIT 1`;
-							const newRow = yield* findRequired(
-								newRows[0],
-								"webhook_signing_keys",
-								input.newKeyId
-							);
-							const activeRows = yield* sql<WebhookSigningKeySqlRow>`SELECT *
+								const newRow = yield* findRequired(
+									newRows[0],
+									"webhook_signing_keys",
+									input.newKeyId
+								);
+								const activeRows = yield* sql<WebhookSigningKeySqlRow>`SELECT *
 							FROM webhook_signing_keys
 							WHERE tenant_id = ${tenantId}
 								AND endpoint_id = ${input.endpointId}
@@ -936,15 +948,18 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 								CASE role WHEN 'primary' THEN 0 ELSE 1 END ASC,
 								created_at DESC,
 								id ASC`;
-							return {
-								activeKeys: activeRows.map(mapWebhookSigningKeyRecord),
-								endpoint: mapWebhookEndpointRecord(endpointRow),
-								newPrimary: mapWebhookSigningKeyRecord(newRow),
-								previousPrimary: previousRows[0]
-									? mapWebhookSigningKeyRecord(previousRows[0])
-									: undefined,
-							};
-						})
+								return {
+									activeKeys: activeRows.map(mapWebhookSigningKeyRecord),
+									endpoint: mapWebhookEndpointRecord(endpointRow),
+									newPrimary: mapWebhookSigningKeyRecord(newRow),
+									previousPrimary: previousRows[0]
+										? mapWebhookSigningKeyRecord(previousRows[0])
+										: undefined,
+								};
+							})
+						);
+					return yield* rotateOnce().pipe(
+						Effect.catchIf(isUniqueConstraintSqlError, () => rotateOnce())
 					);
 				}),
 		};

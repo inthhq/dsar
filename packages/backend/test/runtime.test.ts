@@ -366,7 +366,7 @@ describe(dsarInstance, () => {
 		);
 		expect(forbiddenSubject.status).toBe(403);
 
-		for (const invalidGracePeriod of [-1, 1.5]) {
+		for (const invalidGracePeriod of [-1, 1.5, Number.MAX_SAFE_INTEGER]) {
 			const invalid = await runtime.handler(
 				new Request(
 					"https://example.test/webhooks/endpoints/default/rotate-key",
