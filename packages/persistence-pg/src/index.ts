@@ -7,6 +7,7 @@ import type {
 	PersistenceMigrationHooks,
 	PersistenceService,
 	TenantContext,
+	WebhookSigningSecretEncryptionOptions,
 } from "@dsar/persistence";
 import type * as PgClient from "@effect/sql-pg/PgClient";
 import type { Layer } from "effect";
@@ -79,6 +80,8 @@ export interface PgPersistenceLayerOptions {
 	readonly migrationLockKey?: number;
 	/** Disables advisory-lock migration protection when set to `false`. */
 	readonly useMigrationLock?: boolean;
+	/** Encryption key material used for persisted webhook signing secrets. */
+	readonly webhookSigningSecretEncryption?: WebhookSigningSecretEncryptionOptions;
 }
 
 /**
@@ -128,6 +131,7 @@ export const makePgPersistenceLayer = (
 					),
 			options.migrationHooks
 		),
+		webhookSigningSecretEncryption: options.webhookSigningSecretEncryption,
 	});
 
 /**

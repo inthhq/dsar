@@ -116,6 +116,13 @@ export interface NotificationDispatchInput {
 	readonly locale: string;
 	/** Event-specific business payload consumed by channel adapters. */
 	readonly payload: Readonly<Record<string, unknown>>;
+	/** Optional outbound webhook signing key for webhook notification adapters. */
+	readonly webhookSigningKey?: {
+		/** Persisted signing key id to emit as `x-dsar-signature-key-id`. */
+		readonly id: string;
+		/** Secret used to compute the `x-dsar-signature` HMAC. */
+		readonly secret: string;
+	};
 }
 
 /**

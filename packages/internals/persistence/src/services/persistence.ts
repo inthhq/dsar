@@ -4,6 +4,7 @@ import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as ServiceMap from "effect/ServiceMap";
 import * as SqlClient from "effect/unstable/sql/SqlClient";
+import { SqlError } from "effect/unstable/sql/SqlError";
 
 import type { PersistenceDriver } from "../sql/driver";
 import { TenantContext, requireTenantId } from "../tenant/context";
@@ -15,6 +16,7 @@ import type {
 	CreateNotificationDeliveryAttemptInput,
 	CreateNotificationEventInput,
 	FulfillmentArtifactsRepository,
+	ListRequestsBySubjectInput,
 	NotificationDeliveryAttemptsRepository,
 	NotificationEventsRepository,
 	PaginationInput,
@@ -23,7 +25,10 @@ import type {
 	RequestTimelineRepository,
 	RetentionPoliciesRepository,
 	VerificationEvidenceRepository,
+	WebhookEndpointsRepository,
+	WebhookSigningKeyRecord,
 } from "../types/domain";
+import type { PersistenceError } from "../types/errors";
 import {
 	mapAuditEventRecord,
 	mapChatStateRecord,
@@ -38,18 +43,75 @@ import {
 	mapRetentionPolicyRecordEffect,
 	mapTimelineRecord,
 	mapVerificationEvidenceRecord,
+	mapWebhookEndpointRecord,
+	mapWebhookSigningKeyRecord,
 } from "./persistence/mappers";
 import { runMigrations } from "./persistence/migrations";
 import {
 	BOOTSTRAP_TENANT_ID,
+	extractRequestLookupFields,
 	findRequired,
 	jsonEncode,
 	limitWithFallback,
+	normalizeSubjectLookupIdentifier,
 	offsetWithFallback,
 } from "./persistence/shared";
 import type { Sql } from "./persistence/shared";
+import { makeWebhookSigningSecretCipher } from "./persistence/webhook-secret-encryption";
+import type {
+	WebhookSigningSecretCipher,
+	WebhookSigningSecretEncryptionOptions,
+} from "./persistence/webhook-secret-encryption";
 
 export { runMigrations } from "./persistence/migrations";
+export type { WebhookSigningSecretEncryptionOptions } from "./persistence/webhook-secret-encryption";
+
+interface WebhookEndpointSqlRow {
+	readonly id: string;
+	readonly tenant_id: string;
+	readonly url: string;
+	readonly created_at: string;
+	readonly updated_at: string;
+}
+
+interface WebhookSigningKeySqlRow {
+	readonly id: string;
+	readonly tenant_id: string;
+	readonly endpoint_id: string;
+	readonly secret_ciphertext: string;
+	readonly secret_data_key_nonce: string;
+	readonly secret_data_key_tag: string;
+	readonly secret_encrypted_data_key: string;
+	readonly secret_key_id: string;
+	readonly secret_nonce: string;
+	readonly secret_tag: string;
+	readonly role: string;
+	readonly expires_at: string | null;
+	readonly created_at: string;
+}
+
+const isUniqueConstraintSqlError = (error: unknown): error is SqlError => {
+	if (!(error instanceof SqlError)) {
+		return false;
+	}
+	const cause =
+		error.cause instanceof Error ? error.cause.message : String(error.cause);
+	const message = `${error.message ?? ""} ${cause}`;
+	return /constraint|duplicate|unique/i.test(message);
+};
+
+const mapWebhookSigningKeySqlRow = (
+	row: WebhookSigningKeySqlRow,
+	cipher: WebhookSigningSecretCipher
+): Effect.Effect<WebhookSigningKeyRecord, PersistenceError> =>
+	Effect.gen(function* decryptWebhookSigningKey() {
+		const secret = yield* cipher.open(row, {
+			endpointId: row.endpoint_id,
+			signingKeyId: row.id,
+			tenantId: row.tenant_id,
+		});
+		return mapWebhookSigningKeyRecord({ ...row, secret });
+	});
 
 /**
  * Effect service surface for all tenant-scoped persistence repositories.
@@ -75,6 +137,8 @@ export interface PersistenceService {
 	readonly notificationEvents: NotificationEventsRepository;
 	/** Immutable notification delivery-attempt repository. */
 	readonly notificationDeliveryAttempts: NotificationDeliveryAttemptsRepository;
+	/** Outbound webhook endpoint and signing-key repository. */
+	readonly webhookEndpoints: WebhookEndpointsRepository;
 	/** Tenant-scoped Chat SDK state, subscription, and lock repository. */
 	readonly chatRuntimeState: ChatRuntimeStateRepository;
 }
@@ -116,9 +180,15 @@ export interface PersistenceMigrationHooks {
 	readonly afterMigrations?: (sql: Sql) => Effect.Effect<void, unknown>;
 }
 
-const makePersistence = (hooks?: PersistenceMigrationHooks) =>
+const makePersistence = (
+	hooks?: PersistenceMigrationHooks,
+	webhookSigningSecretEncryption?: WebhookSigningSecretEncryptionOptions
+) =>
 	Effect.gen(function* makePersistenceService() {
 		const sql = yield* SqlClient.SqlClient;
+		const webhookSigningSecretCipher = makeWebhookSigningSecretCipher(
+			webhookSigningSecretEncryption
+		);
 		const dbCurrentTimestamp = sql.onDialectOrElse({
 			orElse: () => sql.literal("CURRENT_TIMESTAMP"),
 			pg: () =>
@@ -139,6 +209,7 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 			create: (input) =>
 				Effect.gen(function* createRequest() {
 					const tenantId = yield* requireTenantId;
+					const lookupFields = extractRequestLookupFields(input);
 					yield* sql`INSERT INTO requests ${sql.insert({
 						appeals_json: jsonEncode(input.appeals),
 						authority_json: jsonEncode(input.authority),
@@ -147,9 +218,13 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 						created_at: input.receivedAt,
 						due_at: input.dueAt,
 						id: input.id,
+						policy_pack: lookupFields.policyPack,
 						received_at: input.receivedAt,
+						requestor_email: lookupFields.requestorEmail,
 						requestor_json: jsonEncode(input.requestor),
 						status: input.status,
+						subject_external_ref: lookupFields.subjectExternalRef,
+						subject_id: lookupFields.subjectId,
 						tenant_id: tenantId,
 						updated_at: input.receivedAt,
 					})}`;
@@ -200,6 +275,82 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 						OFFSET ${offset}`;
 					return rows.map(mapRequestRecord);
 				}),
+			listBySubject: (input: ListRequestsBySubjectInput) =>
+				Effect.gen(function* listRequestsBySubject() {
+					const tenantId = yield* requireTenantId;
+					const identifiers = [
+						...new Set(
+							input.identifiers
+								.map(normalizeSubjectLookupIdentifier)
+								.filter((value): value is string => value !== null)
+						),
+					];
+					if (identifiers.length === 0) {
+						return { items: [], limit: limitWithFallback(input.limit) };
+					}
+					const limit = limitWithFallback(input.limit);
+					const pageLimit = limit + 1;
+					const statusValues = [
+						...new Set(
+							(input.status ?? [])
+								.map((value) => value.trim())
+								.filter((value) => value.length > 0)
+						),
+					];
+					const clauses = [
+						sql`tenant_id = ${tenantId}`,
+						sql.or([
+							sql.in("subject_id", identifiers),
+							sql.in("subject_external_ref", identifiers),
+							sql.in("requestor_email", identifiers),
+						]),
+					];
+					if (statusValues.length > 0) {
+						clauses.push(sql.in("status", statusValues));
+					}
+					if (input.createdAfter) {
+						clauses.push(sql`created_at > ${input.createdAfter}`);
+					}
+					if (input.createdBefore) {
+						clauses.push(sql`created_at < ${input.createdBefore}`);
+					}
+					if (input.policyPack) {
+						clauses.push(sql`policy_pack = ${input.policyPack}`);
+					}
+					if (input.cursor) {
+						clauses.push(
+							sql`(created_at < ${input.cursor.createdAt} OR (created_at = ${input.cursor.createdAt} AND id < ${input.cursor.id}))`
+						);
+					}
+					const rows = yield* sql<{
+						readonly id: string;
+						readonly tenant_id: string;
+						readonly status: string;
+						readonly received_at: string;
+						readonly due_at: string;
+						readonly clock_mode: string;
+						readonly requestor_json: string;
+						readonly authority_json: string;
+						readonly capture_json: string;
+						readonly appeals_json: string;
+						readonly created_at: string;
+						readonly updated_at: string;
+					}>`SELECT * FROM requests
+						WHERE ${sql.and(clauses)}
+						ORDER BY created_at DESC, id DESC
+						LIMIT ${pageLimit}`;
+					const mapped = rows.map(mapRequestRecord);
+					const items = mapped.slice(0, limit);
+					const last = items.at(-1);
+					return {
+						items,
+						limit,
+						nextCursor:
+							mapped.length > limit && last
+								? { createdAt: last.createdAt, id: last.id }
+								: undefined,
+					};
+				}),
 			remove: (id) =>
 				Effect.gen(function* removeRequest() {
 					const tenantId = yield* requireTenantId;
@@ -209,14 +360,24 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 				Effect.gen(function* updateRequest() {
 					const tenantId = yield* requireTenantId;
 					const current = yield* requests.getById(id);
+					const nextCapture = input.capture ?? current.capture;
+					const nextRequestor = input.requestor ?? current.requestor;
+					const lookupFields = extractRequestLookupFields({
+						capture: nextCapture,
+						requestor: nextRequestor,
+					});
 					yield* sql`UPDATE requests SET ${sql.update({
 						appeals_json: jsonEncode(input.appeals ?? current.appeals),
 						authority_json: jsonEncode(input.authority ?? current.authority),
-						capture_json: jsonEncode(input.capture ?? current.capture),
+						capture_json: jsonEncode(nextCapture),
 						clock_mode: input.clockMode ?? current.clockMode,
 						due_at: input.dueAt ?? current.dueAt,
-						requestor_json: jsonEncode(input.requestor ?? current.requestor),
+						policy_pack: lookupFields.policyPack,
+						requestor_email: lookupFields.requestorEmail,
+						requestor_json: jsonEncode(nextRequestor),
 						status: input.status ?? current.status,
+						subject_external_ref: lookupFields.subjectExternalRef,
+						subject_id: lookupFields.subjectId,
 						updated_at: input.updatedAt,
 					})} WHERE tenant_id = ${tenantId} AND id = ${id}`;
 					return yield* requests.getById(id);
@@ -778,6 +939,217 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 					}),
 			};
 
+		const webhookEndpoints: WebhookEndpointsRepository = {
+			ensureConfigured: (input) =>
+				Effect.gen(function* ensureConfiguredWebhookEndpoint() {
+					const tenantId = yield* requireTenantId;
+					return yield* sql.withTransaction(
+						Effect.gen(function* ensureConfiguredWebhookEndpointTransaction() {
+							const encryptedSecret = yield* webhookSigningSecretCipher.seal(
+								input.signingSecret,
+								{
+									endpointId: input.id,
+									signingKeyId: input.keyId ?? `${input.id}:primary`,
+									tenantId,
+								}
+							);
+							yield* sql`INSERT INTO webhook_endpoints ${sql.insert({
+								created_at: input.createdAt,
+								id: input.id,
+								tenant_id: tenantId,
+								updated_at: input.createdAt,
+								url: input.url,
+							})}
+							ON CONFLICT(tenant_id, id) DO UPDATE SET
+								url = excluded.url,
+								updated_at = excluded.updated_at`;
+							yield* sql`INSERT INTO webhook_signing_keys ${sql.insert({
+								created_at: input.createdAt,
+								endpoint_id: input.id,
+								expires_at: null,
+								id: input.keyId ?? `${input.id}:primary`,
+								role: "primary",
+								tenant_id: tenantId,
+								...encryptedSecret,
+							})}
+							ON CONFLICT DO NOTHING`;
+							const endpointRows = yield* sql<WebhookEndpointSqlRow>`SELECT *
+							FROM webhook_endpoints
+							WHERE tenant_id = ${tenantId} AND id = ${input.id}
+							LIMIT 1`;
+							const endpointRow = yield* findRequired(
+								endpointRows[0],
+								"webhook_endpoints",
+								input.id
+							);
+							const primaryRows = yield* sql<WebhookSigningKeySqlRow>`SELECT *
+							FROM webhook_signing_keys
+							WHERE tenant_id = ${tenantId}
+								AND endpoint_id = ${input.id}
+								AND role = 'primary'
+							LIMIT 1`;
+							const primaryRow = yield* findRequired(
+								primaryRows[0],
+								"webhook_signing_keys",
+								input.id
+							);
+							return {
+								endpoint: mapWebhookEndpointRecord(endpointRow),
+								primaryKey: yield* mapWebhookSigningKeySqlRow(
+									primaryRow,
+									webhookSigningSecretCipher
+								),
+							};
+						})
+					);
+				}),
+			getById: (id) =>
+				Effect.gen(function* getWebhookEndpointById() {
+					const tenantId = yield* requireTenantId;
+					const rows =
+						yield* sql<WebhookEndpointSqlRow>`SELECT * FROM webhook_endpoints
+					WHERE tenant_id = ${tenantId} AND id = ${id}
+					LIMIT 1`;
+					const row = yield* findRequired(rows[0], "webhook_endpoints", id);
+					return mapWebhookEndpointRecord(row);
+				}),
+			listActiveKeys: (endpointId, now) =>
+				Effect.gen(function* listActiveWebhookSigningKeys() {
+					const tenantId = yield* requireTenantId;
+					const rows =
+						yield* sql<WebhookSigningKeySqlRow>`SELECT * FROM webhook_signing_keys
+					WHERE tenant_id = ${tenantId}
+						AND endpoint_id = ${endpointId}
+						AND (
+							role = 'primary'
+							OR expires_at IS NULL
+							OR expires_at > ${now}
+						)
+					ORDER BY
+						CASE role WHEN 'primary' THEN 0 ELSE 1 END ASC,
+						created_at DESC,
+						id ASC`;
+					return yield* Effect.forEach(rows, (row) =>
+						mapWebhookSigningKeySqlRow(row, webhookSigningSecretCipher)
+					);
+				}),
+			rollbackSigningKeyRotation: (input) =>
+				Effect.gen(function* rollbackWebhookSigningKeyRotation() {
+					const tenantId = yield* requireTenantId;
+					yield* sql.withTransaction(
+						Effect.gen(
+							function* rollbackWebhookSigningKeyRotationTransaction() {
+								const deletedRows = yield* sql<{ readonly id: string }>`DELETE
+								FROM webhook_signing_keys
+								WHERE tenant_id = ${tenantId}
+									AND endpoint_id = ${input.endpointId}
+									AND id = ${input.newKeyId}
+									AND role = 'primary'
+								RETURNING id`;
+								if (deletedRows.length === 0 || !input.previousPrimary) {
+									return;
+								}
+								yield* sql`UPDATE webhook_signing_keys
+								SET role = 'primary',
+									expires_at = NULL
+								WHERE tenant_id = ${tenantId}
+									AND endpoint_id = ${input.endpointId}
+									AND id = ${input.previousPrimary.id}`;
+							}
+						)
+					);
+				}),
+			rotateSigningKey: (input) =>
+				Effect.gen(function* rotateWebhookSigningKey() {
+					const tenantId = yield* requireTenantId;
+					const rotateOnce = () =>
+						sql.withTransaction(
+							Effect.gen(function* rotateWebhookSigningKeyTransaction() {
+								const encryptedSecret = yield* webhookSigningSecretCipher.seal(
+									input.newSecret,
+									{
+										endpointId: input.endpointId,
+										signingKeyId: input.newKeyId,
+										tenantId,
+									}
+								);
+								const endpointRows =
+									yield* sql<WebhookEndpointSqlRow>`UPDATE webhook_endpoints
+							SET updated_at = updated_at
+							WHERE tenant_id = ${tenantId} AND id = ${input.endpointId}
+							RETURNING *`;
+								const endpointRow = yield* findRequired(
+									endpointRows[0],
+									"webhook_endpoints",
+									input.endpointId
+								);
+								const previousRows =
+									yield* sql<WebhookSigningKeySqlRow>`UPDATE webhook_signing_keys
+							SET role = 'secondary',
+								expires_at = ${input.graceExpiresAt}
+							WHERE tenant_id = ${tenantId}
+								AND endpoint_id = ${input.endpointId}
+								AND role = 'primary'
+							RETURNING *`;
+								yield* sql`INSERT INTO webhook_signing_keys ${sql.insert({
+									created_at: input.rotatedAt,
+									endpoint_id: input.endpointId,
+									expires_at: null,
+									id: input.newKeyId,
+									role: "primary",
+									tenant_id: tenantId,
+									...encryptedSecret,
+								})}`;
+								const newRows = yield* sql<WebhookSigningKeySqlRow>`SELECT *
+							FROM webhook_signing_keys
+							WHERE tenant_id = ${tenantId} AND id = ${input.newKeyId}
+							LIMIT 1`;
+								const newRow = yield* findRequired(
+									newRows[0],
+									"webhook_signing_keys",
+									input.newKeyId
+								);
+								const activeRows = yield* sql<WebhookSigningKeySqlRow>`SELECT *
+							FROM webhook_signing_keys
+							WHERE tenant_id = ${tenantId}
+								AND endpoint_id = ${input.endpointId}
+								AND (
+									role = 'primary'
+									OR expires_at IS NULL
+									OR expires_at > ${input.rotatedAt}
+								)
+								ORDER BY
+								CASE role WHEN 'primary' THEN 0 ELSE 1 END ASC,
+								created_at DESC,
+								id ASC`;
+								const newPrimary = yield* mapWebhookSigningKeySqlRow(
+									newRow,
+									webhookSigningSecretCipher
+								);
+								const [previousRow] = previousRows;
+								const previousPrimary = previousRow
+									? yield* mapWebhookSigningKeySqlRow(
+											previousRow,
+											webhookSigningSecretCipher
+										)
+									: undefined;
+								const activeKeys = yield* Effect.forEach(activeRows, (row) =>
+									mapWebhookSigningKeySqlRow(row, webhookSigningSecretCipher)
+								);
+								return {
+									activeKeys,
+									endpoint: mapWebhookEndpointRecord(endpointRow),
+									newPrimary,
+									previousPrimary,
+								};
+							})
+						);
+					return yield* rotateOnce().pipe(
+						Effect.catchIf(isUniqueConstraintSqlError, () => rotateOnce())
+					);
+				}),
+		};
+
 		const chatRuntimeState: ChatRuntimeStateRepository = {
 			acquireLock: (input) =>
 				Effect.gen(function* acquireChatRuntimeLock() {
@@ -965,6 +1337,7 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 			retentionPolicies,
 			timeline,
 			verificationEvidence,
+			webhookEndpoints,
 		} satisfies PersistenceService;
 	});
 
@@ -980,10 +1353,17 @@ const makePersistence = (hooks?: PersistenceMigrationHooks) =>
 export const makePersistenceLayer = (options: {
 	readonly driver: PersistenceDriver;
 	readonly migrationHooks?: PersistenceMigrationHooks;
+	readonly webhookSigningSecretEncryption?: WebhookSigningSecretEncryptionOptions;
 }): Layer.Layer<Persistence, never, TenantContext> =>
 	Layer.provide(
 		Layer.effect(Persistence)(
-			pipe(makePersistence(options.migrationHooks), Effect.orDie)
+			pipe(
+				makePersistence(
+					options.migrationHooks,
+					options.webhookSigningSecretEncryption
+				),
+				Effect.orDie
+			)
 		),
 		Layer.orDie(options.driver.layer)
 	);

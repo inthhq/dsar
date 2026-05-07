@@ -7,6 +7,7 @@ export {
 export type {
 	PersistenceMigrationHooks,
 	PersistenceService,
+	WebhookSigningSecretEncryptionOptions,
 } from "./services/persistence";
 export type { PersistenceDriver, PersistenceDriverKind } from "./sql/driver";
 export { TenantContext, withTenant } from "./tenant/context";
@@ -26,22 +27,34 @@ export type {
 	CreateVerificationEvidenceInput,
 	CreateNotificationDeliveryAttemptInput,
 	CreateNotificationEventInput,
+	EnsureWebhookEndpointInput,
 	FulfillmentArtifactRecord,
 	JsonValue,
+	ListRequestsBySubjectInput,
 	NotificationDeliveryAttemptRecord,
 	NotificationDeliveryStatus,
 	NotificationEventRecord,
 	PaginationInput,
 	PolicyAssignmentRecord,
 	RequestRecord,
+	RequestsRepository,
+	RequestSubjectCursor,
+	RequestSubjectPage,
 	RequestTimelineEventRecord,
 	RetentionClass,
 	RetentionPolicyRecord,
+	RollbackWebhookSigningKeyRotationInput,
+	RotateWebhookSigningKeyInput,
+	RotateWebhookSigningKeyResult,
 	TenantScope,
 	UpdateFulfillmentArtifactInput,
 	UpdateRequestInput,
 	UpsertRetentionPolicyInput,
 	VerificationEvidenceRecord,
+	WebhookEndpointRecord,
+	WebhookEndpointsRepository,
+	WebhookSigningKeyRecord,
+	WebhookSigningKeyRole,
 } from "./types/domain";
 export {
 	MissingTenantScopeError,

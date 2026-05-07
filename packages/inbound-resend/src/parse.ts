@@ -27,9 +27,13 @@ const DSAR_INTENT_TOKENS = [
 
 const DSAR_WORD_BOUNDARY_TOKENS = ["sar"] as const;
 
-const DSAR_WORD_BOUNDARY_PATTERNS = DSAR_WORD_BOUNDARY_TOKENS.map(
-	(token) => new RegExp(`\\b${token}\\b`, "u")
-);
+const escapeRegExp = (value: string): string =>
+	value.replaceAll(/[\\^$.*+?()[\]{}|]/gu, "\\$&");
+
+const DSAR_WORD_BOUNDARY_MATCHERS = DSAR_WORD_BOUNDARY_TOKENS.map((token) => ({
+	pattern: new RegExp(`\\b${escapeRegExp(token)}\\b`, "u"),
+	token,
+}));
 
 const asAttachment = (value: unknown): ResendReceivedAttachment | undefined => {
 	const record = asRecord(value);
@@ -206,12 +210,11 @@ export const parseIntent = (input: {
 	if (match) {
 		return { isDsar: true, reason: `Matched token: ${match}` };
 	}
-	for (let index = 0; index < DSAR_WORD_BOUNDARY_PATTERNS.length; index += 1) {
-		const pattern = DSAR_WORD_BOUNDARY_PATTERNS[index];
+	for (const { pattern, token } of DSAR_WORD_BOUNDARY_MATCHERS) {
 		if (pattern.test(text)) {
 			return {
 				isDsar: true,
-				reason: `Matched word: ${DSAR_WORD_BOUNDARY_TOKENS[index]}`,
+				reason: `Matched word: ${token}`,
 			};
 		}
 	}

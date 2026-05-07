@@ -1,5 +1,9 @@
 import * as Effect from "effect/Effect";
 
+import {
+	backfillRequestLookupColumns,
+	ensureRequestLookupColumns,
+} from "./request-lookup-migrations";
 import type { Sql } from "./shared";
 
 /**
@@ -18,6 +22,10 @@ export const runMigrations = (sql: Sql) =>
 			received_at TEXT NOT NULL,
 			due_at TEXT NOT NULL,
 			clock_mode TEXT NOT NULL,
+			subject_id TEXT,
+			subject_external_ref TEXT,
+			requestor_email TEXT,
+			policy_pack TEXT,
 			requestor_json TEXT NOT NULL,
 			authority_json TEXT NOT NULL,
 			capture_json TEXT NOT NULL,
@@ -26,6 +34,8 @@ export const runMigrations = (sql: Sql) =>
 			updated_at TEXT NOT NULL,
 			PRIMARY KEY (tenant_id, id)
 		)`;
+		yield* ensureRequestLookupColumns(sql);
+		yield* backfillRequestLookupColumns(sql);
 
 		yield* sql`CREATE TABLE IF NOT EXISTS request_clock_segments (
 			id TEXT NOT NULL,
@@ -156,6 +166,33 @@ export const runMigrations = (sql: Sql) =>
 			FOREIGN KEY (tenant_id, request_id) REFERENCES requests(tenant_id, id)
 		)`;
 
+		yield* sql`CREATE TABLE IF NOT EXISTS webhook_endpoints (
+			id TEXT NOT NULL,
+			tenant_id TEXT NOT NULL,
+			url TEXT NOT NULL,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			PRIMARY KEY (tenant_id, id)
+		)`;
+
+		yield* sql`CREATE TABLE IF NOT EXISTS webhook_signing_keys (
+			id TEXT NOT NULL,
+			tenant_id TEXT NOT NULL,
+			endpoint_id TEXT NOT NULL,
+			secret_ciphertext TEXT NOT NULL,
+			secret_key_id TEXT NOT NULL,
+			secret_nonce TEXT NOT NULL,
+			secret_tag TEXT NOT NULL,
+			secret_encrypted_data_key TEXT NOT NULL,
+			secret_data_key_nonce TEXT NOT NULL,
+			secret_data_key_tag TEXT NOT NULL,
+			role TEXT NOT NULL CHECK (role IN ('primary', 'secondary')),
+			expires_at TEXT,
+			created_at TEXT NOT NULL,
+			PRIMARY KEY (tenant_id, id),
+			FOREIGN KEY (tenant_id, endpoint_id) REFERENCES webhook_endpoints(tenant_id, id)
+		)`;
+
 		yield* sql`CREATE TABLE IF NOT EXISTS chat_state_entries (
 			tenant_id TEXT NOT NULL,
 			cache_key TEXT NOT NULL,
@@ -184,6 +221,14 @@ export const runMigrations = (sql: Sql) =>
 
 		yield* sql`CREATE INDEX IF NOT EXISTS idx_requests_tenant_due
 			ON requests(tenant_id, due_at)`;
+		yield* sql`CREATE INDEX IF NOT EXISTS idx_requests_tenant_subject_created
+			ON requests(tenant_id, subject_id, created_at, id)`;
+		yield* sql`CREATE INDEX IF NOT EXISTS idx_requests_tenant_subject_external_created
+			ON requests(tenant_id, subject_external_ref, created_at, id)`;
+		yield* sql`CREATE INDEX IF NOT EXISTS idx_requests_tenant_requestor_email_created
+			ON requests(tenant_id, requestor_email, created_at, id)`;
+		yield* sql`CREATE INDEX IF NOT EXISTS idx_requests_tenant_policy_created
+			ON requests(tenant_id, policy_pack, created_at, id)`;
 		yield* sql`CREATE INDEX IF NOT EXISTS idx_timeline_tenant_request
 			ON request_timeline_events(tenant_id, request_id)`;
 		yield* sql`CREATE INDEX IF NOT EXISTS idx_audit_tenant_request
@@ -194,6 +239,11 @@ export const runMigrations = (sql: Sql) =>
 			ON notification_events(tenant_id, idempotency_key)`;
 		yield* sql`CREATE INDEX IF NOT EXISTS idx_notification_attempts_tenant_event
 			ON notification_delivery_attempts(tenant_id, notification_event_id)`;
+		yield* sql`CREATE INDEX IF NOT EXISTS idx_webhook_keys_tenant_endpoint
+			ON webhook_signing_keys(tenant_id, endpoint_id)`;
+		yield* sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_webhook_keys_primary
+			ON webhook_signing_keys(tenant_id, endpoint_id)
+			WHERE role = 'primary'`;
 		yield* sql`CREATE INDEX IF NOT EXISTS idx_chat_state_tenant_expiry
 			ON chat_state_entries(tenant_id, expires_at)`;
 		yield* sql`CREATE INDEX IF NOT EXISTS idx_chat_locks_tenant_expiry

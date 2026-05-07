@@ -112,6 +112,7 @@
 	"devDependencies": {
 		"@dsar/typescript-config": "workspace:*",
 		"@types/node": "catalog:types",
+		"@typescript/native-preview": "catalog:utils",
 		"tsdown": "catalog:utils",
 		"typescript": "catalog:utils"
 	},

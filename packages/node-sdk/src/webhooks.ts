@@ -1,5 +1,21 @@
+export { makeWebhooksApi, verifyWebhook } from "./endpoints/webhooks";
 export { createWebhookReceiver } from "./webhooks/receiver";
-export { verifyWebhook, WebhookVerificationError } from "./webhooks/verify";
+export {
+	verifyWebhook as verifyWebhookSignature,
+	WebhookVerificationError,
+} from "./webhooks/verify";
+export type {
+	VerifyWebhookInput,
+	VerifyWebhookResult,
+	WebhookSecretLookup,
+	WebhookSecretLookupResult,
+	WebhookVerificationSecret,
+	WebhooksApi,
+} from "./endpoints/webhooks";
+export type {
+	WebhookRotateKeyPayload,
+	WebhookRotateKeyResponse,
+} from "./endpoints/types";
 export type {
 	WebhookEventHandler,
 	WebhookReceiver,
@@ -14,6 +30,6 @@ export type {
 	WebhookEventType,
 } from "./webhooks/types";
 export type {
-	VerifyWebhookInput,
+	VerifyWebhookInput as VerifyWebhookSignatureInput,
 	WebhookVerificationErrorCode,
 } from "./webhooks/verify";

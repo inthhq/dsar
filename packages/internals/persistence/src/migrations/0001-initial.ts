@@ -2,6 +2,11 @@ import * as Effect from "effect/Effect";
 import type * as SqlClient from "effect/unstable/sql/SqlClient";
 import type { SqlError } from "effect/unstable/sql/SqlError";
 
+import {
+	backfillRequestLookupColumns,
+	ensureRequestLookupColumns,
+} from "../services/persistence/request-lookup-migrations";
+
 /**
  * Unique migration identifier used to track applied migrations.
  */
@@ -34,6 +39,10 @@ export const applyMigration0001 = (
 			received_at TEXT NOT NULL,
 			due_at TEXT NOT NULL,
 			clock_mode TEXT NOT NULL,
+			subject_id TEXT,
+			subject_external_ref TEXT,
+			requestor_email TEXT,
+			policy_pack TEXT,
 			requestor_json TEXT NOT NULL,
 			authority_json TEXT NOT NULL,
 			capture_json TEXT NOT NULL,
@@ -42,6 +51,8 @@ export const applyMigration0001 = (
 			updated_at TEXT NOT NULL,
 			PRIMARY KEY (tenant_id, id)
 		)`;
+		yield* ensureRequestLookupColumns(sql);
+		yield* backfillRequestLookupColumns(sql);
 
 		yield* sql`CREATE TABLE IF NOT EXISTS request_clock_segments (
 			id TEXT NOT NULL,
@@ -200,6 +211,14 @@ export const applyMigration0001 = (
 
 		yield* sql`CREATE INDEX IF NOT EXISTS idx_requests_tenant_due
 			ON requests(tenant_id, due_at)`;
+		yield* sql`CREATE INDEX IF NOT EXISTS idx_requests_tenant_subject_created
+			ON requests(tenant_id, subject_id, created_at, id)`;
+		yield* sql`CREATE INDEX IF NOT EXISTS idx_requests_tenant_subject_external_created
+			ON requests(tenant_id, subject_external_ref, created_at, id)`;
+		yield* sql`CREATE INDEX IF NOT EXISTS idx_requests_tenant_requestor_email_created
+			ON requests(tenant_id, requestor_email, created_at, id)`;
+		yield* sql`CREATE INDEX IF NOT EXISTS idx_requests_tenant_policy_created
+			ON requests(tenant_id, policy_pack, created_at, id)`;
 		yield* sql`CREATE INDEX IF NOT EXISTS idx_timeline_tenant_request
 			ON request_timeline_events(tenant_id, request_id)`;
 		yield* sql`CREATE INDEX IF NOT EXISTS idx_audit_tenant_request

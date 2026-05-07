@@ -25,6 +25,7 @@
 		"@dsar/typescript-config": "workspace:*",
 		"@effect/language-service": "catalog:effect",
 		"@effect/vitest": "catalog:effect",
+		"@typescript/native-preview": "catalog:utils",
 		"tsdown": "catalog:utils",
 		"typescript": "catalog:utils",
 		"vitest": "catalog:utils"

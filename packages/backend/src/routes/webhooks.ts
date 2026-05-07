@@ -1,5 +1,6 @@
 import type { RouteDefinition } from "./types";
 import { resendWebhookRoute } from "./webhooks/resend";
+import { rotateWebhookKeyRoute } from "./webhooks/rotate-key";
 import { slackWebhookRoute } from "./webhooks/slack";
 
 /**
@@ -9,4 +10,5 @@ import { slackWebhookRoute } from "./webhooks/slack";
 export const webhookRoutes: readonly RouteDefinition[] = [
 	resendWebhookRoute,
 	slackWebhookRoute,
+	rotateWebhookKeyRoute,
 ];

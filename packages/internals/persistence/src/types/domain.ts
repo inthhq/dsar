@@ -44,6 +44,54 @@ export interface PaginationInput {
 }
 
 /**
+ * Stable cursor for request subject lookup pages.
+ *
+ * @public
+ */
+export interface RequestSubjectCursor {
+	/** Creation timestamp of the last item returned to the caller. */
+	readonly createdAt: string;
+	/** Request id of the last item returned to the caller. */
+	readonly id: string;
+}
+
+/**
+ * Filter contract for indexed subject request lookup.
+ *
+ * @public
+ */
+export interface ListRequestsBySubjectInput {
+	/** Normalized subject identifiers to match against subject id, external ref, or requestor email. */
+	readonly identifiers: readonly string[];
+	/** Optional lifecycle statuses to include. */
+	readonly status?: readonly string[];
+	/** Return records created strictly after this ISO timestamp. */
+	readonly createdAfter?: string;
+	/** Return records created strictly before this ISO timestamp. */
+	readonly createdBefore?: string;
+	/** Optional active policy pack id filter. */
+	readonly policyPack?: string;
+	/** Cursor returned by the previous page. */
+	readonly cursor?: RequestSubjectCursor;
+	/** Maximum rows to read for a single page. */
+	readonly limit?: number;
+}
+
+/**
+ * Cursor-paginated request page.
+ *
+ * @public
+ */
+export interface RequestSubjectPage {
+	/** Matching request records in descending creation order. */
+	readonly items: readonly RequestRecord[];
+	/** Cursor for the next page when more records are available. */
+	readonly nextCursor?: RequestSubjectCursor;
+	/** Bounded page size used by the query. */
+	readonly limit: number;
+}
+
+/**
  * Persistent request row with capability-upgrade fields.
  *
  * @public
@@ -636,6 +684,119 @@ export interface CreateNotificationDeliveryAttemptInput {
 }
 
 /**
+ * Persisted outbound webhook endpoint configuration.
+ *
+ * @public
+ */
+export interface WebhookEndpointRecord {
+	/** Stable endpoint identifier within the tenant. */
+	readonly id: string;
+	/** Tenant scope for endpoint storage and lookup. */
+	readonly tenantId: string;
+	/** Destination URL receiving outbound webhook notifications. */
+	readonly url: string;
+	/** Timestamp when this endpoint was first recorded. */
+	readonly createdAt: string;
+	/** Timestamp when this endpoint was last updated. */
+	readonly updatedAt: string;
+}
+
+/**
+ * Role assigned to a persisted webhook signing key.
+ *
+ * @public
+ */
+export type WebhookSigningKeyRole = "primary" | "secondary";
+
+/**
+ * Persisted HMAC signing key for an outbound webhook endpoint.
+ *
+ * @public
+ */
+export interface WebhookSigningKeyRecord {
+	/** Stable signing-key identifier. */
+	readonly id: string;
+	/** Tenant scope for key storage and lookup. */
+	readonly tenantId: string;
+	/** Endpoint this key signs for. */
+	readonly endpointId: string;
+	/** HMAC secret used to sign outbound payloads. */
+	readonly secret: string;
+	/** Whether this key is the current primary or a grace-window secondary. */
+	readonly role: WebhookSigningKeyRole;
+	/** Optional timestamp after which secondary keys are no longer accepted. */
+	readonly expiresAt?: string;
+	/** Timestamp when this key was created. */
+	readonly createdAt: string;
+}
+
+/**
+ * Input used to seed or update a configured outbound webhook endpoint.
+ *
+ * @public
+ */
+export interface EnsureWebhookEndpointInput {
+	/** Stable endpoint identifier within the tenant. */
+	readonly id: string;
+	/** Destination URL receiving outbound webhook notifications. */
+	readonly url: string;
+	/** Initial signing secret used only when no primary key exists yet. */
+	readonly signingSecret: string;
+	/** Optional deterministic key identifier for tests or import tooling. */
+	readonly keyId?: string;
+	/** Timestamp used for endpoint/key creation and update fields. */
+	readonly createdAt: string;
+}
+
+/**
+ * Input used to rotate an outbound webhook endpoint signing key.
+ *
+ * @public
+ */
+export interface RotateWebhookSigningKeyInput {
+	/** Endpoint whose primary signing key should rotate. */
+	readonly endpointId: string;
+	/** Stable identifier for the newly generated primary key. */
+	readonly newKeyId: string;
+	/** Newly generated HMAC signing secret. */
+	readonly newSecret: string;
+	/** Expiry assigned to the demoted previous primary key. */
+	readonly graceExpiresAt: string;
+	/** Timestamp when the rotation occurred. */
+	readonly rotatedAt: string;
+}
+
+/**
+ * Result returned by webhook signing-key rotation.
+ *
+ * @public
+ */
+export interface RotateWebhookSigningKeyResult {
+	/** Endpoint whose key was rotated. */
+	readonly endpoint: WebhookEndpointRecord;
+	/** Newly persisted primary key. */
+	readonly newPrimary: WebhookSigningKeyRecord;
+	/** Previous primary key demoted into the grace window, when one existed. */
+	readonly previousPrimary?: WebhookSigningKeyRecord;
+	/** Currently usable primary/secondary keys after rotation. */
+	readonly activeKeys: readonly WebhookSigningKeyRecord[];
+}
+
+/**
+ * Input used to undo a failed signing-key rotation side effect.
+ *
+ * @public
+ */
+export interface RollbackWebhookSigningKeyRotationInput {
+	/** Endpoint whose rotation should be undone. */
+	readonly endpointId: string;
+	/** Newly inserted primary key that should be removed. */
+	readonly newKeyId: string;
+	/** Previous primary key to promote back when one existed. */
+	readonly previousPrimary?: WebhookSigningKeyRecord;
+}
+
+/**
  * Cached chat runtime state entry persisted for subscriptions, dedupe, and
  * per-thread state.
  *
@@ -815,6 +976,22 @@ export interface RequestsRepository {
 		pagination?: PaginationInput
 	) => Effect.Effect<
 		readonly RequestRecord[],
+		PersistenceError | SqlError,
+		TenantContext
+	>;
+	/**
+	 * Lists request records for subject profile lookup using indexed,
+	 * tenant-scoped request metadata.
+	 *
+	 * @param input - Subject identifiers, filters, cursor, and page size.
+	 * @returns A cursor-paginated page of matching request records.
+	 * @throws {@link PersistenceError} on mapping failures.
+	 * @throws {@link SqlError} on underlying database failures.
+	 */
+	readonly listBySubject: (
+		input: ListRequestsBySubjectInput
+	) => Effect.Effect<
+		RequestSubjectPage,
 		PersistenceError | SqlError,
 		TenantContext
 	>;
@@ -1215,4 +1392,87 @@ export interface NotificationDeliveryAttemptsRepository {
 		PersistenceError | SqlError,
 		TenantContext
 	>;
+}
+
+/**
+ * Outbound webhook endpoint and signing-key repository requiring tenant scope.
+ *
+ * @public
+ */
+export interface WebhookEndpointsRepository {
+	/**
+	 * Creates or updates a configured endpoint and lazily seeds its primary key.
+	 *
+	 * @param input - Endpoint URL and initial signing secret.
+	 * @returns The endpoint and currently active primary key.
+	 * @throws {@link PersistenceError} on constraint violations or mapping failures.
+	 * @throws {@link SqlError} on underlying database failures.
+	 */
+	readonly ensureConfigured: (
+		input: EnsureWebhookEndpointInput
+	) => Effect.Effect<
+		{
+			readonly endpoint: WebhookEndpointRecord;
+			readonly primaryKey: WebhookSigningKeyRecord;
+		},
+		PersistenceError | SqlError,
+		TenantContext
+	>;
+	/**
+	 * Retrieves a webhook endpoint by identifier.
+	 *
+	 * @param id - Endpoint identifier.
+	 * @returns The matching {@link WebhookEndpointRecord}.
+	 * @throws {@link PersistenceError} when no endpoint exists for `id`.
+	 * @throws {@link SqlError} on underlying database failures.
+	 */
+	readonly getById: (
+		id: string
+	) => Effect.Effect<
+		WebhookEndpointRecord,
+		PersistenceError | SqlError,
+		TenantContext
+	>;
+	/**
+	 * Lists active primary and unexpired secondary signing keys for an endpoint.
+	 *
+	 * @param endpointId - Endpoint identifier.
+	 * @param now - Timestamp used for secondary-key expiry checks.
+	 * @returns Active signing keys ordered primary first, then newest secondary.
+	 * @throws {@link PersistenceError} on mapping failures.
+	 * @throws {@link SqlError} on underlying database failures.
+	 */
+	readonly listActiveKeys: (
+		endpointId: string,
+		now: string
+	) => Effect.Effect<
+		readonly WebhookSigningKeyRecord[],
+		PersistenceError | SqlError,
+		TenantContext
+	>;
+	/**
+	 * Rotates the endpoint primary key and demotes the previous primary into the grace window.
+	 *
+	 * @param input - New key material and grace-window expiry.
+	 * @returns Rotation metadata including the new primary and previous primary.
+	 * @throws {@link PersistenceError} when the endpoint does not exist.
+	 * @throws {@link SqlError} on underlying database failures.
+	 */
+	readonly rotateSigningKey: (
+		input: RotateWebhookSigningKeyInput
+	) => Effect.Effect<
+		RotateWebhookSigningKeyResult,
+		PersistenceError | SqlError,
+		TenantContext
+	>;
+	/**
+	 * Rolls back a completed signing-key rotation after a coupled side effect fails.
+	 *
+	 * @param input - Newly inserted key and prior primary metadata to restore.
+	 * @throws {@link PersistenceError} on mapping failures.
+	 * @throws {@link SqlError} on underlying database failures.
+	 */
+	readonly rollbackSigningKeyRotation: (
+		input: RollbackWebhookSigningKeyRotationInput
+	) => Effect.Effect<void, PersistenceError | SqlError, TenantContext>;
 }
