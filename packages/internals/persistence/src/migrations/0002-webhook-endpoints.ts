@@ -55,3 +55,22 @@ export const applyMigration0002 = (
 			ON webhook_signing_keys(tenant_id, endpoint_id)
 			WHERE role = 'primary'`;
 	});
+
+/**
+ * Test-only rollback for webhook endpoint DDL.
+ *
+ * Production persistence remains forward-only; this helper exists so driver
+ * migration suites can verify each migration's DDL boundary.
+ *
+ * @param sql - Effect SQL client used to execute rollback DDL.
+ * @returns An effect that succeeds once webhook objects are gone.
+ */
+export const revertMigration0002 = (
+	sql: SqlClient.SqlClient
+): Effect.Effect<void, SqlError> =>
+	Effect.gen(function* revertMigration0002Program() {
+		yield* sql`DROP INDEX IF EXISTS idx_webhook_keys_primary`;
+		yield* sql`DROP INDEX IF EXISTS idx_webhook_keys_tenant_endpoint`;
+		yield* sql`DROP TABLE IF EXISTS webhook_signing_keys`;
+		yield* sql`DROP TABLE IF EXISTS webhook_endpoints`;
+	});
