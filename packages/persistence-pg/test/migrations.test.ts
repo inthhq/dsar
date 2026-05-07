@@ -25,12 +25,6 @@ const runPgProgram = <A>(
 const quotePgIdentifier = (identifier: string): string =>
 	`"${identifier.replaceAll('"', '""')}"`;
 
-const schemaUrl = (url: string, schemaName: string): string => {
-	const parsedUrl = new URL(url);
-	parsedUrl.searchParams.set("options", `-c search_path=${schemaName}`);
-	return parsedUrl.toString();
-};
-
 const makePgContext = async (label: string): Promise<MigrationTestContext> => {
 	if (!hasPgUrl) {
 		throw new Error("DSAR_TEST_PG_URL is required for pg migration tests.");
@@ -46,14 +40,21 @@ const makePgContext = async (label: string): Promise<MigrationTestContext> => {
 		sql.unsafe(`CREATE SCHEMA ${quotedSchemaName}`)
 	);
 
-	const isolatedUrl = schemaUrl(pgUrl, schemaName);
 	return {
 		cleanup: async () => {
 			await runPgProgram(pgUrl, (sql) =>
 				sql.unsafe(`DROP SCHEMA IF EXISTS ${quotedSchemaName} CASCADE`)
 			);
 		},
-		run: (program) => runPgProgram(isolatedUrl, program),
+		run: (program) =>
+			runPgProgram(pgUrl, (sql) =>
+				sql.withTransaction(
+					Effect.gen(function* runInIsolatedSchema() {
+						yield* sql.unsafe(`SET search_path TO ${quotedSchemaName}`);
+						return yield* program(sql);
+					})
+				)
+			),
 	};
 };
 

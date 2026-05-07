@@ -288,6 +288,17 @@ export const defineMigrationConformanceTests = (
 			});
 		});
 
+		it("tolerates concurrent migration runners racing metadata inserts", async () => {
+			await withContext(options, "concurrent", async (context) => {
+				const rows = await Promise.all([
+					context.run((sql) => runMigrations(sql)),
+					context.run((sql) => runMigrations(sql)),
+				]).then(() => context.run((sql) => readAppliedMigrationsForTest(sql)));
+
+				expect(rows).toStrictEqual(currentMigrationRows);
+			});
+		});
+
 		it("fails when recorded migration metadata drifts", async () => {
 			await withContext(options, "metadata-drift", async (context) => {
 				const result = await context.run((sql) =>

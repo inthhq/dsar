@@ -114,7 +114,8 @@ const assertAppliedMigrationsMatchRegistry = (
 
 const recordAppliedMigration = (sql: Sql, migration: PersistenceMigration) =>
 	sql`INSERT INTO dsar_schema_migrations (id, name, applied_at)
-		VALUES (${migration.id}, ${migration.name}, CURRENT_TIMESTAMP)`;
+		VALUES (${migration.id}, ${migration.name}, CURRENT_TIMESTAMP)
+		ON CONFLICT(id) DO NOTHING`;
 
 /**
  * Ordered migration registry used by driver conformance tests.
@@ -174,4 +175,6 @@ export const runMigrations = (sql: Sql) =>
 				})
 			);
 		}
+		const finalAppliedRows = yield* readAppliedMigrations(sql);
+		yield* assertAppliedMigrationsMatchRegistry(finalAppliedRows);
 	});
