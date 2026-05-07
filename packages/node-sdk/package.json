@@ -20,6 +20,18 @@
 		"./webhooks": {
 			"types": "./src/webhooks.ts",
 			"import": "./src/webhooks.ts"
+		},
+		"./webhooks/express": {
+			"types": "./src/webhooks/express.ts",
+			"import": "./src/webhooks/express.ts"
+		},
+		"./webhooks/hono": {
+			"types": "./src/webhooks/hono.ts",
+			"import": "./src/webhooks/hono.ts"
+		},
+		"./webhooks/next": {
+			"types": "./src/webhooks/next.ts",
+			"import": "./src/webhooks/next.ts"
 		}
 	},
 	"scripts": {
@@ -39,9 +51,29 @@
 		"@dsar/typescript-config": "workspace:*",
 		"@effect/language-service": "catalog:effect",
 		"@effect/vitest": "catalog:effect",
+		"@types/express": "^5.0.6",
 		"@types/node": "catalog:types",
 		"@typescript/native-preview": "catalog:utils",
+		"express": "^5.2.1",
+		"hono": "^4.12.15",
+		"next": "^16.2.4",
 		"typescript": "catalog:utils",
 		"vitest": "catalog:utils"
+	},
+	"peerDependencies": {
+		"express": "^4.0.0 || ^5.0.0",
+		"hono": "^1.0.0 || ^2.0.0 || ^3.0.0 || ^4.0.0",
+		"next": "^13.4.0 || ^14.0.0 || ^15.0.0 || ^16.0.0"
+	},
+	"peerDependenciesMeta": {
+		"express": {
+			"optional": true
+		},
+		"hono": {
+			"optional": true
+		},
+		"next": {
+			"optional": true
+		}
 	}
 }

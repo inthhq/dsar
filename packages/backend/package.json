@@ -13,6 +13,10 @@
 			"types": "./src/index.ts",
 			"import": "./src/index.ts"
 		},
+		"./events/contracts": {
+			"types": "./src/events/contracts.ts",
+			"import": "./src/events/contracts.ts"
+		},
 		"./testing": {
 			"types": "./src/testing/index.ts",
 			"import": "./src/testing/index.ts"
