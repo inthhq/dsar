@@ -1,0 +1,73 @@
+---
+title: "Redis Integration"
+description: "Use @dsar/redis for Redis-backed DSAR runtime integrations."
+lastModified: 2026-05-07
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+`@dsar/redis` provides Redis-backed DSAR runtime integrations. It currently
+exports a Redis-backed `RateLimitStore` for public intake endpoints. Use it when
+a runtime has multiple Node/server instances and the default in-memory store
+would not share counters.
+
+## Install
+
+```sh
+bun add @dsar/redis ioredis
+```
+
+`ioredis` is a peer dependency so host applications control the Redis client
+version and connection setup.
+
+## Runtime Wiring
+
+```ts
+import { dsarInstance } from "@dsar/backend";
+import { makeRedisRateLimitStore } from "@dsar/redis";
+import Redis from "ioredis";
+
+const redis = new Redis(process.env.REDIS_URL!);
+
+const runtime = dsarInstance({
+	config: {
+		rateLimit: {
+			intake: {
+				ip: {
+					limit: 60,
+					windowMs: 60_000,
+				},
+				tenant: {
+					limit: 300,
+					windowMs: 60_000,
+				},
+			},
+			store: makeRedisRateLimitStore({
+				client: redis,
+				keyPrefix: "dsar:rate-limit",
+			}),
+		},
+	},
+	repos: {
+		persistence:
+			/* see examples/config/runtime.config.example.ts or provide
+			   runtimeReposFromPersistence(...) output */,
+	},
+});
+```
+
+## Behavior
+
+- Uses the backend fixed-window rate-limit contract.
+- Shares IP and tenant counters across runtime instances.
+- Returns the same `429` and `Retry-After` behavior as the default store.
+- Automatically expires Redis keys after the configured window.
+- Applies `keyPrefix` before DSAR's route/scope key. Use an empty string only
+  when the host application already namespaces keys.
+
+## Production Notes
+
+- Use this package for Node/server deployments.
+- Use `@dsar/upstash` for fetch/edge-oriented deployments.
+- Keep `config.rateLimit.onLimitExceeded` wired to your metrics pipeline when
+  you need visibility into abusive or misconfigured public intake sources.

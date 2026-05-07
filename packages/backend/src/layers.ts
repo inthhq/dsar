@@ -3,6 +3,7 @@ import * as Layer from "effect/Layer";
 
 import type { AnyAdapterContract, AdapterRegistryService } from "./adapters";
 import { makeAdapterRegistry } from "./adapters";
+import { resolveRuntimeRateLimitConfig } from "./rate-limit";
 import { LegalClockLive } from "./services/legal-clock/service";
 import type {
 	RuntimeAdapters,
@@ -103,6 +104,7 @@ export const makeCoreModule = (options: {
 						staticBearerTokens: mergedConfig.auth.staticBearerTokens,
 					}
 				: undefined,
+			rateLimit: resolveRuntimeRateLimitConfig(mergedConfig.rateLimit),
 		},
 		repos: { ...options.repos },
 	};

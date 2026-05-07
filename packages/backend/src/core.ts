@@ -18,6 +18,7 @@ import {
 } from "./middleware/auth-context";
 import { normalizeBasePath, stripBasePath } from "./middleware/base-path";
 import { toErrorResponse } from "./middleware/errors";
+import { enforceIntakeIpRateLimit } from "./rate-limit";
 import { coreRoutes } from "./routes";
 import { matchRoute } from "./routes/helpers";
 import type { RouteDefinition } from "./routes/types";
@@ -274,14 +275,30 @@ export const dsarInstance = (options: DsarInstanceOptions): DsarInstance => {
 				);
 			}
 
+			const requestId = makeRequestId();
+			if (matched.route.publicIntake === true) {
+				const limited = await enforceIntakeIpRateLimit({
+					config,
+					request,
+					requestId,
+					route: {
+						method: matched.route.method,
+						path: matched.route.path,
+					},
+				});
+				if (limited) {
+					return limited;
+				}
+			}
+
 			const requestContext =
 				matched.route.protected === true
 					? {
 							...(await resolveRequestContext(request, config.auth)),
-							requestId: makeRequestId(),
+							requestId,
 						}
 					: {
-							requestId: makeRequestId(),
+							requestId,
 						};
 
 			const services = buildRuntimeServices(

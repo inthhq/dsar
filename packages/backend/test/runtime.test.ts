@@ -2,7 +2,11 @@ import { PersistenceInvalidRecordError, withTenant } from "@dsar/persistence";
 import { describe, expect, expectTypeOf, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 
-import type { ErrorEnvelope, InboundAdapterContract } from "../src";
+import type {
+	ErrorEnvelope,
+	InboundAdapterContract,
+	RateLimitStore,
+} from "../src";
 import { dsarInstance } from "../src";
 import {
 	TEST_ADMIN_HEADERS,
@@ -206,6 +210,56 @@ const makeResendInboundFailureAdapter = (input: {
 		}),
 	validateConfig: () => Effect.void,
 });
+
+const makeResendInboundSuccessAdapter = (
+	sourceId = "resend-rate-limit-email"
+): InboundAdapterContract => ({
+	capability: "inbound",
+	diagnostics: () =>
+		Effect.succeed({
+			capability: "inbound",
+			key: "resend",
+		}),
+	healthCheck: () =>
+		Effect.succeed({
+			ok: true,
+			status: "healthy",
+		}),
+	init: () => Effect.void,
+	key: "resend",
+	receive: () =>
+		Effect.succeed({
+			payload: {
+				from: "Jane Subject <jane@example.com>",
+				fromEmail: "jane@example.com",
+				intent: {
+					isDsar: true,
+					reason: "matched token",
+				},
+				route: {
+					jurisdiction: "uk",
+					tenantId: "tenant-default",
+				},
+				subject: "Subject access request",
+				to: ["privacy@tenant.example"],
+			},
+			receivedAt: "2026-01-01T00:00:00.000Z",
+			sourceId,
+		}),
+	validateConfig: () => Effect.void,
+});
+
+const makeResendWebhookRequest = (): Request =>
+	new Request("https://example.test/webhooks/inbound/resend", {
+		body: JSON.stringify({ type: "email.received" }),
+		headers: {
+			"content-type": "application/json",
+			"svix-id": "svix-id-1",
+			"svix-signature": "svix-signature-1",
+			"svix-timestamp": "123",
+		},
+		method: "POST",
+	});
 
 describe(dsarInstance, () => {
 	it("creates runtime handler and metadata", () => {
@@ -961,6 +1015,258 @@ describe(dsarInstance, () => {
 		expect([slackResponse.status, slackBody.error.message]).toStrictEqual([
 			400,
 			"Slack request signature verification failed.",
+		]);
+	});
+
+	it("rate limits public inbound routes by client IP", async () => {
+		const runtime = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			adapters: {
+				inbound: [
+					makeResendInboundFailureAdapter({
+						category: "validation",
+						message: "Resend webhook signature verification failed.",
+						retriable: false,
+					}),
+					makeSlackInboundFailureAdapter({
+						category: "validation",
+						message: "Slack request signature verification failed.",
+						retriable: false,
+					}),
+				],
+			},
+			config: {
+				...TEST_RUNTIME_AUTH.config,
+				rateLimit: {
+					intake: {
+						ip: {
+							limit: 1,
+							windowMs: 60_000,
+						},
+						tenant: {
+							enabled: false,
+						},
+					},
+				},
+			},
+			repos: { persistence: makeMemoryPersistence() },
+		});
+
+		const resendFirst = await runtime.handler(
+			new Request("https://example.test/webhooks/inbound/resend", {
+				body: "{}",
+				headers: {
+					"content-type": "text/plain",
+					"svix-id": "msg_123",
+					"svix-signature": "v1,test",
+					"svix-timestamp": "123",
+					"x-forwarded-for": "203.0.113.10",
+				},
+				method: "POST",
+			})
+		);
+		const resendSecond = await runtime.handler(
+			new Request("https://example.test/webhooks/inbound/resend", {
+				body: "{}",
+				headers: {
+					"content-type": "text/plain",
+					"svix-id": "msg_123",
+					"svix-signature": "v1,test",
+					"svix-timestamp": "123",
+					"x-forwarded-for": "203.0.113.10",
+				},
+				method: "POST",
+			})
+		);
+		const slackFirst = await runtime.handler(
+			new Request("https://example.test/webhooks/inbound/slack", {
+				body: JSON.stringify({ type: "event_callback" }),
+				headers: {
+					"content-type": "application/json",
+					"x-forwarded-for": "203.0.113.10",
+					"x-slack-request-timestamp": "123",
+					"x-slack-signature": "v0=test",
+				},
+				method: "POST",
+			})
+		);
+		const slackSecond = await runtime.handler(
+			new Request("https://example.test/webhooks/inbound/slack", {
+				body: JSON.stringify({ type: "event_callback" }),
+				headers: {
+					"content-type": "application/json",
+					"x-forwarded-for": "203.0.113.10",
+					"x-slack-request-timestamp": "123",
+					"x-slack-signature": "v0=test",
+				},
+				method: "POST",
+			})
+		);
+		const resendBody = (await resendSecond.json()) as ErrorEnvelope;
+		const slackBody = (await slackSecond.json()) as ErrorEnvelope;
+
+		expect(resendFirst.status).toBe(400);
+		expect([resendSecond.status, resendBody.error.code]).toStrictEqual([
+			429,
+			"REQUEST_RATE_LIMITED",
+		]);
+		expect(Number(resendSecond.headers.get("retry-after"))).toBeGreaterThan(0);
+		expect(slackFirst.status).toBe(400);
+		expect([slackSecond.status, slackBody.error.code]).toStrictEqual([
+			429,
+			"REQUEST_RATE_LIMITED",
+		]);
+		expect(Number(slackSecond.headers.get("retry-after"))).toBeGreaterThan(0);
+	});
+
+	it("does not rate limit protected request capture with intake limits", async () => {
+		const runtime = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			config: {
+				...TEST_RUNTIME_AUTH.config,
+				rateLimit: {
+					intake: {
+						ip: {
+							limit: 1,
+							windowMs: 60_000,
+						},
+						tenant: {
+							limit: 1,
+							windowMs: 60_000,
+						},
+					},
+				},
+			},
+			repos: { persistence: makeMemoryPersistence() },
+		});
+		const request = () =>
+			new Request("https://example.test/requests/capture", {
+				body: JSON.stringify({}),
+				headers: {
+					"content-type": "application/json",
+					"x-forwarded-for": "203.0.113.20",
+					...actorHeaders,
+				},
+				method: "POST",
+			});
+
+		const first = await runtime.handler(request());
+		const second = await runtime.handler(request());
+
+		expect(first.status).not.toBe(429);
+		expect(second.status).not.toBe(429);
+	});
+
+	it("rate limits public inbound routes by tenant after adapter normalization", async () => {
+		const events: unknown[] = [];
+		const runtime = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			adapters: {
+				inbound: [makeResendInboundSuccessAdapter()],
+			},
+			config: {
+				...TEST_RUNTIME_AUTH.config,
+				rateLimit: {
+					intake: {
+						ip: {
+							enabled: false,
+						},
+						tenant: {
+							limit: 1,
+							windowMs: 60_000,
+						},
+					},
+					onLimitExceeded: (event) => {
+						events.push(event);
+					},
+				},
+			},
+			repos: { persistence: makeMemoryPersistence() },
+		});
+
+		const first = await runtime.handler(makeResendWebhookRequest());
+		const second = await runtime.handler(makeResendWebhookRequest());
+		const secondBody = (await second.json()) as ErrorEnvelope;
+
+		expect(first.status).toBe(202);
+		expect([second.status, secondBody.error.code]).toStrictEqual([
+			429,
+			"REQUEST_RATE_LIMITED",
+		]);
+		expect(events).toMatchObject([
+			{
+				route: {
+					method: "POST",
+					path: "/webhooks/inbound/resend",
+				},
+				scope: "tenant",
+				tenantId: "tenant-default",
+			},
+		]);
+	});
+
+	it("uses a custom rate limit store with stable fixed-window inputs", async () => {
+		const inputs: unknown[] = [];
+		const store: RateLimitStore = {
+			consume: (input) => {
+				inputs.push(input);
+				return {
+					allowed: true,
+					limit: input.limit,
+					remaining: input.limit - 1,
+					resetAtMs: input.nowMs + input.windowMs,
+				};
+			},
+		};
+		const runtime = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			adapters: {
+				inbound: [
+					makeSlackInboundFailureAdapter({
+						category: "validation",
+						message: "Slack request signature verification failed.",
+						retriable: false,
+					}),
+				],
+			},
+			config: {
+				...TEST_RUNTIME_AUTH.config,
+				rateLimit: {
+					intake: {
+						ip: {
+							limit: 7,
+							windowMs: 12_000,
+						},
+						tenant: {
+							enabled: false,
+						},
+					},
+					store,
+				},
+			},
+			repos: { persistence: makeMemoryPersistence() },
+		});
+
+		const response = await runtime.handler(
+			new Request("https://example.test/webhooks/inbound/slack", {
+				body: JSON.stringify({ type: "event_callback" }),
+				headers: {
+					"content-type": "application/json",
+					"x-real-ip": "198.51.100.5",
+					"x-slack-request-timestamp": "123",
+					"x-slack-signature": "v0=test",
+				},
+				method: "POST",
+			})
+		);
+
+		expect(response.status).toBe(400);
+		expect(inputs).toMatchObject([
+			{
+				key: "intake:ip:POST:/webhooks/inbound/slack:198.51.100.5",
+				limit: 7,
+				windowMs: 12_000,
+			},
 		]);
 	});
 
