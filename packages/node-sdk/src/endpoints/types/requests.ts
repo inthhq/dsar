@@ -174,7 +174,7 @@ export interface NotificationAttemptPayload {
 	/** Timestamp when this record was created. */
 	readonly createdAt: string;
 	/** Delivery result for this specific attempt. */
-	readonly status: "pending" | "delivered" | "failed" | "skipped";
+	readonly status: "pending" | "delivered" | "failed" | "skipped" | "dead";
 	/** Provider response code returned for this attempt. */
 	readonly responseCode?: number;
 	/** Failure reason returned by the provider or runtime. */

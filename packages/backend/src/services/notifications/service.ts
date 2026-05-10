@@ -22,6 +22,28 @@ const DEFAULT_LOCALE = "en-GB";
 const GENERATED_STATUS = "generated";
 const DEFAULT_WEBHOOK_ENDPOINT_ID = "default";
 
+const notifyDeadDispatch = (input: {
+	readonly eventId: string;
+	readonly channel: string;
+	readonly destination: string;
+	readonly tenantId: string;
+}): Effect.Effect<void, AppendDeliveryAttemptError, RuntimeServicesTag> =>
+	Effect.gen(function* notifyDeadDispatchProgram() {
+		const services = yield* Effect.service(RuntimeServicesTag);
+		if (services.config.onDeadDispatchAlert) {
+			const alertEvent = {
+				channel: input.channel,
+				destination: input.destination,
+				eventId: input.eventId,
+				tenantId: input.tenantId,
+				deadAt: new Date().toISOString(),
+			};
+			yield* Effect.tryPromise(() =>
+				Promise.resolve(services.config.onDeadDispatchAlert(alertEvent))
+			).pipe(Effect.catch(() => Effect.void));
+		}
+	});
+
 const toGeneratedResult = (
 	eventId: string
 ): {
@@ -237,6 +259,7 @@ const deliverWithRetries = (input: {
 						Promise.resolve(services.config.onAdapterEvent?.(adapterEvent))
 					).pipe(Effect.catch(() => Effect.void));
 				}
+				const isLastAttempt = attempt >= input.retryMaxAttempts || !normalized.retriable;
 				yield* appendDeliveryAttempt({
 					attempt,
 					channel: input.channel,
@@ -244,10 +267,16 @@ const deliverWithRetries = (input: {
 					error: normalized.message,
 					eventId: input.eventId,
 					requestId: input.requestId,
-					status: "failed",
+					status: isLastAttempt ? "dead" : "failed",
 					tenantId: input.tenantId,
 				});
-				if (attempt >= input.retryMaxAttempts || !normalized.retriable) {
+				if (isLastAttempt) {
+					yield* notifyDeadDispatch({
+						eventId: input.eventId,
+						channel: input.channel,
+						destination: input.destination,
+						tenantId: input.tenantId,
+					});
 					return;
 				}
 				yield* Effect.sleep(input.retryDelayMs);
@@ -272,6 +301,23 @@ const deliverWithRetries = (input: {
 				return;
 			}
 			if (attempt >= input.retryMaxAttempts) {
+				yield* appendDeliveryAttempt({
+					attempt: attempt + 1,
+					channel: input.channel,
+					destination: input.destination,
+					error: result.error ?? "Max retry attempts exhausted",
+					eventId: input.eventId,
+					requestId: input.requestId,
+					responseCode: result.responseCode,
+					status: "dead",
+					tenantId: input.tenantId,
+				});
+				yield* notifyDeadDispatch({
+					eventId: input.eventId,
+					channel: input.channel,
+					destination: input.destination,
+					tenantId: input.tenantId,
+				});
 				return;
 			}
 			yield* Effect.sleep(input.retryDelayMs);

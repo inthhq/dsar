@@ -4,6 +4,7 @@ import * as ServiceMap from "effect/ServiceMap";
 import type {
 	AdapterOperationalEvent,
 	AdapterRegistryService,
+	DeadDispatchAlertEvent,
 	InboundAdapterContract,
 	NotificationAdapterContract,
 	StorageAdapterContract,
@@ -130,6 +131,10 @@ export interface RuntimeConfig {
 	/** Optional observer for adapter failure/degradation events. */
 	readonly onAdapterEvent?: (
 		event: AdapterOperationalEvent
+	) => Promise<void> | void;
+	/** Optional callback for dead dispatch alerts (webhook/email delivery failures). */
+	readonly onDeadDispatchAlert?: (
+		event: DeadDispatchAlertEvent
 	) => Promise<void> | void;
 	/** Auth and identity resolution used by protected endpoints. */
 	readonly auth?: RuntimeAuthConfig;

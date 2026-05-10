@@ -1,6 +1,11 @@
 import type { Effect } from "effect";
 
-import type { NotificationEventType } from "../events/contracts";
+import type {
+	DeadDispatchAlertEvent,
+	NotificationEventType,
+} from "../events/contracts";
+
+export type { DeadDispatchAlertEvent };
 
 /**
  * Supported adapter capability groups used by the runtime registry.

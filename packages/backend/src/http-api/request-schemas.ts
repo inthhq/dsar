@@ -134,7 +134,7 @@ export const NotificationAttemptSchema = Schema.Struct({
 	destination: Schema.String,
 	error: Schema.optional(Schema.String),
 	responseCode: Schema.optional(Schema.Number),
-	status: Schema.Literals(["pending", "delivered", "failed", "skipped"]),
+	status: Schema.Literals(["pending", "delivered", "failed", "skipped", "dead"]),
 });
 
 /** Notification event summary schema grouped by originating event. */
