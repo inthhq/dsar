@@ -234,3 +234,44 @@ export const applyMigration0001 = (
 		yield* sql`CREATE INDEX IF NOT EXISTS idx_chat_locks_tenant_expiry
 			ON chat_thread_locks(tenant_id, expires_at)`;
 	});
+
+/**
+ * Test-only rollback for the initial schema migration.
+ *
+ * Production persistence remains forward-only; this helper exists so driver
+ * migration suites can verify each migration's DDL boundary.
+ *
+ * @param sql - Effect SQL client used to execute rollback DDL.
+ * @returns An effect that succeeds once the migration-owned objects are gone.
+ */
+export const revertMigration0001 = (
+	sql: SqlClient.SqlClient
+): Effect.Effect<void, SqlError> =>
+	Effect.gen(function* revertMigration0001Program() {
+		yield* sql`DROP INDEX IF EXISTS idx_chat_locks_tenant_expiry`;
+		yield* sql`DROP INDEX IF EXISTS idx_chat_state_tenant_expiry`;
+		yield* sql`DROP INDEX IF EXISTS idx_notification_attempts_tenant_event`;
+		yield* sql`DROP INDEX IF EXISTS idx_notification_events_tenant_idempotency`;
+		yield* sql`DROP INDEX IF EXISTS idx_notification_events_tenant_request`;
+		yield* sql`DROP INDEX IF EXISTS idx_audit_tenant_request`;
+		yield* sql`DROP INDEX IF EXISTS idx_timeline_tenant_request`;
+		yield* sql`DROP INDEX IF EXISTS idx_requests_tenant_policy_created`;
+		yield* sql`DROP INDEX IF EXISTS idx_requests_tenant_requestor_email_created`;
+		yield* sql`DROP INDEX IF EXISTS idx_requests_tenant_subject_external_created`;
+		yield* sql`DROP INDEX IF EXISTS idx_requests_tenant_subject_created`;
+		yield* sql`DROP INDEX IF EXISTS idx_requests_tenant_due`;
+
+		yield* sql`DROP TABLE IF EXISTS chat_thread_locks`;
+		yield* sql`DROP TABLE IF EXISTS chat_thread_subscriptions`;
+		yield* sql`DROP TABLE IF EXISTS chat_state_entries`;
+		yield* sql`DROP TABLE IF EXISTS notification_delivery_attempts`;
+		yield* sql`DROP TABLE IF EXISTS notification_events`;
+		yield* sql`DROP TABLE IF EXISTS audit_events`;
+		yield* sql`DROP TABLE IF EXISTS retention_policies`;
+		yield* sql`DROP TABLE IF EXISTS fulfillment_artifacts`;
+		yield* sql`DROP TABLE IF EXISTS verification_evidence`;
+		yield* sql`DROP TABLE IF EXISTS policy_assignments`;
+		yield* sql`DROP TABLE IF EXISTS request_timeline_events`;
+		yield* sql`DROP TABLE IF EXISTS request_clock_segments`;
+		yield* sql`DROP TABLE IF EXISTS requests`;
+	});
