@@ -192,7 +192,7 @@ export interface NotificationEventPayload {
 	/** Timestamp when this record was created. */
 	readonly createdAt: string;
 	/** Aggregate delivery status for the notification event. */
-	readonly status: "generated" | "delivered" | "failed" | "skipped";
+	readonly status: "generated" | "delivered" | "failed" | "skipped" | "dead";
 	/** Delivery attempts recorded for this notification event. */
 	readonly attempts: readonly NotificationAttemptPayload[];
 }

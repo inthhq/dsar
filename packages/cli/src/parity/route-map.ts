@@ -105,7 +105,7 @@ export const routeParityMap: readonly RouteParityDefinition[] = [
 		path: "/webhooks/dispatches",
 	},
 	{
-		command: ["webhooks", "dlq", "replay", ":eventId"],
+		command: ["webhooks", "dlq", "replay", ":requestId", ":eventId"],
 		description: "Replay a dead notification event.",
 		id: "webhooks_dispatches_replay",
 		method: "POST",

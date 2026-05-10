@@ -940,6 +940,7 @@ const makePersistence = (
 				listByStatus: (status, limit = 50) =>
 					Effect.gen(function* listNotificationDeliveryAttemptsByStatus() {
 						const tenantId = yield* requireTenantId;
+						const clampedLimit = Math.min(Math.max(1, limit), 500);
 						const rows = yield* sql<{
 							readonly id: string;
 							readonly tenant_id: string;
@@ -955,7 +956,7 @@ const makePersistence = (
 						}>`SELECT * FROM notification_delivery_attempts
 					WHERE tenant_id = ${tenantId} AND status = ${status}
 					ORDER BY created_at DESC
-					LIMIT ${limit}`;
+					LIMIT ${clampedLimit}`;
 						return yield* Effect.forEach(
 							rows,
 							mapNotificationDeliveryAttemptRecordEffect

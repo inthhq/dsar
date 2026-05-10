@@ -37,7 +37,7 @@ const WebhookDispatchSchema = Schema.Struct({
 	notificationEventId: Schema.String,
 	requestId: Schema.String,
 	responseCode: Schema.optional(Schema.Number),
-	status: Schema.Literal("dead"),
+	status: Schema.Literals(["pending", "delivered", "failed", "skipped", "dead"]),
 });
 
 /** OpenAPI group describing public inbound webhook endpoints. */

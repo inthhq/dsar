@@ -21,6 +21,7 @@ const DEFAULT_POLICY_VERSION = "policy-v1";
 const DEFAULT_LOCALE = "en-GB";
 const GENERATED_STATUS = "generated";
 const DEFAULT_WEBHOOK_ENDPOINT_ID = "default";
+const RETRY_EXHAUSTED_ERROR_MESSAGE = "Max retry attempts exhausted";
 
 const notifyDeadDispatch = (input: {
 	readonly eventId: string;
@@ -39,7 +40,7 @@ const notifyDeadDispatch = (input: {
 				deadAt: new Date().toISOString(),
 			};
 			yield* Effect.tryPromise(() =>
-				Promise.resolve(services.config.onDeadDispatchAlert(alertEvent))
+				services.config.onDeadDispatchAlert(alertEvent)
 			).pipe(Effect.catch(() => Effect.void));
 		}
 	});
@@ -301,11 +302,13 @@ const deliverWithRetries = (input: {
 				return;
 			}
 			if (attempt >= input.retryMaxAttempts) {
+				// Note: This creates a phantom attempt record (attempt + 1) to mark the final
+				// "dead" state since the last actual attempt already has its status set.
 				yield* appendDeliveryAttempt({
 					attempt: attempt + 1,
 					channel: input.channel,
 					destination: input.destination,
-					error: result.error ?? "Max retry attempts exhausted",
+					error: result.error ?? RETRY_EXHAUSTED_ERROR_MESSAGE,
 					eventId: input.eventId,
 					requestId: input.requestId,
 					responseCode: result.responseCode,

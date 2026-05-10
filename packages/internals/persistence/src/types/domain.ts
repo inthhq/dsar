@@ -1396,8 +1396,8 @@ export interface NotificationDeliveryAttemptsRepository {
 	/**
 	 * Lists delivery attempts filtered by status.
 	 *
-	 * @param status - Optional status filter (e.g. "dead" for DLQ).
-	 * @param limit - Maximum number of results.
+	 * @param status - Status filter (e.g. "dead" for DLQ).
+	 * @param limit - Maximum number of results (default: 50, max: 500).
 	 * @returns An ordered array of {@link NotificationDeliveryAttemptRecord} entries.
 	 * @throws {@link PersistenceError} on mapping failures.
 	 * @throws {@link SqlError} on underlying database failures.

@@ -143,7 +143,7 @@ export const NotificationEventSummarySchema = Schema.Struct({
 	createdAt: Schema.String,
 	eventId: Schema.String,
 	eventType: Schema.String,
-	status: Schema.Literals(["generated", "delivered", "failed", "skipped"]),
+	status: Schema.Literals(["generated", "delivered", "failed", "skipped", "dead"]),
 });
 
 /** Notification history response schema scoped to a request. */
