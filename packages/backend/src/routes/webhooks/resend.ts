@@ -1,12 +1,18 @@
 import { asObject } from "@dsar/guards";
 import * as Effect from "effect/Effect";
 
+import { enforceIntakeTenantRateLimit } from "../../rate-limit";
 import { backendErrorCatalogByCode } from "../../types/error-codes";
 import { RequestValidationError } from "../../types/errors";
 import { RuntimeServicesTag } from "../../types/runtime";
 import { captureInboundRequest } from "../inbound-capture";
 import type { RouteDefinition } from "../types";
 import { parseInboundPayload } from "./shared";
+
+const resendRoute = {
+	method: "POST",
+	path: "/webhooks/inbound/resend",
+} as const;
 
 /** Route definition for receiving Resend inbound webhooks. */
 export const resendWebhookRoute: RouteDefinition = {
@@ -58,6 +64,17 @@ export const resendWebhookRoute: RouteDefinition = {
 					})
 				);
 			const inboundPayload = parseInboundPayload(received.payload);
+			const limited = yield* Effect.promise(() =>
+				enforceIntakeTenantRateLimit({
+					request,
+					route: resendRoute,
+					services,
+					tenantId: inboundPayload.route.tenantId,
+				})
+			);
+			if (limited) {
+				return limited;
+			}
 			return yield* captureInboundRequest({
 				actor: "inbound-resend",
 				idempotencyKey: `inbound-resend:${received.sourceId}:${inboundPayload.route.tenantId}:${inboundPayload.route.workspaceId ?? "*"}`,
@@ -85,8 +102,9 @@ export const resendWebhookRoute: RouteDefinition = {
 				sourceId: received.sourceId,
 			});
 		}),
-	method: "POST",
-	path: "/webhooks/inbound/resend",
+	method: resendRoute.method,
+	path: resendRoute.path,
 	protected: false,
+	publicIntake: true,
 	summary: "Receive Resend inbound webhook",
 };

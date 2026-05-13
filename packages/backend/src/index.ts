@@ -6,6 +6,7 @@ export {
 export { dsarInstance } from "./core";
 export { createOpenApiSpec, makeDsarHttpApi } from "./http-api";
 export { Persistence, runtimeReposFromPersistence } from "./persistence";
+export { createMemoryRateLimitStore } from "./rate-limit";
 export {
 	AdapterRegistryTag,
 	makeAdapterRegistry,
@@ -35,6 +36,15 @@ export type {
 	StorageObjectMetadata,
 } from "./adapters";
 export type { AdapterModule, CoreModule } from "./layers";
+export type {
+	RateLimitConsumeInput,
+	RateLimitConsumeResult,
+	RateLimitExceededEvent,
+	RateLimitRuleConfig,
+	RateLimitScope,
+	RateLimitStore,
+	RuntimeRateLimitConfig,
+} from "./rate-limit";
 export type {
 	AuthenticatedRequestIdentity,
 	DsarConfigOptions,

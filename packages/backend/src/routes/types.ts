@@ -21,6 +21,8 @@ export interface RouteDefinition {
 	readonly path: string;
 	/** Whether actor context is required before handler execution. */
 	readonly protected: boolean;
+	/** Whether this route receives public DSAR intake and should be rate limited. */
+	readonly publicIntake?: boolean;
 	/** Human-readable route description for docs/debugging. */
 	readonly summary: string;
 	/**

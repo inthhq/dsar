@@ -1,0 +1,74 @@
+---
+title: "Upstash Integration"
+description: "Use @dsar/upstash for Upstash-backed DSAR runtime integrations."
+lastModified: 2026-05-07
+---
+
+<import src="../../_shared/alpha-warning.mdx" />
+
+`@dsar/upstash` provides Upstash-backed DSAR runtime integrations. It currently
+exports an Upstash Redis-backed `RateLimitStore` for public intake endpoints.
+Use it for serverless or edge-friendly deployments where a fetch-based Redis
+client is preferred.
+
+## Install
+
+```sh
+bun add @dsar/upstash @upstash/redis
+```
+
+`@upstash/redis` is a peer dependency so host applications control the client
+version and environment variable setup.
+
+## Runtime Wiring
+
+```ts
+import { dsarInstance } from "@dsar/backend";
+import { makeUpstashRateLimitStore } from "@dsar/upstash";
+import { Redis } from "@upstash/redis";
+
+const redis = Redis.fromEnv();
+
+const runtime = dsarInstance({
+	config: {
+		rateLimit: {
+			intake: {
+				ip: {
+					limit: 60,
+					windowMs: 60_000,
+				},
+				tenant: {
+					limit: 300,
+					windowMs: 60_000,
+				},
+			},
+			store: makeUpstashRateLimitStore({
+				client: redis,
+				keyPrefix: "dsar:rate-limit",
+			}),
+		},
+	},
+	repos: {
+		persistence:
+			/* see examples/config/runtime.config.example.ts or provide
+			   runtimeReposFromPersistence(...) output */,
+	},
+});
+```
+
+## Behavior
+
+- Uses the backend fixed-window rate-limit contract.
+- Shares IP and tenant counters across runtime instances.
+- Returns the same `429` and `Retry-After` behavior as the default store.
+- Automatically expires Upstash Redis keys after the configured window.
+- Applies `keyPrefix` before DSAR's route/scope key. Use an empty string only
+  when the host application already namespaces keys.
+
+## Production Notes
+
+- Use this package for serverless and fetch-oriented deployments.
+- Use `@dsar/redis` for long-running Node/server deployments with
+  `ioredis`.
+- Keep `config.rateLimit.onLimitExceeded` wired to your metrics pipeline when
+  you need visibility into abusive or misconfigured public intake sources.

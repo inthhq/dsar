@@ -8,9 +8,11 @@
 		"inbound-resend",
 		"inbound-slack",
 		"outbound-resend",
+		"redis",
 		"storage-filesystem",
 		"storage-s3",
 		"storage-vercel-blob",
+		"upstash",
 		"unkey"
 	]
 }

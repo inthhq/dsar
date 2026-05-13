@@ -83,6 +83,14 @@
 			"types": "./dist/outbound-resend.d.mts",
 			"import": "./dist/outbound-resend.mjs"
 		},
+		"./redis": {
+			"types": "./dist/redis.d.mts",
+			"import": "./dist/redis.mjs"
+		},
+		"./upstash": {
+			"types": "./dist/upstash.d.mts",
+			"import": "./dist/upstash.mjs"
+		},
 		"./auth-unkey": {
 			"types": "./dist/auth-unkey.d.mts",
 			"import": "./dist/auth-unkey.mjs"
@@ -103,9 +111,11 @@
 		"@dsar/outbound-resend": "workspace:*",
 		"@dsar/persistence-pg": "workspace:*",
 		"@dsar/persistence-sqlite": "workspace:*",
+		"@dsar/redis": "workspace:*",
 		"@dsar/storage-filesystem": "workspace:*",
 		"@dsar/storage-s3": "workspace:*",
 		"@dsar/storage-vercel-blob": "workspace:*",
+		"@dsar/upstash": "workspace:*",
 		"@effect/platform-node": "catalog:effect",
 		"dotenv": "17.3.1"
 	},

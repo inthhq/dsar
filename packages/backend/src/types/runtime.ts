@@ -8,6 +8,7 @@ import type {
 	NotificationAdapterContract,
 	StorageAdapterContract,
 } from "../adapters";
+import type { RuntimeRateLimitConfig } from "../rate-limit";
 
 /**
  * Workspace-level notification policy controlling built-in email delivery.
@@ -133,6 +134,8 @@ export interface RuntimeConfig {
 	) => Promise<void> | void;
 	/** Auth and identity resolution used by protected endpoints. */
 	readonly auth?: RuntimeAuthConfig;
+	/** Rate limiting for public intake endpoints. */
+	readonly rateLimit?: RuntimeRateLimitConfig;
 }
 
 export type {
