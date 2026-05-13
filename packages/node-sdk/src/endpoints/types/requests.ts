@@ -174,7 +174,7 @@ export interface NotificationAttemptPayload {
 	/** Timestamp when this record was created. */
 	readonly createdAt: string;
 	/** Delivery result for this specific attempt. */
-	readonly status: "pending" | "delivered" | "failed" | "skipped";
+	readonly status: "pending" | "delivered" | "failed" | "skipped" | "dead";
 	/** Provider response code returned for this attempt. */
 	readonly responseCode?: number;
 	/** Failure reason returned by the provider or runtime. */
@@ -192,7 +192,7 @@ export interface NotificationEventPayload {
 	/** Timestamp when this record was created. */
 	readonly createdAt: string;
 	/** Aggregate delivery status for the notification event. */
-	readonly status: "generated" | "delivered" | "failed" | "skipped";
+	readonly status: "generated" | "delivered" | "failed" | "skipped" | "dead";
 	/** Delivery attempts recorded for this notification event. */
 	readonly attempts: readonly NotificationAttemptPayload[];
 }

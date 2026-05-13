@@ -623,7 +623,8 @@ export type NotificationDeliveryStatus =
 	| "pending"
 	| "delivered"
 	| "failed"
-	| "skipped";
+	| "skipped"
+	| "dead";
 
 /**
  * Immutable delivery-attempt event record associated with a notification event.
@@ -1387,6 +1388,23 @@ export interface NotificationDeliveryAttemptsRepository {
 	 */
 	readonly listByNotificationEventId: (
 		notificationEventId: string
+	) => Effect.Effect<
+		readonly NotificationDeliveryAttemptRecord[],
+		PersistenceError | SqlError,
+		TenantContext
+	>;
+	/**
+	 * Lists delivery attempts filtered by status.
+	 *
+	 * @param status - Status filter (e.g. "dead" for DLQ).
+	 * @param limit - Maximum number of results (default: 50, max: 500).
+	 * @returns An ordered array of {@link NotificationDeliveryAttemptRecord} entries.
+	 * @throws {@link PersistenceError} on mapping failures.
+	 * @throws {@link SqlError} on underlying database failures.
+	 */
+	readonly listByStatus: (
+		status: NotificationDeliveryStatus,
+		limit?: number
 	) => Effect.Effect<
 		readonly NotificationDeliveryAttemptRecord[],
 		PersistenceError | SqlError,

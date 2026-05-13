@@ -27,6 +27,19 @@ const WebhookRotateKeyResponseSchema = Schema.Struct({
 	previousKeyId: Schema.optional(Schema.String),
 });
 
+const WebhookDispatchSchema = Schema.Struct({
+	attempt: Schema.Number,
+	channel: Schema.String,
+	createdAt: Schema.String,
+	destination: Schema.String,
+	error: Schema.optional(Schema.String),
+	id: Schema.String,
+	notificationEventId: Schema.String,
+	requestId: Schema.String,
+	responseCode: Schema.optional(Schema.Number),
+	status: Schema.Literals(["pending", "delivered", "failed", "skipped", "dead"]),
+});
+
 /** OpenAPI group describing public inbound webhook endpoints. */
 export const webhooksGroup = HttpApiGroup.make("webhooks", { topLevel: true })
 	.add(
@@ -80,5 +93,27 @@ export const webhooksGroup = HttpApiGroup.make("webhooks", { topLevel: true })
 				}
 			),
 			"Rotate webhook endpoint signing key"
+		)
+	)
+	.add(
+		protectedOperation(
+			HttpApiEndpoint.get(
+				"webhooks_dispatches_list",
+				"/webhooks/dispatches",
+				{
+					query: {
+						status: Schema.optional(
+							Schema.Literals(["dead", "failed", "delivered", "pending", "skipped"])
+						),
+						limit: Schema.optional(Schema.Number),
+					},
+					success: successEnvelope(
+						Schema.Struct({
+							dispatches: Schema.Array(WebhookDispatchSchema),
+						})
+					),
+				}
+			),
+			"List webhook dispatches with optional status filter"
 		)
 	);

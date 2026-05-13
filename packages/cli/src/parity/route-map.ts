@@ -98,6 +98,20 @@ export const routeParityMap: readonly RouteParityDefinition[] = [
 		path: "/webhooks/endpoints/{id}/rotate-key",
 	},
 	{
+		command: ["webhooks", "dlq", "list"],
+		description: "List dead-letter queue (DLQ) dispatches.",
+		id: "webhooks_dispatches_list",
+		method: "GET",
+		path: "/webhooks/dispatches",
+	},
+	{
+		command: ["webhooks", "dlq", "replay", ":requestId", ":eventId"],
+		description: "Replay a dead notification event.",
+		id: "webhooks_dispatches_replay",
+		method: "POST",
+		path: "/requests/:requestId/notifications/:eventId/replay",
+	},
+	{
 		command: ["requests", "create"],
 		description: "Create request.",
 		id: "requests_create",

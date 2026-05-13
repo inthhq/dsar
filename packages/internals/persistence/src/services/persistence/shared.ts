@@ -186,7 +186,8 @@ export const parseNotificationDeliveryStatus = (
 		case "pending":
 		case "delivered":
 		case "failed":
-		case "skipped": {
+		case "skipped":
+		case "dead": {
 			return Effect.succeed(value);
 		}
 		default: {

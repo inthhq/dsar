@@ -937,6 +937,31 @@ const makePersistence = (
 							mapNotificationDeliveryAttemptRecordEffect
 						);
 					}),
+				listByStatus: (status, limit = 50) =>
+					Effect.gen(function* listNotificationDeliveryAttemptsByStatus() {
+						const tenantId = yield* requireTenantId;
+						const clampedLimit = Math.min(Math.max(1, limit), 500);
+						const rows = yield* sql<{
+							readonly id: string;
+							readonly tenant_id: string;
+							readonly notification_event_id: string;
+							readonly request_id: string;
+							readonly channel: string;
+							readonly destination: string;
+							readonly attempt: number;
+							readonly status: string;
+							readonly response_code: number | null;
+							readonly error_text: string | null;
+							readonly created_at: string;
+						}>`SELECT * FROM notification_delivery_attempts
+					WHERE tenant_id = ${tenantId} AND status = ${status}
+					ORDER BY created_at DESC
+					LIMIT ${clampedLimit}`;
+						return yield* Effect.forEach(
+							rows,
+							mapNotificationDeliveryAttemptRecordEffect
+						);
+					}),
 			};
 
 		const webhookEndpoints: WebhookEndpointsRepository = {

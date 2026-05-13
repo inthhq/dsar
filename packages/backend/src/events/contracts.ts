@@ -42,6 +42,22 @@ export interface NotificationEventDraft {
 }
 
 /**
+ * Event emitted when a webhook/email dispatch goes dead after exhausting retries.
+ */
+export interface DeadDispatchAlertEvent {
+	/** Unique event identifier. */
+	readonly eventId: string;
+	/** Channel that failed (webhook or email). */
+	readonly channel: string;
+	/** Destination URL or email address. */
+	readonly destination: string;
+	/** Tenant identifier. */
+	readonly tenantId: string;
+	/** When the dispatch was marked dead. */
+	readonly deadAt: string;
+}
+
+/**
  * Derives notification event drafts from a lifecycle transition.
  *
  * @param input - Lifecycle transition context and optional due-date/rationale data.
