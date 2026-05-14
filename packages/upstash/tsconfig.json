@@ -1,0 +1,3 @@
+{
+	"extends": "@dsar/typescript-config/effect.json"
+}

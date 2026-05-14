@@ -1,0 +1,38 @@
+---
+title: "DSAR-BE-1200: REQUEST_RATE_LIMITED"
+description: "A public intake endpoint exceeded a configured rate limit."
+group: reference-errors
+---
+
+<include src="../../_shared/alpha-warning.mdx" />
+
+## Meaning
+
+A public intake endpoint exceeded a configured rate limit.
+
+## Probable Causes
+
+- A client submitted too many public intake requests in the configured window.
+- A tenant's public intake channel is receiving a burst above its configured limit.
+- A webhook provider is retrying aggressively after upstream failures.
+
+## How to Fix
+
+1. Wait for the `Retry-After` response header before retrying.
+2. Check the public intake source for loops or retry storms.
+3. Adjust runtime intake rate-limit configuration if the limit is too low.
+
+## Retryable
+
+Yes. Retry after the number of seconds in the `Retry-After` header.
+
+## Minimal Trigger Example
+
+```http
+POST /api/v1/webhooks/inbound/resend HTTP/1.1
+Host: localhost:4086
+Content-Type: application/json
+X-Forwarded-For: 203.0.113.10
+
+{}
+```

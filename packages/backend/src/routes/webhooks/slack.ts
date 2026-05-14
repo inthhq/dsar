@@ -1,5 +1,6 @@
 import * as Effect from "effect/Effect";
 
+import { enforceIntakeTenantRateLimit } from "../../rate-limit";
 import { backendErrorCatalogByCode } from "../../types/error-codes";
 import { RequestValidationError } from "../../types/errors";
 import { RuntimeServicesTag } from "../../types/runtime";
@@ -7,6 +8,11 @@ import { jsonResponse } from "../helpers";
 import { captureInboundRequest } from "../inbound-capture";
 import type { RouteDefinition } from "../types";
 import { mapSlackInboundReceiveError, parseSlackPayload } from "./shared";
+
+const slackRoute = {
+	method: "POST",
+	path: "/webhooks/inbound/slack",
+} as const;
 
 /** Route definition for receiving Slack inbound webhooks. */
 export const slackWebhookRoute: RouteDefinition = {
@@ -49,6 +55,17 @@ export const slackWebhookRoute: RouteDefinition = {
 			if (slackPayload.kind === "url_verification") {
 				return jsonResponse({ challenge: slackPayload.challenge }, 200);
 			}
+			const limited = yield* Effect.promise(() =>
+				enforceIntakeTenantRateLimit({
+					request,
+					route: slackRoute,
+					services,
+					tenantId: slackPayload.route.tenantId,
+				})
+			);
+			if (limited) {
+				return limited;
+			}
 			return yield* captureInboundRequest({
 				actor: "inbound-slack",
 				idempotencyKey: `inbound-slack:${received.sourceId}:${slackPayload.route.tenantId}:${slackPayload.route.workspaceId ?? "*"}`,
@@ -80,8 +97,9 @@ export const slackWebhookRoute: RouteDefinition = {
 				sourceId: received.sourceId,
 			});
 		}),
-	method: "POST",
-	path: "/webhooks/inbound/slack",
+	method: slackRoute.method,
+	path: slackRoute.path,
 	protected: false,
+	publicIntake: true,
 	summary: "Receive Slack inbound webhook",
 };

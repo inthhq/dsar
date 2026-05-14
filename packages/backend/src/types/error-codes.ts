@@ -67,6 +67,14 @@ const BACKEND_CATALOG_ENTRIES = [
 		title: "Request validation failed",
 	},
 	{
+		code: "REQUEST_RATE_LIMITED",
+		docsSlug: "dsar-be-1200",
+		id: "DSAR-BE-1200",
+		namespace: "backend",
+		status: 429,
+		title: "Request rate limit exceeded",
+	},
+	{
 		code: "REQUEST_ROUTE_NOT_FOUND",
 		docsSlug: "dsar-be-1201",
 		id: "DSAR-BE-1201",

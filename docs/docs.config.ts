@@ -32,6 +32,12 @@ export default defineDocsConfig({
 					title: "Storage",
 				},
 				{
+					description:
+						"Shared rate-limit stores for public intake endpoints (Redis, Upstash).",
+					slug: "integrations-rate-limit",
+					title: "Rate Limit",
+				},
+				{
 					description: "Bearer-token issuance and trusted identity adapters.",
 					slug: "integrations-auth",
 					title: "Auth",
