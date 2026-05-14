@@ -1,3 +1,4 @@
+import type { AuditEventCursor, AuditEventRecord } from "@dsar/persistence";
 import { withTenant } from "@dsar/persistence";
 import * as Effect from "effect/Effect";
 
@@ -6,6 +7,56 @@ import { RuntimeServicesTag } from "../types/runtime";
 import { computeAuditHash } from "./hash-chain";
 
 const DEFAULT_TENANT_ID = "tenant-default";
+const EXPORT_HARD_CAP = 10_000;
+const EXPORT_PAGE_SIZE = 500;
+
+export interface ExportedAuditEvent {
+	readonly id: string;
+	readonly eventType: string;
+	readonly actor: string;
+	readonly occurredAt: string;
+	readonly hash: string;
+	readonly hashAlg: string;
+	readonly prevHash?: string;
+	readonly sequence: number;
+	readonly metadata: Record<string, unknown>;
+	readonly requestId: string;
+}
+
+const toExportedEvent = (
+	record: AuditEventRecord,
+	fallbackRequestId: string
+): ExportedAuditEvent => ({
+	actor: record.actor,
+	eventType: record.action,
+	hash: record.hash,
+	hashAlg: record.hashAlg,
+	id: record.id,
+	metadata: {
+		after: record.after,
+		before: record.before,
+		object: record.object,
+		reason: record.reason,
+	},
+	occurredAt: record.createdAt,
+	prevHash: record.prevHash,
+	requestId: record.requestId ?? fallbackRequestId,
+	sequence: record.sequence,
+});
+
+const serializeAuditEvents = (
+	events: readonly ExportedAuditEvent[],
+	format: "jsonl" | "csv"
+): string =>
+	format === "jsonl"
+		? events.map((event) => JSON.stringify(event)).join("\n")
+		: [
+				"id,eventType,actor,occurredAt,sequence,hash,prevHash",
+				...events.map(
+					(event) =>
+						`${event.id},${event.eventType},${event.actor},${event.occurredAt},${event.sequence},${event.hash},${event.prevHash ?? ""}`
+				),
+			].join("\n");
 
 /**
  * Exports audit events for a request as serialised JSONL or CSV.
@@ -52,35 +103,10 @@ export const exportAuditEvents = (input: {
 		const records = yield* services.repos.persistence.auditEvents
 			.listByRequestId(input.requestId)
 			.pipe(withTenant(tenantId));
-
-		const events = records.map((record) => ({
-			actor: record.actor,
-			eventType: record.action,
-			hash: record.hash,
-			hashAlg: record.hashAlg,
-			id: record.id,
-			metadata: {
-				after: record.after,
-				before: record.before,
-				object: record.object,
-				reason: record.reason,
-			},
-			occurredAt: record.createdAt,
-			prevHash: record.prevHash,
-			requestId: record.requestId ?? input.requestId,
-			sequence: record.sequence,
-		}));
-
-		const serialized =
-			input.format === "jsonl"
-				? events.map((event) => JSON.stringify(event)).join("\n")
-				: [
-						"id,eventType,actor,occurredAt,sequence,hash,prevHash",
-						...events.map(
-							(event) =>
-								`${event.id},${event.eventType},${event.actor},${event.occurredAt},${event.sequence},${event.hash},${event.prevHash ?? ""}`
-						),
-					].join("\n");
+		const events = records.map((record) =>
+			toExportedEvent(record, input.requestId)
+		);
+		const serialized = serializeAuditEvents(events, input.format);
 		return {
 			events,
 			format: input.format,
@@ -177,6 +203,98 @@ export const verifyAuditChain = (input: {
 					: new RequestValidationError({
 							details: { cause: String(error) },
 							message: "Failed to verify audit hash chain.",
+							reasonCode: "INTERNAL_RUNTIME_ERROR",
+						})
+			)
+		)
+	);
+
+/**
+ * Exports the tenant-wide audit trail bounded by an inclusive time window.
+ *
+ * Paginates the underlying audit repository up to {@link EXPORT_HARD_CAP}
+ * rows. Beyond the cap, callers must narrow the window with `since`/`until`.
+ *
+ * @param input - Export parameters.
+ * @param input.tenantId - Tenant whose audit trail is exported.
+ * @param input.since - Inclusive lower bound (ISO-8601).
+ * @param [input.until] - Inclusive upper bound (ISO-8601).
+ * @param input.format - Serialisation format (`"jsonl"` or `"csv"`).
+ * @returns An `Effect` yielding the event array, the serialised string,
+ *   the chosen format, the bounds used, and the `rootHash` of the latest
+ *   event in the window (for chain verification).
+ * @throws {@link RequestValidationError} When the export exceeds the row
+ *   cap or the underlying persistence query fails.
+ */
+export const exportAuditEventsTenantWide = (input: {
+	readonly tenantId: string;
+	readonly since: string;
+	readonly until?: string;
+	readonly format: "jsonl" | "csv";
+}): Effect.Effect<
+	{
+		readonly format: "jsonl" | "csv";
+		readonly since: string;
+		readonly until?: string;
+		readonly events: readonly ExportedAuditEvent[];
+		readonly rootHash?: string;
+		readonly serialized: string;
+	},
+	RequestValidationError,
+	RuntimeServicesTag
+> =>
+	Effect.gen(function* exportAuditEventsTenantWideProgram() {
+		const services = yield* Effect.service(RuntimeServicesTag);
+		const collected: AuditEventRecord[] = [];
+		let cursor: AuditEventCursor | undefined;
+		while (collected.length <= EXPORT_HARD_CAP) {
+			const page = yield* services.repos.persistence.auditEvents
+				.list({
+					createdAfter: input.since,
+					createdBefore: input.until,
+					cursor,
+					limit: EXPORT_PAGE_SIZE,
+				})
+				.pipe(withTenant(input.tenantId));
+			collected.push(...page.items);
+			if (!page.nextCursor) {
+				break;
+			}
+			cursor = page.nextCursor;
+		}
+		if (collected.length > EXPORT_HARD_CAP) {
+			return yield* Effect.fail(
+				new RequestValidationError({
+					details: {
+						cap: EXPORT_HARD_CAP,
+						since: input.since,
+						until: input.until,
+					},
+					message: `Audit export exceeded ${EXPORT_HARD_CAP} rows. Narrow the window with \`since\`/\`until\` and retry.`,
+					reasonCode: "REQUEST_VALIDATION_FAILED",
+				})
+			);
+		}
+		const events = collected.map((record) =>
+			toExportedEvent(record, record.requestId ?? "")
+		);
+		const serialized = serializeAuditEvents(events, input.format);
+		return {
+			events,
+			format: input.format,
+			rootHash: events.at(0)?.hash,
+			serialized,
+			since: input.since,
+			until: input.until,
+		};
+	}).pipe(
+		Effect.catch((error) =>
+			Effect.fail(
+				error instanceof RequestValidationError
+					? error
+					: new RequestValidationError({
+							details: { cause: String(error) },
+							message: "Failed to export tenant audit events.",
 							reasonCode: "INTERNAL_RUNTIME_ERROR",
 						})
 			)

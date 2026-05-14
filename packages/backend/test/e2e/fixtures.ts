@@ -12,6 +12,7 @@ import type {
 	CreateVerificationEvidenceInput,
 	FulfillmentArtifactRecord,
 	JsonValue,
+	ListAuditEventsInput,
 	ListRequestsBySubjectInput,
 	NotificationDeliveryAttemptRecord,
 	NotificationEventRecord,
@@ -155,6 +156,53 @@ export const makeMemoryPersistence = (): PersistenceService => {
 				};
 				auditEvents.push(record);
 				return Effect.succeed(record);
+			},
+			list: (input: ListAuditEventsInput) => {
+				const limit = Math.max(1, Math.min(500, input.limit ?? 50));
+				const requestIdSet = input.requestIds
+					? new Set(input.requestIds)
+					: undefined;
+				const filtered = auditEvents
+					.filter((event) =>
+						input.requestId ? event.requestId === input.requestId : true
+					)
+					.filter((event) =>
+						requestIdSet
+							? event.requestId !== undefined &&
+								requestIdSet.has(event.requestId)
+							: true
+					)
+					.filter((event) => (input.actor ? event.actor === input.actor : true))
+					.filter((event) =>
+						input.action ? event.action === input.action : true
+					)
+					.filter((event) =>
+						input.createdAfter ? event.createdAt >= input.createdAfter : true
+					)
+					.filter((event) =>
+						input.createdBefore ? event.createdAt <= input.createdBefore : true
+					)
+					.filter((event) =>
+						input.cursor
+							? event.createdAt < input.cursor.createdAt ||
+								(event.createdAt === input.cursor.createdAt &&
+									event.id < input.cursor.id)
+							: true
+					)
+					.toSorted((left, right) => {
+						const order = right.createdAt.localeCompare(left.createdAt);
+						return order === 0 ? right.id.localeCompare(left.id) : order;
+					});
+				const items = filtered.slice(0, limit);
+				const last = items.at(-1);
+				return Effect.succeed({
+					items,
+					limit,
+					nextCursor:
+						filtered.length > limit && last
+							? { createdAt: last.createdAt, id: last.id }
+							: undefined,
+				});
 			},
 			listByRequestId: (requestId: string) =>
 				Effect.succeed(

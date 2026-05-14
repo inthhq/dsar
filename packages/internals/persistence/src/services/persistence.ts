@@ -5,6 +5,10 @@ import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as ServiceMap from "effect/ServiceMap";
 import * as SqlClient from "effect/unstable/sql/SqlClient";
 import { SqlError } from "effect/unstable/sql/SqlError";
+import type {
+	Fragment as SqlFragment,
+	Statement as SqlStatement,
+} from "effect/unstable/sql/Statement";
 
 import type { PersistenceDriver } from "../sql/driver";
 import { TenantContext, requireTenantId } from "../tenant/context";
@@ -16,6 +20,7 @@ import type {
 	CreateNotificationDeliveryAttemptInput,
 	CreateNotificationEventInput,
 	FulfillmentArtifactsRepository,
+	ListAuditEventsInput,
 	ListRequestsBySubjectInput,
 	NotificationDeliveryAttemptsRepository,
 	NotificationEventsRepository,
@@ -789,6 +794,81 @@ const makePersistence = (
 					LIMIT 1`;
 					const row = yield* findRequired(rows[0], "audit_events", input.id);
 					return mapAuditEventRecord(row);
+				}),
+			list: (input: ListAuditEventsInput) =>
+				Effect.gen(function* listAuditEvents() {
+					const tenantId = yield* requireTenantId;
+					const limit = limitWithFallback(input.limit);
+					const requestIdsFilter =
+						input.requestIds === undefined
+							? undefined
+							: [
+									...new Set(
+										input.requestIds
+											.map((value) => value.trim())
+											.filter((value) => value.length > 0)
+									),
+								];
+					if (requestIdsFilter !== undefined && requestIdsFilter.length === 0) {
+						return { items: [], limit };
+					}
+					const pageLimit = limit + 1;
+					const clauses: (SqlFragment | SqlStatement<unknown>)[] = [
+						sql`tenant_id = ${tenantId}`,
+					];
+					if (input.requestId) {
+						clauses.push(sql`request_id = ${input.requestId}`);
+					}
+					if (requestIdsFilter !== undefined) {
+						clauses.push(sql.in("request_id", requestIdsFilter));
+					}
+					if (input.actor) {
+						clauses.push(sql`actor = ${input.actor}`);
+					}
+					if (input.action) {
+						clauses.push(sql`action = ${input.action}`);
+					}
+					if (input.createdAfter) {
+						clauses.push(sql`created_at >= ${input.createdAfter}`);
+					}
+					if (input.createdBefore) {
+						clauses.push(sql`created_at <= ${input.createdBefore}`);
+					}
+					if (input.cursor) {
+						clauses.push(
+							sql`(created_at < ${input.cursor.createdAt} OR (created_at = ${input.cursor.createdAt} AND id < ${input.cursor.id}))`
+						);
+					}
+					const rows = yield* sql<{
+						readonly id: string;
+						readonly tenant_id: string;
+						readonly request_id: string | null;
+						readonly actor: string;
+						readonly action: string;
+						readonly object: string;
+						readonly before_json: string;
+						readonly after_json: string;
+						readonly reason_json: string;
+						readonly prev_hash: string | null;
+						readonly hash: string;
+						readonly hash_alg: string;
+						readonly sequence: number;
+						readonly created_at: string;
+					}>`SELECT * FROM audit_events
+						WHERE ${sql.and(clauses)}
+						ORDER BY created_at DESC, id DESC
+						LIMIT ${pageLimit}`;
+					const mapped = rows.map(mapAuditEventRecord);
+					const items = mapped.slice(0, limit);
+					const last = items.at(-1);
+					return {
+						items,
+						limit,
+						nextCursor:
+							mapped.length > limit && last
+								? { createdAt: last.createdAt, id: last.id }
+								: undefined,
+					};
 				}),
 			listByRequestId: (requestId) =>
 				Effect.gen(function* listAuditEventsByRequestId() {

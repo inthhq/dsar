@@ -1,6 +1,7 @@
 import * as HttpApi from "effect/unstable/httpapi/HttpApi";
 import * as OpenApi from "effect/unstable/httpapi/OpenApi";
 
+import { auditGroup } from "./groups/audit";
 import { initGroup } from "./groups/init";
 import { policiesGroup } from "./groups/policies";
 import { requestsGroup } from "./groups/requests";
@@ -22,6 +23,7 @@ export const makeDsarHttpApi = (basePath: string) =>
 		.add(statusGroup)
 		.add(webhooksGroup)
 		.add(subjectsGroup)
+		.add(auditGroup)
 		.add(policiesGroup)
 		.add(requestsGroup)
 		.annotateMerge(

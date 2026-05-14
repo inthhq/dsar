@@ -541,6 +541,25 @@ const commandCases: readonly CommandCase[] = [
 		id: "requests_notifications_replay",
 		outputIncludes: ["Failed to replay notification event"],
 	},
+	{
+		argv: ["audit", "list", "--limit", "10"],
+		expectedExitCode: 0,
+		id: "audit_list",
+		outputIncludes: ['"items":[]'],
+	},
+	{
+		argv: [
+			"audit",
+			"export",
+			"--since",
+			"1970-01-01T00:00:00.000Z",
+			"--format",
+			"jsonl",
+		],
+		expectedExitCode: 0,
+		id: "audit_export",
+		outputIncludes: ['"format":"jsonl"'],
+	},
 ];
 
 const testedCommandIds = new Set(commandCases.map((entry) => entry.id));

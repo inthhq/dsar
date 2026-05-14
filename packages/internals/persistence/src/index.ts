@@ -12,6 +12,8 @@ export type {
 export type { PersistenceDriver, PersistenceDriverKind } from "./sql/driver";
 export { TenantContext, withTenant } from "./tenant/context";
 export type {
+	AuditEventCursor,
+	AuditEventPage,
 	AuditEventRecord,
 	ChatRuntimeStateRepository,
 	ChatStateRecord,
@@ -30,6 +32,7 @@ export type {
 	EnsureWebhookEndpointInput,
 	FulfillmentArtifactRecord,
 	JsonValue,
+	ListAuditEventsInput,
 	ListRequestsBySubjectInput,
 	NotificationDeliveryAttemptRecord,
 	NotificationDeliveryStatus,

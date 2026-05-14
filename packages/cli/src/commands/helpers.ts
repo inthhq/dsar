@@ -156,6 +156,29 @@ const queryForRoute = (
 			format: input.flags.format,
 		};
 	}
+	if (route.id === "audit_list") {
+		return {
+			actor: input.flags.actor,
+			created_after: input.flags["created-after"] ?? input.flags.since,
+			created_before: input.flags["created-before"] ?? input.flags.until,
+			cursor: input.flags.cursor,
+			event_type: input.flags["event-type"],
+			limit: input.flags.limit,
+			request_id: input.flags["request-id"],
+			subject_id: input.flags["subject-id"],
+		};
+	}
+	if (route.id === "audit_export") {
+		return {
+			format: input.flags.format,
+			since: requireFlag(
+				input.flags,
+				"since",
+				"Missing required --since for audit export command."
+			),
+			until: input.flags.until,
+		};
+	}
 	if (route.id === "requests_manifest_artifact_download") {
 		return {
 			key: requireFlag(

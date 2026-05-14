@@ -93,6 +93,11 @@ export interface MinimalPersistence {
 		readonly listByRequestId: (
 			requestId: string
 		) => Effect.Effect<readonly Record<string, unknown>[]>;
+		readonly list: (input: Record<string, unknown>) => Effect.Effect<{
+			readonly items: readonly Record<string, unknown>[];
+			readonly limit: number;
+			readonly nextCursor?: { readonly createdAt: string; readonly id: string };
+		}>;
 	};
 	/** Legal-clock time segments used for deadline and pause calculations. */
 	readonly clockSegments: {
@@ -293,6 +298,84 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 						yield* Ref.update(auditEventsRef, (arr) => [...arr, record]);
 						return record;
 					}),
+				list: (input: Record<string, unknown>) =>
+					Ref.get(auditEventsRef).pipe(
+						Effect.map((arr) => {
+							const limit = Math.max(
+								1,
+								Math.min(500, (input.limit as number | undefined) ?? 50)
+							);
+							const requestIds = Array.isArray(input.requestIds)
+								? new Set(input.requestIds as readonly string[])
+								: undefined;
+							const cursor = input.cursor as
+								| { readonly createdAt: string; readonly id: string }
+								| undefined;
+							const filtered = arr
+								.filter((event) =>
+									input.requestId ? event.requestId === input.requestId : true
+								)
+								.filter((event) =>
+									requestIds
+										? typeof event.requestId === "string" &&
+											requestIds.has(event.requestId)
+										: true
+								)
+								.filter((event) =>
+									input.actor ? event.actor === input.actor : true
+								)
+								.filter((event) =>
+									input.action ? event.action === input.action : true
+								)
+								.filter((event) =>
+									input.createdAfter
+										? typeof event.createdAt === "string" &&
+											event.createdAt >= (input.createdAfter as string)
+										: true
+								)
+								.filter((event) =>
+									input.createdBefore
+										? typeof event.createdAt === "string" &&
+											event.createdAt <= (input.createdBefore as string)
+										: true
+								)
+								.filter((event) => {
+									if (!cursor) {
+										return true;
+									}
+									const createdAt =
+										typeof event.createdAt === "string" ? event.createdAt : "";
+									const id = typeof event.id === "string" ? event.id : "";
+									return (
+										createdAt < cursor.createdAt ||
+										(createdAt === cursor.createdAt && id < cursor.id)
+									);
+								})
+								.toSorted((left, right) => {
+									const leftCreatedAt =
+										typeof left.createdAt === "string" ? left.createdAt : "";
+									const rightCreatedAt =
+										typeof right.createdAt === "string" ? right.createdAt : "";
+									const order = rightCreatedAt.localeCompare(leftCreatedAt);
+									if (order !== 0) {
+										return order;
+									}
+									const leftId = typeof left.id === "string" ? left.id : "";
+									const rightId = typeof right.id === "string" ? right.id : "";
+									return rightId.localeCompare(leftId);
+								});
+							const items = filtered.slice(0, limit);
+							const last = items.at(-1);
+							const nextCursor =
+								filtered.length > limit &&
+								last &&
+								typeof last.createdAt === "string" &&
+								typeof last.id === "string"
+									? { createdAt: last.createdAt, id: last.id }
+									: undefined;
+							return { items, limit, nextCursor };
+						})
+					),
 				listByRequestId: (requestId: string) =>
 					Ref.get(auditEventsRef).pipe(
 						Effect.map((arr) =>

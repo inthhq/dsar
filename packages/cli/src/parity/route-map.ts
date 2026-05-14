@@ -405,6 +405,20 @@ export const routeParityMap: readonly RouteParityDefinition[] = [
 		method: "POST",
 		path: "/requests/{id}/audit/verify",
 	},
+	{
+		command: ["audit", "list"],
+		description: "List audit events with filters.",
+		id: "audit_list",
+		method: "GET",
+		path: "/audit",
+	},
+	{
+		command: ["audit", "export"],
+		description: "Export tenant audit trail.",
+		id: "audit_export",
+		method: "GET",
+		path: "/audit/export",
+	},
 ] as const;
 
 /**
