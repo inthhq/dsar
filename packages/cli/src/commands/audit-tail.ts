@@ -28,6 +28,8 @@ interface AuditListEnvelope {
 	};
 }
 
+const POLL_DRAIN_PAGE_CAP = 50;
+
 const requireFlag = (
 	flags: Readonly<Record<string, string>>,
 	key: string,
@@ -89,23 +91,43 @@ const formatLine = (event: AuditTailEvent, output: "json" | "text"): string => {
 	}`;
 };
 
+/**
+ * Drains every page of `/audit` matching the current `created_after`
+ * watermark, returning events in ascending creation order. Following
+ * `nextCursor` here is what prevents a burst larger than
+ * {@link POLL_PAGE_SIZE} from silently dropping the older tail of the
+ * burst on the next iteration (the watermark would otherwise jump over
+ * unseen events).
+ */
 const pollOnce = async (
 	api: ApiClient,
 	requestId: string,
 	createdAfter: string | undefined,
 	limit: number
 ): Promise<readonly AuditTailEvent[]> => {
-	const response = (await api.invoke({
-		method: "GET",
-		path: "/audit",
-		query: {
-			created_after: createdAfter,
-			limit: String(limit),
-			request_id: requestId,
-		},
-	})) as AuditListEnvelope;
-	const items = response.data?.items ?? [];
-	return [...items].toSorted((left, right) => {
+	const collected: AuditTailEvent[] = [];
+	let cursor: string | undefined;
+	let pages = 0;
+	do {
+		const response = (await api.invoke({
+			method: "GET",
+			path: "/audit",
+			query: {
+				created_after: createdAfter,
+				cursor,
+				limit: String(limit),
+				request_id: requestId,
+			},
+		})) as AuditListEnvelope;
+		const items = response.data?.items ?? [];
+		collected.push(...items);
+		cursor = response.data?.pagination?.nextCursor;
+		pages += 1;
+		if (pages >= POLL_DRAIN_PAGE_CAP) {
+			break;
+		}
+	} while (cursor);
+	return collected.toSorted((left, right) => {
 		const order = left.createdAt.localeCompare(right.createdAt);
 		return order === 0 ? left.sequence - right.sequence : order;
 	});
@@ -118,6 +140,15 @@ const pollOnce = async (
  * Exits cleanly when:
  *   - `signal` aborts (SIGINT in production, AbortController in tests), or
  *   - `--max-polls=<n>` reached (test-only bound).
+ *
+ * @param ctx - Command execution context carrying parsed flags, the API
+ *   client used to invoke `/audit`, and the writeLine sink for emitted
+ *   events.
+ * @param signal - Abort signal used to stop polling gracefully (wired to
+ *   SIGINT at the binary entry point, or to a test-controlled
+ *   `AbortController` from unit tests).
+ * @returns A summary of the run: the number of `polls` performed, the
+ *   count of unique events `emitted`, and the `requestId` that was tailed.
  */
 export const runAuditTailLoop = async (
 	ctx: CommandExecutionContext,
@@ -141,7 +172,12 @@ export const runAuditTailLoop = async (
 		? parseIntegerFlag(ctx.input.flags, "max-polls", 0)
 		: Number.POSITIVE_INFINITY;
 	const outputMode = ctx.input.global.output;
-	const seen = new Set<string>();
+	// `seen` is bounded by the backend `created_after` filter: once the
+	// watermark advances past a timestamp, events at strictly older
+	// timestamps cannot reappear, so we only need to retain ids that share
+	// the current watermark for cross-poll dedup. Without this bound, a
+	// long tail session would grow `seen` indefinitely.
+	let seenAtWatermark = new Set<string>();
 	let createdAfter: string | undefined;
 	let polls = 0;
 	let emitted = 0;
@@ -154,14 +190,16 @@ export const runAuditTailLoop = async (
 			POLL_PAGE_SIZE
 		);
 		for (const event of events) {
-			if (seen.has(event.id)) {
+			if (seenAtWatermark.has(event.id)) {
 				continue;
 			}
-			seen.add(event.id);
 			ctx.writeLine(formatLine(event, outputMode));
 			emitted += 1;
 			if (createdAfter === undefined || event.createdAt > createdAfter) {
 				createdAfter = event.createdAt;
+				seenAtWatermark = new Set<string>([event.id]);
+			} else {
+				seenAtWatermark.add(event.id);
 			}
 		}
 		if (polls >= maxPolls || signal.aborted) {

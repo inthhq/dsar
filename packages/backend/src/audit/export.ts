@@ -10,16 +10,30 @@ const DEFAULT_TENANT_ID = "tenant-default";
 const EXPORT_HARD_CAP = 10_000;
 const EXPORT_PAGE_SIZE = 500;
 
+/**
+ * Serialised projection of an immutable audit event used for compliance
+ * export payloads. Mirrors the public schema in `@dsar/schema`.
+ */
 export interface ExportedAuditEvent {
+	/** Immutable audit event identifier. */
 	readonly id: string;
+	/** Event-type name (derived from the audit `action`). */
 	readonly eventType: string;
+	/** Actor or principal responsible for the event. */
 	readonly actor: string;
+	/** Timestamp when the event was recorded. */
 	readonly occurredAt: string;
+	/** Tamper-evident chain hash for this event. */
 	readonly hash: string;
+	/** Hash algorithm identifier used to compute `hash`. */
 	readonly hashAlg: string;
+	/** Hash of the preceding event in the chain, when present. */
 	readonly prevHash?: string;
+	/** Monotonic sequence number used for deterministic ordering. */
 	readonly sequence: number;
+	/** Structured before/after/reason/object payload kept beside the event. */
 	readonly metadata: Record<string, unknown>;
+	/** Request id this event belongs to. */
 	readonly requestId: string;
 }
 
@@ -44,6 +58,35 @@ const toExportedEvent = (
 	sequence: record.sequence,
 });
 
+const escapeCsvField = (value: string | number | undefined): string => {
+	if (value === undefined) {
+		return "";
+	}
+	const text = String(value);
+	if (
+		text.includes(",") ||
+		text.includes('"') ||
+		text.includes("\n") ||
+		text.includes("\r")
+	) {
+		return `"${text.replaceAll('"', '""')}"`;
+	}
+	return text;
+};
+
+const toCsvRow = (event: ExportedAuditEvent): string =>
+	[
+		event.id,
+		event.eventType,
+		event.actor,
+		event.occurredAt,
+		event.sequence,
+		event.hash,
+		event.prevHash,
+	]
+		.map(escapeCsvField)
+		.join(",");
+
 const serializeAuditEvents = (
 	events: readonly ExportedAuditEvent[],
 	format: "jsonl" | "csv"
@@ -52,10 +95,7 @@ const serializeAuditEvents = (
 		? events.map((event) => JSON.stringify(event)).join("\n")
 		: [
 				"id,eventType,actor,occurredAt,sequence,hash,prevHash",
-				...events.map(
-					(event) =>
-						`${event.id},${event.eventType},${event.actor},${event.occurredAt},${event.sequence},${event.hash},${event.prevHash ?? ""}`
-				),
+				...events.map(toCsvRow),
 			].join("\n");
 
 /**
@@ -221,8 +261,9 @@ export const verifyAuditChain = (input: {
  * @param [input.until] - Inclusive upper bound (ISO-8601).
  * @param input.format - Serialisation format (`"jsonl"` or `"csv"`).
  * @returns An `Effect` yielding the event array, the serialised string,
- *   the chosen format, the bounds used, and the `rootHash` of the latest
- *   event in the window (for chain verification).
+ *   the chosen format, the bounds used, and two chain-verification
+ *   anchors: `rootHash` (earliest event in the window, chronologically
+ *   first) and `tipHash` (latest event in the window).
  * @throws {@link RequestValidationError} When the export exceeds the row
  *   cap or the underlying persistence query fails.
  */
@@ -238,6 +279,7 @@ export const exportAuditEventsTenantWide = (input: {
 		readonly until?: string;
 		readonly events: readonly ExportedAuditEvent[];
 		readonly rootHash?: string;
+		readonly tipHash?: string;
 		readonly serialized: string;
 	},
 	RequestValidationError,
@@ -279,12 +321,16 @@ export const exportAuditEventsTenantWide = (input: {
 			toExportedEvent(record, record.requestId ?? "")
 		);
 		const serialized = serializeAuditEvents(events, input.format);
+		// Persistence returns rows ORDER BY created_at DESC, id DESC, so the
+		// last entry is the earliest event in the window (root) and the
+		// first entry is the latest (tip).
 		return {
 			events,
 			format: input.format,
-			rootHash: events.at(0)?.hash,
+			rootHash: events.at(-1)?.hash,
 			serialized,
 			since: input.since,
+			tipHash: events.at(0)?.hash,
 			until: input.until,
 		};
 	}).pipe(

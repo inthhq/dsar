@@ -1,4 +1,4 @@
-import type { AuditEventCursor } from "@dsar/persistence";
+import type { AuditEventCursor, RequestSubjectCursor } from "@dsar/persistence";
 import { withTenant } from "@dsar/persistence";
 import { IsoTimestampSchema } from "@dsar/schema";
 import * as Effect from "effect/Effect";
@@ -11,6 +11,7 @@ import {
 	RequestValidationError,
 	UnauthorizedRequestError,
 } from "../types/errors";
+import type { RuntimeServices } from "../types/runtime";
 import { RuntimeServicesTag } from "../types/runtime";
 import {
 	requirePrincipalKinds,
@@ -91,6 +92,44 @@ const decodeCursor = (value: string | null): AuditEventCursor | undefined => {
 const OPERATOR_MESSAGE =
 	"The audit log is reserved for operator or service principals.";
 
+const SUBJECT_REQUEST_EXPANSION_CAP = 10_000;
+
+const collectRequestIdsForSubject = (
+	services: RuntimeServices,
+	tenantId: string,
+	subjectId: string
+) =>
+	Effect.gen(function* collectRequestIdsForSubjectEffect() {
+		const collected: string[] = [];
+		let cursor: RequestSubjectCursor | undefined;
+		do {
+			const page = yield* services.repos.persistence.requests
+				.listBySubject({
+					cursor,
+					identifiers: [subjectId],
+					limit: MAX_LIST_LIMIT,
+				})
+				.pipe(withTenant(tenantId));
+			for (const record of page.items) {
+				collected.push(record.id);
+			}
+			if (collected.length > SUBJECT_REQUEST_EXPANSION_CAP) {
+				return yield* Effect.fail(
+					new RequestValidationError({
+						details: {
+							cap: SUBJECT_REQUEST_EXPANSION_CAP,
+							subjectId,
+						},
+						message: `subject_id matches more than ${SUBJECT_REQUEST_EXPANSION_CAP} requests; narrow with created_after/created_before or request_id.`,
+						reasonCode: "REQUEST_VALIDATION_FAILED",
+					})
+				);
+			}
+			cursor = page.nextCursor;
+		} while (cursor);
+		return collected;
+	});
+
 const requireOperator = Effect.gen(function* requireOperatorEffect() {
 	const services = yield* Effect.service(RuntimeServicesTag);
 	const actor = yield* requireRequestActor(services.requestContext);
@@ -151,13 +190,11 @@ export const auditRoutes: readonly RouteDefinition[] = [
 				const action = trimmed(searchParams.get("event_type"));
 				let requestIds: readonly string[] | undefined;
 				if (subjectId) {
-					const subjectPage = yield* services.repos.persistence.requests
-						.listBySubject({
-							identifiers: [subjectId],
-							limit: MAX_LIST_LIMIT,
-						})
-						.pipe(withTenant(tenantId));
-					requestIds = subjectPage.items.map((record) => record.id);
+					requestIds = yield* collectRequestIdsForSubject(
+						services,
+						tenantId,
+						subjectId
+					);
 					if (requestIds.length === 0) {
 						return ok({
 							items: [],
@@ -233,7 +270,19 @@ export const auditRoutes: readonly RouteDefinition[] = [
 					"until"
 				);
 				const formatParam = searchParams.get("format");
-				const format = formatParam === "csv" ? "csv" : "jsonl";
+				if (
+					formatParam !== null &&
+					formatParam !== "csv" &&
+					formatParam !== "jsonl"
+				) {
+					return yield* Effect.fail(
+						toValidationFailure(
+							"`format` must be either `jsonl` or `csv`.",
+							new Error(`Unsupported format=${formatParam}`)
+						)
+					);
+				}
+				const format: "jsonl" | "csv" = formatParam === "csv" ? "csv" : "jsonl";
 				const exported = yield* exportAuditEventsTenantWide({
 					format,
 					since: since ?? sinceParam,
@@ -246,6 +295,7 @@ export const auditRoutes: readonly RouteDefinition[] = [
 					format: exported.format,
 					rootHash: exported.rootHash,
 					since: exported.since,
+					tipHash: exported.tipHash,
 					until: exported.until,
 				});
 			}).pipe(

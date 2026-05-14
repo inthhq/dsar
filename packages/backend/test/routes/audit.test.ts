@@ -1,4 +1,5 @@
 import { describe, expect, it } from "@effect/vitest";
+import * as Effect from "effect/Effect";
 
 import { dsarInstance } from "../../src";
 import {
@@ -30,6 +31,7 @@ interface ExportEnvelope {
 		readonly since: string;
 		readonly until?: string;
 		readonly rootHash?: string;
+		readonly tipHash?: string;
 		readonly eventCount: number;
 	};
 }
@@ -60,24 +62,22 @@ const seedAudit = async (
 	}[]
 ): Promise<void> => {
 	for (const event of events) {
-		const append = persistence.auditEvents.append({
-			action: event.action,
-			actor: event.actor,
-			after: {},
-			before: {},
-			createdAt: event.createdAt,
-			hash: `hash-${event.id}`,
-			hashAlg: "sha256",
-			id: event.id,
-			object: "request",
-			reason: {},
-			requestId: event.requestId,
-			sequence: event.sequence,
-		});
-		// Memory persistence's append returns Effect.succeed synchronously.
-		// Tests don't drive the Effect runtime, so we manually invoke it.
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		await (append as unknown as Promise<unknown>);
+		await Effect.runPromise(
+			persistence.auditEvents.append({
+				action: event.action,
+				actor: event.actor,
+				after: {},
+				before: {},
+				createdAt: event.createdAt,
+				hash: `hash-${event.id}`,
+				hashAlg: "sha256",
+				id: event.id,
+				object: "request",
+				reason: {},
+				requestId: event.requestId,
+				sequence: event.sequence,
+			})
+		);
 	}
 };
 

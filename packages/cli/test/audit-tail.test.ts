@@ -97,6 +97,67 @@ describe("audit tail polling loop", () => {
 		expect(calls[1]?.query?.created_after).toBe("2026-01-01T00:00:00.000Z");
 	});
 
+	it("drains every audit page within a single poll before advancing the watermark", async () => {
+		const calls: ApiRequest[] = [];
+		const lines: string[] = [];
+		const pages = [
+			{
+				items: [
+					{
+						action: "capture",
+						actor: "operator-1",
+						createdAt: "2026-01-01T00:00:00.000Z",
+						id: "evt-1",
+						object: "request",
+						sequence: 1,
+					},
+				],
+				nextCursor: "cursor-1",
+			},
+			{
+				items: [
+					{
+						action: "verify",
+						actor: "operator-1",
+						createdAt: "2026-01-02T00:00:00.000Z",
+						id: "evt-2",
+						object: "request",
+						sequence: 2,
+					},
+				],
+				nextCursor: undefined,
+			},
+		];
+		let pageIndex = 0;
+		const ctx = makeContext({
+			flags: {
+				interval: "1",
+				"max-polls": "1",
+				request: "req-1",
+			},
+			invoke: (request) => {
+				calls.push(request);
+				const page = pages[pageIndex] ?? {
+					items: [],
+					nextCursor: undefined,
+				};
+				pageIndex += 1;
+				return Promise.resolve({
+					data: {
+						items: page.items,
+						pagination: { limit: 200, nextCursor: page.nextCursor },
+					},
+				});
+			},
+			writeLine: (line) => lines.push(line),
+		});
+		const result = await runAuditTailLoop(ctx, new AbortController().signal);
+		expect(result.polls).toBe(1);
+		expect(result.emitted).toBe(2);
+		expect(calls).toHaveLength(2);
+		expect(calls[1]?.query?.cursor).toBe("cursor-1");
+	});
+
 	it("deduplicates events seen across overlapping polls", async () => {
 		const lines: string[] = [];
 		let pollIndex = 0;

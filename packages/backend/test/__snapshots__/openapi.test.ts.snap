@@ -564,6 +564,16 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "since": {
                           "type": "string",
                         },
+                        "tipHash": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                            },
+                            {
+                              "type": "null",
+                            },
+                          ],
+                        },
                         "until": {
                           "anyOf": [
                             {

@@ -301,10 +301,7 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 				list: (input: Record<string, unknown>) =>
 					Ref.get(auditEventsRef).pipe(
 						Effect.map((arr) => {
-							const limit = Math.max(
-								1,
-								Math.min(500, (input.limit as number | undefined) ?? 50)
-							);
+							const limit = boundedLimit(input.limit);
 							const requestIds = Array.isArray(input.requestIds)
 								? new Set(input.requestIds as readonly string[])
 								: undefined;

@@ -74,6 +74,7 @@ export const auditGroup = HttpApiGroup.make("audit", { topLevel: true })
 						format: Schema.Literals(["jsonl", "csv"]),
 						rootHash: Schema.optional(Schema.String),
 						since: Schema.String,
+						tipHash: Schema.optional(Schema.String),
 						until: Schema.optional(Schema.String),
 					})
 				).pipe(s200),
