@@ -1,0 +1,8 @@
+{
+	"title": "Rate Limit",
+	"nav": {
+		"sidebar": "section",
+		"label": "Rate Limit"
+	},
+	"pages": ["redis", "upstash"]
+}

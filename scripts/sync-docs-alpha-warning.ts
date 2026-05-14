@@ -35,7 +35,7 @@ const buildWarningImport = (filePath: string): string => {
 	const importPath = relativePath.startsWith(".")
 		? relativePath
 		: `./${relativePath}`;
-	return `<import src="${importPath}" />`;
+	return `<include src="${importPath}" />`;
 };
 
 const replaceWarningBlock = (
@@ -44,7 +44,7 @@ const replaceWarningBlock = (
 ): string => {
 	const normalized = normalizeNewlines(content);
 	const warningPattern =
-		/^(---\n[\s\S]*?\n---\n)(?:\n(?:(?:<import src="[^"\n]*alpha-warning\.mdx(?:#[^"\n]+)?"\s*\/>)|(?:<Callout\b[^>]*>[\s\S]*?<\/Callout>))\n?)?/u;
+		/^(---\n[\s\S]*?\n---\n)(?:\n(?:(?:<include src="[^"\n]*alpha-warning\.mdx(?:#[^"\n]+)?"\s*\/>)|(?:<Callout\b[^>]*>[\s\S]*?<\/Callout>))\n?)?/u;
 	const matched = normalized.match(warningPattern);
 	if (!matched) {
 		throw new Error(

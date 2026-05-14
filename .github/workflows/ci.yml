@@ -71,6 +71,12 @@ jobs:
       - name: Error doc coverage
         run: bun run check:error-docs
 
+      - name: Docs alpha warning sync
+        run: bun run check:docs-alpha-warning
+
+      - name: Leadtype docs lint
+        run: bunx leadtype lint --src docs --error-unknown --format github
+
   test:
     name: Vitest (${{ matrix.runtime }})
     runs-on: ubuntu-latest

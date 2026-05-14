@@ -4,5 +4,5 @@
 		"sidebar": "section",
 		"label": "Integrations"
 	},
-	"pages": ["inbound", "integrations"]
+	"pages": ["inbound", "outbound", "storage", "rate-limit", "auth"]
 }
