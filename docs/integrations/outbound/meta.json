@@ -1,0 +1,8 @@
+{
+	"title": "Outbound",
+	"nav": {
+		"sidebar": "section",
+		"label": "Outbound"
+	},
+	"pages": ["resend"]
+}

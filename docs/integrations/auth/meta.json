@@ -1,0 +1,8 @@
+{
+	"title": "Auth",
+	"nav": {
+		"sidebar": "section",
+		"label": "Auth"
+	},
+	"pages": ["unkey"]
+}
