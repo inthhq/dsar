@@ -164,6 +164,7 @@ export const runCli = async (options: CliRunOptions): Promise<number> => {
 						api,
 						input,
 						params: matched.params,
+						writeLine: stdout,
 					}),
 			})
 		);

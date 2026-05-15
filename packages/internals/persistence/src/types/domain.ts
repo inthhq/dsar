@@ -561,6 +561,56 @@ export interface CreateAuditEventInput {
 }
 
 /**
+ * Stable cursor for audit event list pages.
+ *
+ * @public
+ */
+export interface AuditEventCursor {
+	/** Creation timestamp of the last item returned to the caller. */
+	readonly createdAt: string;
+	/** Audit event id of the last item returned to the caller. */
+	readonly id: string;
+}
+
+/**
+ * Filter contract for tenant-scoped audit event lookup.
+ *
+ * @public
+ */
+export interface ListAuditEventsInput {
+	/** Optional request id filter. */
+	readonly requestId?: string;
+	/** Optional set of request ids (used when expanding a subject filter upstream). */
+	readonly requestIds?: readonly string[];
+	/** Optional actor filter. */
+	readonly actor?: string;
+	/** Optional action filter (the public-facing "event_type"). */
+	readonly action?: string;
+	/** Return records created at or after this ISO timestamp. */
+	readonly createdAfter?: string;
+	/** Return records created at or before this ISO timestamp. */
+	readonly createdBefore?: string;
+	/** Cursor returned by the previous page. */
+	readonly cursor?: AuditEventCursor;
+	/** Maximum rows to read for a single page. */
+	readonly limit?: number;
+}
+
+/**
+ * Cursor-paginated audit event page.
+ *
+ * @public
+ */
+export interface AuditEventPage {
+	/** Matching audit event records in descending creation order. */
+	readonly items: readonly AuditEventRecord[];
+	/** Cursor for the next page when more records are available. */
+	readonly nextCursor?: AuditEventCursor;
+	/** Bounded page size used by the query. */
+	readonly limit: number;
+}
+
+/**
  * Immutable notification generation event record.
  *
  * @public
@@ -1298,6 +1348,22 @@ export interface AuditEventsRepository {
 		requestId: string
 	) => Effect.Effect<
 		readonly AuditEventRecord[],
+		PersistenceError | SqlError,
+		TenantContext
+	>;
+	/**
+	 * Lists audit events for the active tenant filtered by request, actor,
+	 * action, and creation window, paginated with a stable cursor.
+	 *
+	 * @param input - Filter and pagination parameters.
+	 * @returns A cursor-paginated {@link AuditEventPage}.
+	 * @throws {@link PersistenceError} on mapping failures.
+	 * @throws {@link SqlError} on underlying database failures.
+	 */
+	readonly list: (
+		input: ListAuditEventsInput
+	) => Effect.Effect<
+		AuditEventPage,
 		PersistenceError | SqlError,
 		TenantContext
 	>;

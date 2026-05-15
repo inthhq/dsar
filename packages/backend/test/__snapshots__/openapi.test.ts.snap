@@ -39,6 +39,612 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
   },
   "openapi": "3.1.0",
   "paths": {
+    "/audit": {
+      "get": {
+        "operationId": "audit_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "created_after",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "created_before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "event_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "request_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "action": {
+                                "type": "string",
+                              },
+                              "actor": {
+                                "type": "string",
+                              },
+                              "createdAt": {
+                                "type": "string",
+                              },
+                              "hash": {
+                                "type": "string",
+                              },
+                              "hashAlg": {
+                                "type": "string",
+                              },
+                              "id": {
+                                "type": "string",
+                              },
+                              "object": {
+                                "type": "string",
+                              },
+                              "prevHash": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                  },
+                                  {
+                                    "type": "null",
+                                  },
+                                ],
+                              },
+                              "requestId": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                  },
+                                  {
+                                    "type": "null",
+                                  },
+                                ],
+                              },
+                              "sequence": {
+                                "anyOf": [
+                                  {
+                                    "type": "number",
+                                  },
+                                  {
+                                    "enum": [
+                                      "NaN",
+                                    ],
+                                    "type": "string",
+                                  },
+                                  {
+                                    "enum": [
+                                      "Infinity",
+                                    ],
+                                    "type": "string",
+                                  },
+                                  {
+                                    "enum": [
+                                      "-Infinity",
+                                    ],
+                                    "type": "string",
+                                  },
+                                ],
+                              },
+                            },
+                            "required": [
+                              "action",
+                              "actor",
+                              "createdAt",
+                              "hash",
+                              "hashAlg",
+                              "id",
+                              "object",
+                              "sequence",
+                            ],
+                            "type": "object",
+                          },
+                          "type": "array",
+                        },
+                        "pagination": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "limit": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                              ],
+                            },
+                            "nextCursor": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                },
+                                {
+                                  "type": "null",
+                                },
+                              ],
+                            },
+                          },
+                          "required": [
+                            "limit",
+                          ],
+                          "type": "object",
+                        },
+                      },
+                      "required": [
+                        "items",
+                        "pagination",
+                      ],
+                      "type": "object",
+                    },
+                    "meta": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": {
+                            "type": "null",
+                          },
+                          "type": "object",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+                    "ok": {
+                      "enum": [
+                        true,
+                      ],
+                      "type": "boolean",
+                    },
+                  },
+                  "required": [
+                    "data",
+                    "ok",
+                  ],
+                  "type": "object",
+                },
+              },
+            },
+            "description": "Success",
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
+                },
+              },
+            },
+            "description": "The request or response did not match the expected schema",
+          },
+        },
+        "security": [
+          {
+            "BearerAuth": [],
+          },
+        ],
+        "summary": "List audit events",
+        "tags": [
+          "audit",
+        ],
+      },
+    },
+    "/audit/export": {
+      "get": {
+        "operationId": "audit_export",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "anyOf": [
+                    {
+                      "enum": [
+                        "jsonl",
+                      ],
+                      "type": "string",
+                    },
+                    {
+                      "enum": [
+                        "csv",
+                      ],
+                      "type": "string",
+                    },
+                  ],
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": true,
+            "schema": {
+              "type": "string",
+            },
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "eventCount": {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                            },
+                            {
+                              "enum": [
+                                "NaN",
+                              ],
+                              "type": "string",
+                            },
+                            {
+                              "enum": [
+                                "Infinity",
+                              ],
+                              "type": "string",
+                            },
+                            {
+                              "enum": [
+                                "-Infinity",
+                              ],
+                              "type": "string",
+                            },
+                          ],
+                        },
+                        "events": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "actor": {
+                                "type": "string",
+                              },
+                              "eventType": {
+                                "type": "string",
+                              },
+                              "hash": {
+                                "type": "string",
+                              },
+                              "hashAlg": {
+                                "type": "string",
+                              },
+                              "id": {
+                                "type": "string",
+                              },
+                              "metadata": {
+                                "additionalProperties": {
+                                  "type": "null",
+                                },
+                                "type": "object",
+                              },
+                              "occurredAt": {
+                                "type": "string",
+                              },
+                              "prevHash": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                  },
+                                  {
+                                    "type": "null",
+                                  },
+                                ],
+                              },
+                              "requestId": {
+                                "type": "string",
+                              },
+                              "sequence": {
+                                "anyOf": [
+                                  {
+                                    "type": "number",
+                                  },
+                                  {
+                                    "enum": [
+                                      "NaN",
+                                    ],
+                                    "type": "string",
+                                  },
+                                  {
+                                    "enum": [
+                                      "Infinity",
+                                    ],
+                                    "type": "string",
+                                  },
+                                  {
+                                    "enum": [
+                                      "-Infinity",
+                                    ],
+                                    "type": "string",
+                                  },
+                                ],
+                              },
+                            },
+                            "required": [
+                              "actor",
+                              "eventType",
+                              "hash",
+                              "hashAlg",
+                              "id",
+                              "metadata",
+                              "occurredAt",
+                              "requestId",
+                              "sequence",
+                            ],
+                            "type": "object",
+                          },
+                          "type": "array",
+                        },
+                        "format": {
+                          "anyOf": [
+                            {
+                              "enum": [
+                                "jsonl",
+                              ],
+                              "type": "string",
+                            },
+                            {
+                              "enum": [
+                                "csv",
+                              ],
+                              "type": "string",
+                            },
+                          ],
+                        },
+                        "rootHash": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                            },
+                            {
+                              "type": "null",
+                            },
+                          ],
+                        },
+                        "since": {
+                          "type": "string",
+                        },
+                        "tipHash": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                            },
+                            {
+                              "type": "null",
+                            },
+                          ],
+                        },
+                        "until": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                            },
+                            {
+                              "type": "null",
+                            },
+                          ],
+                        },
+                      },
+                      "required": [
+                        "eventCount",
+                        "events",
+                        "format",
+                        "since",
+                      ],
+                      "type": "object",
+                    },
+                    "meta": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": {
+                            "type": "null",
+                          },
+                          "type": "object",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+                    "ok": {
+                      "enum": [
+                        true,
+                      ],
+                      "type": "boolean",
+                    },
+                  },
+                  "required": [
+                    "data",
+                    "ok",
+                  ],
+                  "type": "object",
+                },
+              },
+            },
+            "description": "Success",
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
+                },
+              },
+            },
+            "description": "The request or response did not match the expected schema",
+          },
+        },
+        "security": [
+          {
+            "BearerAuth": [],
+          },
+        ],
+        "summary": "Export tenant audit trail",
+        "tags": [
+          "audit",
+        ],
+      },
+    },
     "/init": {
       "post": {
         "operationId": "init_runtime",
@@ -10410,6 +11016,9 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
     },
     {
       "name": "subjects",
+    },
+    {
+      "name": "audit",
     },
     {
       "name": "policies",

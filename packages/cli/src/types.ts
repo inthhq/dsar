@@ -86,6 +86,8 @@ export interface CommandExecutionContext {
 	readonly api: ApiClient;
 	/** Route/path params extracted from command syntax. */
 	readonly params: Readonly<Record<string, string>>;
+	/** Direct stdout sink for streaming commands (e.g. `audit tail`). */
+	readonly writeLine: (line: string) => void;
 }
 
 /**

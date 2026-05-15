@@ -1,4 +1,5 @@
 import { auditCommands } from "../commands/audit";
+import { auditTailCommand } from "../commands/audit-tail";
 import { matchCommand } from "../commands/helpers";
 import { notificationCommands } from "../commands/notifications";
 import { policiesCommands } from "../commands/policies";
@@ -17,6 +18,7 @@ const commandGroups: readonly CommandDefinition[] = [
 	...webhooksCommands,
 	...retentionCommands,
 	...auditCommands,
+	auditTailCommand,
 	...notificationCommands,
 ];
 

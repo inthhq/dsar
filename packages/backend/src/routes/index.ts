@@ -1,3 +1,4 @@
+import { auditRoutes } from "./audit";
 import { initRoutes } from "./init";
 import { policyRoutes } from "./policies";
 import { requestRoutes } from "./requests";
@@ -8,7 +9,7 @@ import { webhookRoutes } from "./webhooks";
 
 /**
  * Aggregate route table combining all backend endpoint groups (init,
- * webhooks, requests, subjects, policies, status) into a single
+ * webhooks, requests, subjects, audit, policies, status) into a single
  * ordered array matched by the request router.
  */
 export const coreRoutes: readonly RouteDefinition[] = [
@@ -16,6 +17,7 @@ export const coreRoutes: readonly RouteDefinition[] = [
 	...webhookRoutes,
 	...requestRoutes,
 	...subjectRoutes,
+	...auditRoutes,
 	...policyRoutes,
 	...statusRoutes,
 ];
