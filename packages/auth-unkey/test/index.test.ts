@@ -5,6 +5,34 @@ import type { DsarResolvedIdentity } from "#src";
 
 const DSAR_UNKEY_REQUIRED_PERMISSION = "dsar.api";
 
+const INVALID_VERIFY_RESULTS = [
+	{
+		code: "EXPIRED",
+		name: "expired keys",
+	},
+	{
+		code: "REVOKED",
+		name: "revoked keys",
+	},
+	{
+		code: "MALFORMED",
+		name: "malformed keys",
+	},
+	{
+		code: "RATE_LIMITED",
+		name: "rate-limited keys",
+	},
+] as const;
+
+const MALFORMED_TOKEN_CASES = [
+	"",
+	"   ",
+	"short",
+	"not-an-unkey-token",
+	"sk_invalid whitespace",
+	"sk_invalid_!",
+] as const;
+
 const verifyAdminKey = () =>
 	Promise.resolve({
 		data: {
@@ -47,6 +75,21 @@ const verifyInvalidKey = () =>
 		},
 	});
 
+const createInvalidVerifyKey =
+	(code: string) => (_input: { readonly key: string }) =>
+		Promise.resolve({
+			data: {
+				code,
+				valid: false,
+			},
+		});
+
+const createRecordingInvalidVerifyKey =
+	(inputs: string[]) => (input: { readonly key: string }) => {
+		inputs.push(input.key);
+		return verifyInvalidKey();
+	};
+
 const createPermissionAwareVerifyKey =
 	(
 		inputs: {
@@ -83,6 +126,21 @@ const verifySubjectKey = () =>
 			keyId: "key_123",
 			meta: {
 				tenantId: "tenant-1",
+			},
+			valid: true,
+		},
+	});
+
+const verifyTenantTwoKey = () =>
+	Promise.resolve({
+		data: {
+			identity: {
+				externalId: "tenant-two-admin",
+			},
+			keyId: "key_456",
+			meta: {
+				role: "admin",
+				tenantId: "tenant-2",
 			},
 			valid: true,
 		},
@@ -272,6 +330,92 @@ describe("makeUnkeyBearerResolver", () => {
 			principalKind: "subject",
 			role: "subject",
 			tenantId: "tenant-1",
+		});
+	});
+});
+
+describe("makeUnkeyBearerResolver fail-closed coverage", () => {
+	it.each(INVALID_VERIFY_RESULTS)(
+		"returns undefined for $name",
+		async ({ code }) => {
+			const resolver = makeUnkeyBearerResolver({
+				client: {
+					keys: {
+						verifyKey: createInvalidVerifyKey(code),
+					},
+				},
+			});
+
+			await expect(
+				resolver({
+					request: new Request("https://example.test"),
+					token: "token-1",
+				})
+			).resolves.toBeUndefined();
+		}
+	);
+
+	it("returns undefined when Unkey verification fails before returning a result", async () => {
+		const resolver = makeUnkeyBearerResolver({
+			client: {
+				keys: {
+					verifyKey: () =>
+						Promise.reject(new Error("Unkey verification unavailable.")),
+				},
+			},
+		});
+
+		await expect(
+			resolver({
+				request: new Request("https://example.test"),
+				token: "token-1",
+			})
+		).resolves.toBeUndefined();
+	});
+
+	it.each(MALFORMED_TOKEN_CASES)(
+		"delegates malformed-looking token %p to Unkey and fails closed",
+		async (token) => {
+			const verifyInputs: string[] = [];
+			const resolver = makeUnkeyBearerResolver({
+				client: {
+					keys: {
+						verifyKey: createRecordingInvalidVerifyKey(verifyInputs),
+					},
+				},
+			});
+
+			await expect(
+				resolver({
+					request: new Request("https://example.test"),
+					token,
+				})
+			).resolves.toBeUndefined();
+
+			expect(verifyInputs).toStrictEqual([token]);
+		}
+	);
+
+	it("preserves tenant metadata for downstream tenant-scoped authorization", async () => {
+		const resolver = makeUnkeyBearerResolver({
+			client: {
+				keys: {
+					verifyKey: verifyTenantTwoKey,
+				},
+			},
+			fallbackPrincipalKind: "operator",
+		});
+
+		await expect(
+			resolver({
+				request: new Request("https://example.test"),
+				token: "token-1",
+			})
+		).resolves.toStrictEqual({
+			actorId: "tenant-two-admin",
+			principalKind: "operator",
+			role: "admin",
+			tenantId: "tenant-2",
 		});
 	});
 });
