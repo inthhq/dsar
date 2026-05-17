@@ -1,8 +1,11 @@
+import { setTimeout as delay } from "node:timers/promises";
+
 import { describe, expect, it } from "@effect/vitest";
 
 import type { SuccessEnvelope } from "../../src";
 import { BASE_JSON_BODY } from "./fixtures";
 import { ACTOR_HEADERS, startApiE2eServer } from "./harness";
+import type { ApiE2eServer } from "./harness";
 
 const E2E_TEST_TIMEOUT_MS = 15_000;
 
@@ -12,6 +15,7 @@ const asEnvelope = async <T>(response: Response): Promise<SuccessEnvelope<T>> =>
 const DAY_MS = 24 * 60 * 60 * 1000;
 const CALIFORNIA_APPEAL_DEADLINE_DAYS = 45;
 const CALIFORNIA_BASE_DUE_AT = "2026-04-15T00:00:00.000Z";
+const CLARIFICATION_RECEIPT_DELAY_MS = 10;
 
 interface AppealSummary {
 	readonly decidedAt?: string;
@@ -29,6 +33,30 @@ interface AuditEventSummary {
 		readonly before: { readonly status?: string };
 		readonly reason: { readonly rationale?: string };
 	};
+}
+
+interface ClockSegmentSummary {
+	readonly countsTowardDeadline: boolean;
+	readonly from: string;
+	readonly reason: string;
+	readonly to?: string;
+}
+
+interface ClockExplainSummary {
+	readonly baseDeadline: string;
+	readonly clock: {
+		readonly segments: readonly ClockSegmentSummary[];
+	};
+	readonly finalDueAt: string;
+	readonly pauses: readonly { readonly reason: string }[];
+	readonly policyPack: string;
+	readonly policyVersion: string;
+}
+
+interface ClarificationRoundTripResult {
+	readonly clock: ClockExplainSummary;
+	readonly requestId: string;
+	readonly timelineEvents: readonly string[];
 }
 
 const requireAppeal = (
@@ -58,6 +86,155 @@ const requireString = (value: string | undefined, label: string): string => {
 		throw new Error(`Expected ${label} to be present.`);
 	}
 	return value;
+};
+
+const calculateSegmentDurationMs = (segment: ClockSegmentSummary): number => {
+	if (segment.to === undefined) {
+		throw new Error(`Expected ${segment.reason} clock segment to be closed.`);
+	}
+	return Date.parse(segment.to) - Date.parse(segment.from);
+};
+
+const requireClockSegment = (
+	segments: readonly ClockSegmentSummary[],
+	reason: string,
+	durationMs?: number
+): ClockSegmentSummary => {
+	const segment = segments.find(
+		(candidate) =>
+			candidate.reason === reason &&
+			(durationMs === undefined ||
+				calculateSegmentDurationMs(candidate) === durationMs)
+	);
+	if (!segment) {
+		throw new Error(`Expected ${reason} clock segment to exist.`);
+	}
+	return segment;
+};
+
+const runClarificationRoundTrip = async (
+	server: ApiE2eServer,
+	jurisdiction: "eu" | "us"
+): Promise<ClarificationRoundTripResult> => {
+	const create = await server.request({
+		headers: ACTOR_HEADERS,
+		json: {
+			intakeSource: {
+				channel: "api",
+				receivedAt: "2026-03-01T00:00:00.000Z",
+				type: "api",
+			},
+			jurisdiction,
+			requestType: "access",
+			requestor: {
+				email: `${jurisdiction}-subject@example.test`,
+				type: "subject",
+			},
+			requiresVerification: true,
+		},
+		method: "POST",
+		path: "/requests/capture",
+	});
+	const createBody = await asEnvelope<{
+		readonly id: string;
+		readonly status: string;
+	}>(create);
+	const requestId = createBody.data.id;
+
+	const verificationRequest = await server.request({
+		headers: ACTOR_HEADERS,
+		method: "POST",
+		path: `/requests/${requestId}/verification/request`,
+	});
+	const verificationRequestBody = await asEnvelope<{
+		readonly status: string;
+	}>(verificationRequest);
+
+	const verificationApprove = await server.request({
+		headers: ACTOR_HEADERS,
+		method: "POST",
+		path: `/requests/${requestId}/verification/approve`,
+	});
+	const verificationApproveBody = await asEnvelope<{
+		readonly status: string;
+	}>(verificationApprove);
+
+	const clarificationRequest = await server.request({
+		headers: ACTOR_HEADERS,
+		method: "POST",
+		path: `/requests/${requestId}/clarifications/request`,
+	});
+	const clarificationRequestBody = await asEnvelope<{
+		readonly status: string;
+	}>(clarificationRequest);
+
+	await delay(CLARIFICATION_RECEIPT_DELAY_MS);
+
+	const clarificationReceive = await server.request({
+		headers: ACTOR_HEADERS,
+		method: "POST",
+		path: `/requests/${requestId}/clarifications/receive`,
+	});
+	const clarificationReceiveBody = await asEnvelope<{
+		readonly status: string;
+	}>(clarificationReceive);
+
+	const fulfil = await server.request({
+		headers: ACTOR_HEADERS,
+		method: "POST",
+		path: `/requests/${requestId}/fulfilment`,
+	});
+	const fulfilBody = await asEnvelope<{ readonly status: string }>(fulfil);
+
+	const timeline = await server.request({
+		headers: ACTOR_HEADERS,
+		method: "GET",
+		path: `/requests/${requestId}/timeline`,
+	});
+	const timelineBody = await asEnvelope<{
+		readonly events: readonly { readonly eventType: string }[];
+	}>(timeline);
+
+	const clock = await server.request({
+		headers: ACTOR_HEADERS,
+		method: "GET",
+		path: `/requests/${requestId}/clock/explain`,
+	});
+	const clockBody = await asEnvelope<ClockExplainSummary>(clock);
+
+	expect([
+		create.status,
+		createBody.data.status,
+		verificationRequest.status,
+		verificationRequestBody.data.status,
+		verificationApprove.status,
+		verificationApproveBody.data.status,
+		clarificationRequest.status,
+		clarificationRequestBody.data.status,
+		clarificationReceive.status,
+		clarificationReceiveBody.data.status,
+		fulfil.status,
+		fulfilBody.data.status,
+	]).toStrictEqual([
+		202,
+		"captured",
+		202,
+		"verification_pending",
+		202,
+		"in_progress",
+		202,
+		"in_progress",
+		202,
+		"in_progress",
+		202,
+		"fulfilled",
+	]);
+
+	return {
+		clock: clockBody.data,
+		requestId,
+		timelineEvents: timelineBody.data.events.map((event) => event.eventType),
+	};
 };
 
 describe("api e2e full flow over real HTTP", () => {
@@ -504,6 +681,78 @@ describe("api e2e full flow over real HTTP", () => {
 					"Appeal approved; original refusal overturned."
 				);
 				expect(auditVerifyBody.data.verified).toBeTruthy();
+			} finally {
+				await server.close();
+			}
+		},
+		E2E_TEST_TIMEOUT_MS
+	);
+
+	it(
+		"records clarification round-trip clock behavior by policy",
+		async () => {
+			const server = await startApiE2eServer();
+			try {
+				const eu = await runClarificationRoundTrip(server, "eu");
+				const us = await runClarificationRoundTrip(server, "us");
+				const euDeadlineShiftMs =
+					Date.parse(eu.clock.finalDueAt) - Date.parse(eu.clock.baseDeadline);
+				const euClarificationSegment = requireClockSegment(
+					eu.clock.clock.segments,
+					"clarification",
+					euDeadlineShiftMs
+				);
+
+				expect([eu.requestId, us.requestId].every(Boolean)).toBeTruthy();
+				expect(eu.timelineEvents).toStrictEqual([
+					"captured",
+					"verification_requested",
+					"verification_resolved",
+					"clarification_requested",
+					"clarification_received",
+					"fulfilled",
+				]);
+				expect(us.timelineEvents).toStrictEqual(eu.timelineEvents);
+				expect([
+					eu.clock.policyPack,
+					eu.clock.policyVersion,
+					euClarificationSegment.countsTowardDeadline,
+				]).toStrictEqual(["launch-eu-eu", "1.0.0", false]);
+				expect(euDeadlineShiftMs).toBeGreaterThan(0);
+				expect(eu.clock.pauses.map((pause) => pause.reason)).toEqual(
+					expect.arrayContaining(["clarification"])
+				);
+				expect(
+					eu.clock.clock.segments.map((segment) => ({
+						countsTowardDeadline: segment.countsTowardDeadline,
+						reason: segment.reason,
+					}))
+				).toEqual(
+					expect.arrayContaining([
+						{ countsTowardDeadline: true, reason: "base" },
+						{ countsTowardDeadline: false, reason: "clarification" },
+					])
+				);
+				expect([
+					us.clock.policyPack,
+					us.clock.policyVersion,
+					us.clock.baseDeadline,
+					us.clock.finalDueAt,
+				]).toStrictEqual([
+					"launch-us-us",
+					"1.0.0",
+					us.clock.baseDeadline,
+					us.clock.baseDeadline,
+				]);
+				expect(us.clock.pauses.map((pause) => pause.reason)).toEqual(
+					expect.arrayContaining(["clarification"])
+				);
+				expect(
+					us.clock.clock.segments.map((segment) => ({
+						countsTowardDeadline: segment.countsTowardDeadline,
+						reason: segment.reason,
+					}))
+				).toStrictEqual([{ countsTowardDeadline: true, reason: "base" }]);
 			} finally {
 				await server.close();
 			}
