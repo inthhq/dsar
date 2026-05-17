@@ -15,7 +15,7 @@ const asEnvelope = async <T>(response: Response): Promise<SuccessEnvelope<T>> =>
 const DAY_MS = 24 * 60 * 60 * 1000;
 const CALIFORNIA_APPEAL_DEADLINE_DAYS = 45;
 const CALIFORNIA_BASE_DUE_AT = "2026-04-15T00:00:00.000Z";
-const CLARIFICATION_RECEIPT_DELAY_MS = 10;
+const CLARIFICATION_RECEIPT_DELAY_MS = 200;
 
 interface AppealSummary {
 	readonly decidedAt?: string;
@@ -215,6 +215,8 @@ const runClarificationRoundTrip = async (
 		clarificationReceiveBody.data.status,
 		fulfil.status,
 		fulfilBody.data.status,
+		timeline.status,
+		clock.status,
 	]).toStrictEqual([
 		202,
 		"captured",
@@ -228,6 +230,8 @@ const runClarificationRoundTrip = async (
 		"in_progress",
 		202,
 		"fulfilled",
+		200,
+		200,
 	]);
 
 	return {
@@ -703,7 +707,7 @@ describe("api e2e full flow over real HTTP", () => {
 					euDeadlineShiftMs
 				);
 
-				expect([eu.requestId, us.requestId].every(Boolean)).toBeTruthy();
+				expect(eu.requestId).not.toBe(us.requestId);
 				expect(eu.timelineEvents).toStrictEqual([
 					"captured",
 					"verification_requested",
@@ -733,17 +737,11 @@ describe("api e2e full flow over real HTTP", () => {
 						{ countsTowardDeadline: false, reason: "clarification" },
 					])
 				);
-				expect([
-					us.clock.policyPack,
-					us.clock.policyVersion,
-					us.clock.baseDeadline,
-					us.clock.finalDueAt,
-				]).toStrictEqual([
+				expect([us.clock.policyPack, us.clock.policyVersion]).toStrictEqual([
 					"launch-us-us",
 					"1.0.0",
-					us.clock.baseDeadline,
-					us.clock.baseDeadline,
 				]);
+				expect(us.clock.finalDueAt).toBe(us.clock.baseDeadline);
 				expect(us.clock.pauses.map((pause) => pause.reason)).toEqual(
 					expect.arrayContaining(["clarification"])
 				);
