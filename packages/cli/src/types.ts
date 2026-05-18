@@ -104,6 +104,8 @@ export interface CommandDefinition {
 	readonly description: string;
 	/** Command execution entry point. */
 	readonly execute: (ctx: CommandExecutionContext) => Promise<unknown>;
+	/** Optional result predicate for commands that can return diagnostics with a non-zero exit. */
+	readonly isSuccessfulResult?: (result: unknown) => boolean;
 }
 
 /**

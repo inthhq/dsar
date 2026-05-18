@@ -17,6 +17,7 @@ Command-line interface for DSAR APIs with endpoint parity coverage.
 - [Usage](#usage)
 - [Available Commands](#available-commands)
 - [Global Flags](#global-flags)
+- [Exit Codes](#exit-codes)
 - [Support](#support)
 - [Contributing](#contributing)
 - [Security](#security)
@@ -40,7 +41,9 @@ bun add @dsar/cli
 ## Available Commands
 
 - `dsar --help`: Print help (does not start interactive wizard).
+- `dsar <command> --help`: Print command-specific help.
 - `dsar`: Start interactive command wizard when no arguments provided.
+- `dsar doctor`: Run CLI diagnostics for API URL config, runtime status, authenticated request reachability, and exposed health checks.
 
 ## Global Flags
 
@@ -49,6 +52,11 @@ bun add @dsar/cli
 - `--idempotency-key <key>`: Idempotency key for mutations.
 - `--output text|json`: Output format.
 - `--json '<payload>'`: POST/PUT payload for JSON body.
+
+## Exit Codes
+
+- `0`: command completed successfully. `doctor` may still report warning or skipped checks when the current backend does not expose a diagnostic surface.
+- `1`: command failed, an unknown command was requested, or `doctor` found one or more failed checks.
 
 ## Support
 

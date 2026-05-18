@@ -16,6 +16,12 @@ Local workspace:
 dsar --help
 ```
 
+Command help:
+
+```sh
+dsar requests get --help
+```
+
 Interactive wizard:
 
 ```sh
@@ -43,6 +49,24 @@ npx dsar --help
 Global flags:
 
 - `--api-url`, `--token`, `--idempotency-key`, `--output`, `--json`
+
+## Diagnostics
+
+`dsar doctor` runs preflight diagnostics for the CLI/runtime connection:
+
+- API URL config and URL validity
+- public runtime status reachability
+- authenticated request reachability when `--token` or `DSAR_API_TOKEN` is set
+- persistence-backed read path through the authenticated probe
+- migration and adapter health visibility
+
+The current backend does not expose dedicated migration freshness or adapter
+health endpoints. `doctor` reports those checks as warning/skipped diagnostics
+instead of pretending they were fully validated.
+
+```sh
+dsar doctor --api-url http://localhost:4086 --token "$DSAR_API_TOKEN"
+```
 
 ## CLI ↔ API mapping highlights
 
@@ -73,8 +97,14 @@ When `--output json` is used:
 
 - success: `{ ok: true, data, meta: { command } }`
 - failure: `{ ok: false, error: { code, message }, meta? }`
+- diagnostic failure: `{ ok: false, data, meta: { command } }`
 
 Interactive mode still uses the same final output envelope after command execution.
+
+## Exit codes
+
+- `0`: command completed successfully. `doctor` can still include warning or skipped checks when a diagnostic surface is unavailable.
+- `1`: command failed, an unknown command was requested, or `doctor` found one or more failed checks.
 
 ## Notification replay
 
