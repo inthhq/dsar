@@ -523,7 +523,7 @@ describe(dsarInstance, () => {
 			persistence.notificationEvents.append({
 				correlationId: "corr-1",
 				createdAt: "2026-02-20T00:00:00.000Z",
-				eventType: "acknowledgement_due",
+				eventType: "acknowledgement_sent",
 				id: "evt-webhook-1",
 				idempotencyKey: "event-1",
 				locale: "en-GB",

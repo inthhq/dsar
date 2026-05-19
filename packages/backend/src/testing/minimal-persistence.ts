@@ -359,14 +359,30 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 				append: (input: Record<string, unknown>) =>
 					Effect.gen(function* append() {
 						const record = { ...input, tenantId: "tenant-default" };
-						const arr = yield* Ref.get(auditEventsRef);
-						if (arr.some((event) => event.id === record.id)) {
+						const result = yield* Ref.modify(auditEventsRef, (arr) => {
+							if (arr.some((event) => event.id === record.id)) {
+								return [
+									{
+										id: record.id,
+										status: "duplicate" as const,
+									},
+									arr,
+								];
+							}
+							return [
+								{
+									record,
+									status: "appended" as const,
+								},
+								[...arr, record],
+							];
+						});
+						if (result.status === "duplicate") {
 							return yield* Effect.fail(
-								new Error(`Duplicate audit event ${String(record.id)}`)
+								new Error(`Duplicate audit event ${String(result.id)}`)
 							);
 						}
-						yield* Ref.set(auditEventsRef, [...arr, record]);
-						return record;
+						return result.record;
 					}),
 				list: (input: Record<string, unknown>) =>
 					Ref.get(auditEventsRef).pipe(

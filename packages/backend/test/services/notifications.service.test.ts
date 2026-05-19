@@ -21,6 +21,7 @@ import { deriveLifecycleNotificationDrafts } from "../../src/events/contracts";
 import {
 	emitNotificationEvent,
 	makeNotificationDraft,
+	replayWebhookDispatch,
 } from "../../src/services/notifications/service";
 import { RuntimeServicesTag } from "../../src/types/runtime";
 import type {
@@ -786,5 +787,49 @@ describe("notification retry/backoff behavior", () => {
 		expect(closed.map((event) => event.eventType)).toContain(
 			"clock_due_changed"
 		);
+	});
+
+	it("rejects replay for persisted notification events with unsupported event types", async () => {
+		const memory = makeMemoryPersistence();
+		let sendCount = 0;
+		const services = makeServices({
+			dispatch: {
+				send: () =>
+					Effect.sync(() => {
+						sendCount += 1;
+						return {
+							responseCode: 202,
+							status: "delivered" as const,
+						};
+					}),
+			},
+			persistence: memory.persistence,
+			retryDelayMs: 0,
+			retryMaxAttempts: 1,
+		});
+
+		await expect(
+			Effect.runPromise(
+				replayWebhookDispatch({
+					event: {
+						correlationId: "corr-corrupt-event",
+						createdAt: "2026-01-01T00:00:00.000Z",
+						eventType: "corrupt_event_type",
+						id: "evt-corrupt-event",
+						idempotencyKey: "original-corrupt-event",
+						locale: "en-GB",
+						payload: {},
+						policyVersion: "policy-v1",
+						requestId: "req-corrupt-event",
+						tenantId: "tenant-default",
+					},
+					idempotencyKey: "replay-corrupt-event",
+					tenantId: "tenant-default",
+				}).pipe(Effect.provideService(RuntimeServicesTag, services))
+			)
+		).rejects.toThrow(
+			"Webhook dispatch cannot be replayed because the persisted notification event type is not supported."
+		);
+		expect(sendCount).toBe(0);
 	});
 });

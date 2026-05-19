@@ -9,7 +9,10 @@ import * as Effect from "effect/Effect";
 
 import { normalizeAdapterError, toAdapterFailureEvent } from "../../adapters";
 import type { AdapterContractError } from "../../adapters";
-import type { NotificationEventDraft } from "../../events/contracts";
+import type {
+	NotificationEventDraft,
+	NotificationEventType,
+} from "../../events/contracts";
 import { makeRequestId } from "../../middleware/auth-context";
 import { RequestValidationError } from "../../types/errors";
 import type {
@@ -25,6 +28,22 @@ const DEFAULT_POLICY_VERSION = "policy-v1";
 const DEFAULT_LOCALE = "en-GB";
 const GENERATED_STATUS = "generated";
 const DEFAULT_WEBHOOK_ENDPOINT_ID = "default";
+const NOTIFICATION_EVENT_TYPES = [
+	"request_captured",
+	"clock_due_changed",
+	"clock_segment_opened",
+	"clock_segment_closed",
+	"request_acknowledged",
+	"acknowledgement_sent",
+	"verification_outcome_recorded",
+	"manifest_review_recorded",
+	"appeal_recorded",
+	"fulfillment_callback_received",
+	"delivery_prepared",
+	"step_up_challenge_issued",
+	"request_fulfilled",
+	"request_refused",
+] as const satisfies readonly NotificationEventType[];
 
 const toGeneratedResult = (
 	eventId: string
@@ -56,6 +75,42 @@ const toNotificationDispatchValidationError = (
 		message: "Failed to generate or dispatch notification event.",
 		reasonCode: "REQUEST_VALIDATION_FAILED",
 	});
+
+const toReplayDispatchValidationError = (
+	error: unknown
+): RequestValidationError => {
+	if (error instanceof RequestValidationError) {
+		return error;
+	}
+	return toNotificationDispatchValidationError(error);
+};
+
+const isNotificationEventType = (
+	value: string
+): value is NotificationEventType => {
+	for (const eventType of NOTIFICATION_EVENT_TYPES) {
+		if (eventType === value) {
+			return true;
+		}
+	}
+	return false;
+};
+
+const parseNotificationEventType = (
+	value: string
+): Effect.Effect<NotificationEventType, RequestValidationError> => {
+	if (isNotificationEventType(value)) {
+		return Effect.succeed(value);
+	}
+	return Effect.fail(
+		new RequestValidationError({
+			details: { eventType: value },
+			message:
+				"Webhook dispatch cannot be replayed because the persisted notification event type is not supported.",
+			reasonCode: "REQUEST_VALIDATION_FAILED",
+		})
+	);
+};
 
 /**
  * Resolves effective outbound-resend policy with workspace > tenant > global precedence.
@@ -345,10 +400,11 @@ export const replayWebhookDispatch = (input: {
 			yield* services.repos.persistence.notificationDeliveryAttempts
 				.listByNotificationEventId(input.event.id)
 				.pipe(withTenant(input.tenantId));
+		const eventType = yield* parseNotificationEventType(input.event.eventType);
 		const dispatchInput = toDispatchInput({
 			correlationId: services.requestContext.requestId,
 			draft: {
-				eventType: input.event.eventType as NotificationEventDraft["eventType"],
+				eventType,
 				locale: input.event.locale,
 				payload: input.event.payload,
 				policyVersion: input.event.policyVersion,
@@ -380,7 +436,7 @@ export const replayWebhookDispatch = (input: {
 			startAttempt: nextWebhookAttemptNumber({ attempts }),
 			tenantId: input.tenantId,
 		});
-	}).pipe(Effect.mapError(toNotificationDispatchValidationError));
+	}).pipe(Effect.mapError(toReplayDispatchValidationError));
 
 /**
  * Persists and dispatches a notification event across configured
