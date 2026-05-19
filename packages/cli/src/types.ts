@@ -94,6 +94,8 @@ export interface CommandExecutionContext {
  * Registry definition for a CLI command.
  */
 export interface CommandDefinition {
+	/** Allows command parsing to continue without `--api-url` / `DSAR_API_URL`. */
+	readonly allowMissingApiUrl?: boolean;
 	/** Stable command identifier used in registry/help tooling. */
 	readonly id: string;
 	/** Optional route parity id linking command to HTTP surface. */
@@ -106,6 +108,8 @@ export interface CommandDefinition {
 	readonly execute: (ctx: CommandExecutionContext) => Promise<unknown>;
 	/** Optional result predicate for commands that can return diagnostics with a non-zero exit. */
 	readonly isSuccessfulResult?: (result: unknown) => boolean;
+	/** Optional text formatter for command-owned structured output. */
+	readonly formatTextResult?: (result: unknown) => string;
 }
 
 /**

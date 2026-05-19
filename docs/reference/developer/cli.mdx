@@ -57,12 +57,15 @@ Global flags:
 - API URL config and URL validity
 - public runtime status reachability
 - authenticated request reachability when `--token` or `DSAR_API_TOKEN` is set
-- persistence-backed read path through the authenticated probe
+- runtime database read operations through the authenticated request probe
 - migration and adapter health visibility
 
 The current backend does not expose dedicated migration freshness or adapter
 health endpoints. `doctor` reports those checks as warning/skipped diagnostics
 instead of pretending they were fully validated.
+
+Use `--output json` when you need the structured diagnostic envelope for
+automation or CI logs.
 
 ```sh
 dsar doctor --api-url http://localhost:4086 --token "$DSAR_API_TOKEN"

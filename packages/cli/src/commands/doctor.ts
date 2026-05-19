@@ -38,6 +38,8 @@ const CHECK_ADAPTERS = "adapters.health";
 const messageFromError = (error: unknown): string =>
 	error instanceof Error ? error.message : String(error);
 
+const statusLabel = (status: DoctorCheckStatus): string => `[${status}]`;
+
 const incrementSummary = (
 	summary: MutableDoctorSummary,
 	status: DoctorCheckStatus
@@ -149,13 +151,15 @@ const checkProtectedRead = async (
 		};
 	}
 	try {
-		const result = await ctx.api.invoke({
+		await ctx.api.invoke({
 			method: "GET",
 			path: "/requests",
 			query: { limit: "1" },
 		});
 		return {
-			details: result,
+			details: {
+				probe: "GET /requests?limit=1",
+			},
 			message:
 				"Authenticated request list probe succeeded; auth and persistence read path are reachable.",
 			name: CHECK_AUTH,
@@ -221,15 +225,32 @@ const isDoctorReport = (result: unknown): result is DoctorReport =>
 	"ok" in result &&
 	typeof (result as { readonly ok?: unknown }).ok === "boolean";
 
+const formatDoctorReport = (result: unknown): string => {
+	if (!isDoctorReport(result)) {
+		return JSON.stringify(result, null, 2);
+	}
+	const lines = [
+		`DSAR doctor ${result.ok ? "passed" : "failed"}`,
+		`Summary: ${result.summary.passed} passed, ${result.summary.warnings} warnings, ${result.summary.skipped} skipped, ${result.summary.failed} failed`,
+		"",
+	];
+	for (const check of result.checks) {
+		lines.push(`${statusLabel(check.status)} ${check.name} - ${check.message}`);
+	}
+	return lines.join("\n");
+};
+
 /**
  * Diagnostic command that validates CLI config, runtime reachability,
  * authenticated request access, and the currently exposed backend health
  * surfaces.
  */
 export const doctorCommand: CommandDefinition = {
+	allowMissingApiUrl: true,
 	description:
 		"Run DSAR CLI diagnostics for config, runtime reachability, auth, persistence, and exposed health checks.",
 	execute: runDoctor,
+	formatTextResult: formatDoctorReport,
 	id: "doctor_runtime",
 	isSuccessfulResult: (result) => isDoctorReport(result) && result.ok,
 	usage: ["doctor"],

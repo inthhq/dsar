@@ -44,6 +44,7 @@ bun add @dsar/cli
 - `dsar <command> --help`: Print command-specific help.
 - `dsar`: Start interactive command wizard when no arguments provided.
 - `dsar doctor`: Run CLI diagnostics for API URL config, runtime status, authenticated request reachability, and exposed health checks.
+  Use `--output json` for the structured diagnostic envelope.
 
 ## Global Flags
 

@@ -29,7 +29,8 @@ const asEnvelope = (
 				readonly ok: false;
 				readonly message: string;
 				readonly command?: readonly string[];
-		  }
+		  },
+	formatTextResult?: (result: unknown) => string
 ): string => {
 	if (mode === "json") {
 		if (input.ok) {
@@ -67,10 +68,14 @@ const asEnvelope = (
 		});
 	}
 	if (input.ok) {
-		return JSON.stringify(input.data, null, 2);
+		return (
+			formatTextResult?.(input.data) ?? JSON.stringify(input.data, null, 2)
+		);
 	}
 	if ("data" in input) {
-		return JSON.stringify(input.data, null, 2);
+		return (
+			formatTextResult?.(input.data) ?? JSON.stringify(input.data, null, 2)
+		);
 	}
 	return input.message;
 };
@@ -132,6 +137,9 @@ const startsWithTokens = (
 	return true;
 };
 
+const withoutHelpFlags = (argv: readonly string[]): readonly string[] =>
+	argv.filter((token) => token !== "--help" && token !== "-h");
+
 const renderCommandGroupHelp = (tokens: readonly string[]): string => {
 	const matches = allCommands.filter((command) =>
 		startsWithTokens(command.usage, tokens)
@@ -154,7 +162,7 @@ const renderCommandGroupHelp = (tokens: readonly string[]): string => {
 };
 
 const renderHelp = (argv: readonly string[]): string => {
-	const { commandTokens } = parseCliArguments(argv);
+	const { commandTokens } = parseCliArguments(withoutHelpFlags(argv));
 	if (commandTokens.length === 0) {
 		return renderGlobalHelp();
 	}
@@ -167,11 +175,6 @@ const renderHelp = (argv: readonly string[]): string => {
 
 const isHelpRequest = (argv: readonly string[]): boolean =>
 	argv.includes("--help") || argv.includes("-h");
-
-const isDoctorRequest = (argv: readonly string[]): boolean => {
-	const { commandTokens } = parseCliArguments(argv);
-	return commandTokens.length === 1 && commandTokens[0] === "doctor";
-};
 
 const hasCommandTokens = (argv: readonly string[]): boolean => {
 	for (let index = 0; index < argv.length; index += 1) {
@@ -226,13 +229,14 @@ export const runCli = async (options: CliRunOptions): Promise<number> => {
 			}
 			argvToRun = wizardArgv;
 		}
+		const { commandTokens } = parseCliArguments(argvToRun);
+		const matched = resolveCommand(commandTokens);
 		const input = parseCliInput({
-			allowMissingApiUrl: isDoctorRequest(argvToRun),
+			allowMissingApiUrl: matched?.command.allowMissingApiUrl === true,
 			argv: argvToRun,
 			env: defaultEnv,
 			fetchImpl: options.fetch ?? fetch,
 		});
-		const matched = resolveCommand(input.commandTokens);
 		if (!matched) {
 			stderr(
 				asEnvelope(input.global.output, {
@@ -261,20 +265,28 @@ export const runCli = async (options: CliRunOptions): Promise<number> => {
 		const commandOk = matched.command.isSuccessfulResult?.(data) ?? true;
 		if (!commandOk) {
 			stdout(
-				asEnvelope(input.global.output, {
-					command: matched.command.usage,
-					data,
-					ok: false,
-				})
+				asEnvelope(
+					input.global.output,
+					{
+						command: matched.command.usage,
+						data,
+						ok: false,
+					},
+					matched.command.formatTextResult
+				)
 			);
 			return 1;
 		}
 		stdout(
-			asEnvelope(input.global.output, {
-				command: matched.command.usage,
-				data,
-				ok: true,
-			})
+			asEnvelope(
+				input.global.output,
+				{
+					command: matched.command.usage,
+					data,
+					ok: true,
+				},
+				matched.command.formatTextResult
+			)
 		);
 		return 0;
 	} catch (error) {
