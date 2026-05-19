@@ -1,13 +1,14 @@
 ---
 title: "Webhooks API"
-description: "These public endpoints accept inbound provider events and map them into DSAR intake flows."
+description: "Webhook endpoints accept public inbound provider events and expose protected outbound dispatch management."
 group: reference-api
 ---
 
 <include src="../../_shared/alpha-warning.mdx" />
 
-These public endpoints accept inbound provider events and map them into DSAR
-intake flows.
+Webhook endpoints accept public inbound provider events and map them into DSAR
+intake flows. Protected outbound endpoints let operator and service principals
+inspect delivery attempts and replay one failed webhook dispatch.
 
 ## POST /webhooks/inbound/resend
 
@@ -132,7 +133,7 @@ Supported query parameters:
 }
 ```
 
-## POST /webhooks/dispatches/:id/replay
+## POST /webhooks/dispatches/{id}/replay
 
 Replay one failed outbound webhook dispatch.
 
@@ -140,9 +141,13 @@ This endpoint is protected and reserved for operator or service principals. The
 dispatch must be a failed webhook delivery attempt. Successful, pending,
 skipped, or non-webhook attempts are not replayable.
 
-Use `x-idempotency-key` to make a replay request safe to retry. When the same
-dispatch id and idempotency key have already been accepted, the endpoint returns
+The `x-idempotency-key` header is required. When the same dispatch id and
+idempotency key have already been accepted, the endpoint returns
 `already_replayed` without sending the webhook again.
+
+Required headers:
+
+- `x-idempotency-key` (string, required): caller-provided replay dedupe key
 
 **Response (202):**
 

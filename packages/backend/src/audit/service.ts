@@ -55,6 +55,8 @@ const toCauseDetails = (error: unknown): Readonly<Record<string, string>> => {
  * audit export and hash-chain verification remain deterministic.
  */
 export interface AppendAuditInput {
+	/** Optional deterministic identifier for idempotent audit markers. */
+	readonly id?: string;
 	/**
 	 * Request identifier for request-scoped events.
 	 *
@@ -145,7 +147,7 @@ export const appendAuditEvent = (
 			sequence,
 		});
 
-		const id = makeRequestId();
+		const id = input.id ?? makeRequestId();
 		yield* services.repos.persistence.auditEvents
 			.append({
 				action: input.action,

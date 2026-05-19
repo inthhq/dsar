@@ -299,6 +299,11 @@ const nextWebhookAttemptNumber = (input: {
 	return maxAttempt + 1;
 };
 
+const supportsNotificationChannel = (
+	adapter: { readonly channels?: readonly string[] } | undefined,
+	channel: "email" | "webhook"
+): boolean => adapter?.channels?.includes(channel) === true;
+
 /**
  * Replays a persisted webhook dispatch without re-sending other notification
  * channels such as email.
@@ -325,11 +330,12 @@ export const replayWebhookDispatch = (input: {
 		}
 		const resolvedNotificationAdapter =
 			services.adapterRegistry.resolveNotification();
-		const webhookAdapter =
-			resolvedNotificationAdapter &&
-			resolvedNotificationAdapter.key !== "outbound-resend"
-				? resolvedNotificationAdapter
-				: undefined;
+		const webhookAdapter = supportsNotificationChannel(
+			resolvedNotificationAdapter,
+			"webhook"
+		)
+			? resolvedNotificationAdapter
+			: undefined;
 		const signingKey = yield* resolveWebhookSigningKey({
 			config: webhookConfig,
 			services,
@@ -450,11 +456,12 @@ export const emitNotificationEvent = (input: {
 			(resolvedNotificationAdapter?.key === "outbound-resend"
 				? resolvedNotificationAdapter
 				: undefined);
-		const webhookAdapter =
-			resolvedNotificationAdapter &&
-			resolvedNotificationAdapter.key !== "outbound-resend"
-				? resolvedNotificationAdapter
-				: undefined;
+		const webhookAdapter = supportsNotificationChannel(
+			resolvedNotificationAdapter,
+			"webhook"
+		)
+			? resolvedNotificationAdapter
+			: undefined;
 
 		// Webhook is optional; we still persist a pending attempt so audit trails can
 		// explain why no outbound webhook dispatch occurred.

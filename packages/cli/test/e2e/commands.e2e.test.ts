@@ -156,6 +156,12 @@ const commandCases: readonly CommandCase[] = [
 		argv: ["webhooks", "replay", "dispatch-1"],
 		expectedExitCode: 1,
 		id: "webhooks_dispatches_replay",
+		outputIncludes: ["--idempotency-key"],
+	},
+	{
+		argv: ["webhooks", "replay", "dispatch-1", "--idempotency-key=replay-1"],
+		expectedExitCode: 1,
+		id: "webhooks_dispatches_replay",
 		outputIncludes: ["dispatch-1"],
 	},
 	{

@@ -749,6 +749,10 @@ export interface ListNotificationDeliveryAttemptsInput {
 	readonly createdAfter?: string;
 	/** Return attempts created strictly before this ISO timestamp. */
 	readonly createdBefore?: string;
+	/** Maximum rows to read for a single page. */
+	readonly limit?: number;
+	/** Number of matching rows to skip. */
+	readonly offset?: number;
 }
 
 /**
@@ -1491,6 +1495,16 @@ export interface NotificationDeliveryAttemptsRepository {
 		PersistenceError | SqlError,
 		TenantContext
 	>;
+	/**
+	 * Counts delivery attempts matching dispatch inspection filters.
+	 *
+	 * @param input - Optional filters.
+	 * @returns Number of matching delivery attempts.
+	 * @throws {@link SqlError} on underlying database failures.
+	 */
+	readonly count: (
+		input?: ListNotificationDeliveryAttemptsInput
+	) => Effect.Effect<number, PersistenceError | SqlError, TenantContext>;
 	/**
 	 * Lists all delivery attempts for a given notification event.
 	 *

@@ -1,3 +1,4 @@
+import { PersistenceEntityNotFoundError } from "@dsar/persistence";
 import type {
 	AuditEventRecord,
 	ChatStateRecord,
@@ -83,6 +84,32 @@ const requestPolicyPack = (record: RequestRecord): string | undefined => {
 		: undefined;
 };
 
+const matchesNotificationAttemptFilter = (
+	attempt: NotificationDeliveryAttemptRecord,
+	input?: ListNotificationDeliveryAttemptsInput
+): boolean => {
+	if (input?.channel && attempt.channel !== input.channel) {
+		return false;
+	}
+	if (
+		input?.status &&
+		input.status.length > 0 &&
+		!input.status.includes(attempt.status)
+	) {
+		return false;
+	}
+	if (input?.destination && attempt.destination !== input.destination) {
+		return false;
+	}
+	if (input?.createdAfter && attempt.createdAt <= input.createdAfter) {
+		return false;
+	}
+	if (input?.createdBefore && attempt.createdAt >= input.createdBefore) {
+		return false;
+	}
+	return true;
+};
+
 export const BASE_JSON_BODY = {
 	challengeId: "challenge-1",
 	channel: "email",
@@ -148,6 +175,9 @@ export const makeMemoryPersistence = (): PersistenceService => {
 	return {
 		auditEvents: {
 			append: (input: CreateAuditEventInput) => {
+				if (auditEvents.some((event) => event.id === input.id)) {
+					return Effect.fail(new Error(`Duplicate audit event ${input.id}`));
+				}
 				const record: AuditEventRecord = {
 					...input,
 					after: input.after as JsonValue,
@@ -396,52 +426,39 @@ export const makeMemoryPersistence = (): PersistenceService => {
 				notificationAttempts.push(record);
 				return Effect.succeed(record);
 			},
+			count: (input?: ListNotificationDeliveryAttemptsInput) =>
+				Effect.succeed(
+					notificationAttempts.filter((attempt) =>
+						matchesNotificationAttemptFilter(attempt, input)
+					).length
+				),
 			getById: (id: string) =>
 				Effect.fromNullishOr(
 					notificationAttempts.find((attempt) => attempt.id === id)
 				).pipe(
 					Effect.mapError(
-						() => new Error(`Missing notification delivery attempt ${id}`)
+						() =>
+							new PersistenceEntityNotFoundError({
+								entity: "notification_delivery_attempts",
+								id,
+							})
 					)
 				),
 			list: (input?: ListNotificationDeliveryAttemptsInput) =>
 				Effect.succeed(
 					notificationAttempts
-						.filter((attempt) => {
-							if (input?.channel && attempt.channel !== input.channel) {
-								return false;
-							}
-							if (
-								input?.status &&
-								input.status.length > 0 &&
-								!input.status.includes(attempt.status)
-							) {
-								return false;
-							}
-							if (
-								input?.destination &&
-								attempt.destination !== input.destination
-							) {
-								return false;
-							}
-							if (
-								input?.createdAfter &&
-								attempt.createdAt <= input.createdAfter
-							) {
-								return false;
-							}
-							if (
-								input?.createdBefore &&
-								attempt.createdAt >= input.createdBefore
-							) {
-								return false;
-							}
-							return true;
-						})
+						.filter((attempt) =>
+							matchesNotificationAttemptFilter(attempt, input)
+						)
 						.toSorted((left, right) =>
 							left.createdAt === right.createdAt
 								? right.id.localeCompare(left.id)
 								: right.createdAt.localeCompare(left.createdAt)
+						)
+						.slice(
+							Math.max(0, Math.trunc(input?.offset ?? 0)),
+							Math.max(0, Math.trunc(input?.offset ?? 0)) +
+								Math.max(1, Math.min(500, Math.trunc(input?.limit ?? 50)))
 						)
 				),
 			listByNotificationEventId: (notificationEventId: string) =>

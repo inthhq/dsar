@@ -10873,6 +10873,14 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               "type": "string",
             },
           },
+          {
+            "in": "header",
+            "name": "x-idempotency-key",
+            "required": true,
+            "schema": {
+              "type": "string",
+            },
+          },
         ],
         "responses": {
           "202": {

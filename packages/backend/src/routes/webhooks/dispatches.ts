@@ -5,7 +5,10 @@ import type {
 	NotificationDeliveryStatus,
 	NotificationEventRecord,
 } from "@dsar/persistence";
+import { IsoTimestampSchema } from "@dsar/schema";
 import * as Effect from "effect/Effect";
+import * as Exit from "effect/Exit";
+import * as Schema from "effect/Schema";
 
 import { appendAuditEvent } from "../../audit/service";
 import { replayWebhookDispatch } from "../../services/notifications/service";
@@ -17,13 +20,15 @@ import {
 	requireRequestTenantId,
 } from "../authz";
 import { accepted, ok } from "../helpers";
-import { currentTimeMs, getIdempotencyKey } from "../requests/shared";
+import { getIdempotencyKey } from "../requests/shared";
 import type { RouteDefinition } from "../types";
 
 const DEFAULT_WEBHOOK_ENDPOINT_ID = "default";
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 500;
 const DISPATCH_REPLAY_ACTION = "webhook_dispatch_replayed";
+const DISPATCH_REPLAY_REQUESTED_ACTION = "webhook_dispatch_replay_requested";
+const INTEGER_PARAM_PATTERN = /^(0|[1-9]\d*)$/;
 
 const hasErrorTag = (error: unknown, tag: string): boolean =>
 	typeof error === "object" &&
@@ -36,30 +41,47 @@ const parseIntParam = (
 	fallback: number,
 	min: number,
 	max: number
-): number => {
+): Effect.Effect<number, RequestValidationError> => {
 	if (value === null || value.trim().length === 0) {
-		return fallback;
+		return Effect.succeed(fallback);
 	}
-	const parsed = Number.parseInt(value, 10);
+	const trimmed = value.trim();
+	if (!INTEGER_PARAM_PATTERN.test(trimmed)) {
+		return Effect.fail(
+			new RequestValidationError({
+				message: `Expected integer between ${min} and ${max}.`,
+				reasonCode: "REQUEST_VALIDATION_FAILED",
+			})
+		);
+	}
+	const parsed = Number.parseInt(trimmed, 10);
 	if (!Number.isSafeInteger(parsed) || parsed < min || parsed > max) {
-		throw new RequestValidationError({
-			message: `Expected integer between ${min} and ${max}.`,
-			reasonCode: "REQUEST_VALIDATION_FAILED",
-		});
+		return Effect.fail(
+			new RequestValidationError({
+				message: `Expected integer between ${min} and ${max}.`,
+				reasonCode: "REQUEST_VALIDATION_FAILED",
+			})
+		);
 	}
-	return parsed;
+	return Effect.succeed(parsed);
 };
 
 const parseStatusFilter = (
 	value: string | null
-): readonly NotificationDeliveryStatus[] | undefined => {
+): Effect.Effect<
+	readonly NotificationDeliveryStatus[] | undefined,
+	RequestValidationError
+> => {
 	if (!value) {
-		return undefined;
+		return Effect.succeed();
 	}
 	const values = value
 		.split(",")
 		.map((entry) => entry.trim())
 		.filter((entry) => entry.length > 0);
+	if (values.length === 0) {
+		return Effect.succeed();
+	}
 	const statuses: NotificationDeliveryStatus[] = [];
 	for (const entry of values) {
 		switch (entry) {
@@ -71,14 +93,43 @@ const parseStatusFilter = (
 				break;
 			}
 			default: {
-				throw new RequestValidationError({
-					message: `Unsupported webhook dispatch status '${entry}'.`,
-					reasonCode: "REQUEST_VALIDATION_FAILED",
-				});
+				return Effect.fail(
+					new RequestValidationError({
+						message: `Unsupported webhook dispatch status '${entry}'.`,
+						reasonCode: "REQUEST_VALIDATION_FAILED",
+					})
+				);
 			}
 		}
 	}
-	return statuses;
+	return Effect.succeed(statuses);
+};
+
+const normalizeIsoTimestamp = (value: string): string | undefined => {
+	const decoded = Schema.decodeUnknownExit(IsoTimestampSchema)(value);
+	if (Exit.isFailure(decoded)) {
+		return undefined;
+	}
+	return new Date(value).toISOString();
+};
+
+const parseIsoTimestampParam = (
+	value: string | null,
+	paramName: "created_after" | "created_before"
+): Effect.Effect<string | undefined, RequestValidationError> => {
+	if (!value || value.trim().length === 0) {
+		return Effect.succeed();
+	}
+	const normalized = normalizeIsoTimestamp(value);
+	if (!normalized) {
+		return Effect.fail(
+			new RequestValidationError({
+				message: `${paramName} must be a valid ISO-8601 timestamp.`,
+				reasonCode: "REQUEST_VALIDATION_FAILED",
+			})
+		);
+	}
+	return Effect.succeed(normalized);
 };
 
 const isPriorReplay = (input: {
@@ -91,13 +142,25 @@ const isPriorReplay = (input: {
 	readonly idempotencyKey: string;
 }): boolean => {
 	if (
-		input.event.action !== DISPATCH_REPLAY_ACTION ||
+		input.event.action !== DISPATCH_REPLAY_REQUESTED_ACTION ||
 		input.event.object !== `webhook_dispatch:${input.dispatchId}`
 	) {
 		return false;
 	}
 	return asRecord(input.event.reason)?.idempotencyKey === input.idempotencyKey;
 };
+
+const replayMarkerId = (input: {
+	readonly dispatchId: string;
+	readonly idempotencyKey: string;
+	readonly tenantId: string;
+}): string =>
+	[
+		"webhook-dispatch-replay",
+		input.tenantId,
+		input.dispatchId,
+		encodeURIComponent(input.idempotencyKey),
+	].join(":");
 
 const endpointIdForAttempt = (
 	attempt: NotificationDeliveryAttemptRecord,
@@ -157,7 +220,7 @@ const isMissingWebhookDispatchError = (
 	if (hasErrorTag(error, "PersistenceEntityNotFoundError")) {
 		return true;
 	}
-	return error instanceof Error && error.message.includes(dispatchId);
+	return error instanceof Error && error.message === `Missing ${dispatchId}`;
 };
 
 const toMissingWebhookDispatchError = (dispatchId: string) =>
@@ -179,13 +242,13 @@ export const listWebhookDispatchesRoute: RouteDefinition = {
 			});
 			const tenantId = yield* requireRequestTenantId(services.requestContext);
 			const { searchParams } = new URL(request.url);
-			const limit = parseIntParam(
+			const limit = yield* parseIntParam(
 				searchParams.get("limit"),
 				DEFAULT_LIMIT,
 				1,
 				MAX_LIMIT
 			);
-			const offset = parseIntParam(
+			const offset = yield* parseIntParam(
 				searchParams.get("offset"),
 				0,
 				0,
@@ -207,18 +270,35 @@ export const listWebhookDispatchesRoute: RouteDefinition = {
 					total: 0,
 				});
 			}
+			const status = yield* parseStatusFilter(searchParams.get("status"));
+			const createdAfter = yield* parseIsoTimestampParam(
+				searchParams.get("created_after"),
+				"created_after"
+			);
+			const createdBefore = yield* parseIsoTimestampParam(
+				searchParams.get("created_before"),
+				"created_before"
+			);
+			const attemptFilters = {
+				channel: "webhook",
+				createdAfter,
+				createdBefore,
+				destination,
+				status,
+			} as const;
+			const total =
+				yield* services.repos.persistence.notificationDeliveryAttempts
+					.count(attemptFilters)
+					.pipe(withTenant(tenantId));
 			const attempts =
 				yield* services.repos.persistence.notificationDeliveryAttempts
 					.list({
-						channel: "webhook",
-						createdAfter: searchParams.get("created_after") ?? undefined,
-						createdBefore: searchParams.get("created_before") ?? undefined,
-						destination,
-						status: parseStatusFilter(searchParams.get("status")),
+						...attemptFilters,
+						limit,
+						offset,
 					})
 					.pipe(withTenant(tenantId));
-			const page = attempts.slice(offset, offset + limit);
-			const items = yield* Effect.forEach(page, (attempt) =>
+			const items = yield* Effect.forEach(attempts, (attempt) =>
 				Effect.gen(function* mapWebhookDispatch() {
 					const event = yield* services.repos.persistence.notificationEvents
 						.getById(attempt.notificationEventId)
@@ -234,7 +314,7 @@ export const listWebhookDispatchesRoute: RouteDefinition = {
 				items,
 				limit,
 				offset,
-				total: attempts.length,
+				total,
 			});
 		}),
 	method: "GET",
@@ -288,17 +368,30 @@ export const replayWebhookDispatchRoute: RouteDefinition = {
 				);
 			}
 			const callerIdempotencyKey = getIdempotencyKey(request);
-			const fallbackIdempotencyMs = callerIdempotencyKey
-				? undefined
-				: yield* currentTimeMs;
-			const replayIdempotencyKey = callerIdempotencyKey
-				? `webhook-dispatch-replay:${dispatchId}:${callerIdempotencyKey}`
-				: `webhook-dispatch-replay:${dispatchId}:${String(fallbackIdempotencyMs)}`;
+			if (!callerIdempotencyKey) {
+				return yield* Effect.fail(
+					new RequestValidationError({
+						message:
+							"Webhook dispatch replay requires an x-idempotency-key header.",
+						reasonCode: "REQUEST_VALIDATION_FAILED",
+					})
+				);
+			}
+			const replayIdempotencyKey = `webhook-dispatch-replay:${tenantId}:${dispatchId}:${callerIdempotencyKey}`;
+			const replayRequestMarkerId = replayMarkerId({
+				dispatchId,
+				idempotencyKey: callerIdempotencyKey,
+				tenantId,
+			});
 			const priorAuditEvents = yield* services.repos.persistence.auditEvents
-				.listByRequestId(event.requestId)
+				.list({
+					action: DISPATCH_REPLAY_REQUESTED_ACTION,
+					limit: MAX_LIMIT,
+					requestId: event.requestId,
+				})
 				.pipe(withTenant(tenantId));
 			if (
-				priorAuditEvents.some((auditEvent) =>
+				priorAuditEvents.items.some((auditEvent) =>
 					isPriorReplay({
 						dispatchId,
 						event: auditEvent,
@@ -306,6 +399,60 @@ export const replayWebhookDispatchRoute: RouteDefinition = {
 					})
 				)
 			) {
+				return accepted({
+					dispatchId,
+					eventId: event.id,
+					status: "already_replayed" as const,
+				});
+			}
+			const replayRequestAppended = yield* appendAuditEvent({
+				action: DISPATCH_REPLAY_REQUESTED_ACTION,
+				actor: actor.id,
+				after: {
+					dispatchId,
+					eventId: event.id,
+					status: "accepted",
+				},
+				before: {
+					attempt: attempt.attempt,
+					dispatchId,
+					status: attempt.status,
+				},
+				id: replayRequestMarkerId,
+				object: `webhook_dispatch:${dispatchId}`,
+				reason: {
+					idempotencyKey: replayIdempotencyKey,
+					requestedBy: actor.principalKind,
+				},
+				requestId: event.requestId,
+				tenantId,
+			}).pipe(
+				Effect.as(true),
+				Effect.catch((error) =>
+					Effect.gen(function* recoverReplayRequestAppend() {
+						const replayRequests = yield* services.repos.persistence.auditEvents
+							.list({
+								action: DISPATCH_REPLAY_REQUESTED_ACTION,
+								limit: MAX_LIMIT,
+								requestId: event.requestId,
+							})
+							.pipe(withTenant(tenantId));
+						if (
+							replayRequests.items.some((auditEvent) =>
+								isPriorReplay({
+									dispatchId,
+									event: auditEvent,
+									idempotencyKey: replayIdempotencyKey,
+								})
+							)
+						) {
+							return false;
+						}
+						return yield* Effect.fail(error);
+					})
+				)
+			);
+			if (!replayRequestAppended) {
 				return accepted({
 					dispatchId,
 					eventId: event.id,

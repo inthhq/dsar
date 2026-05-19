@@ -242,6 +242,15 @@ const headersForRoute = (
 				: {}),
 		};
 	}
+	if (route.id === "webhooks_dispatches_replay") {
+		return {
+			"x-idempotency-key": requireFlag(
+				input.flags,
+				"idempotency-key",
+				"Missing required --idempotency-key for webhook replay command."
+			),
+		};
+	}
 	return undefined;
 };
 

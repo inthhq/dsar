@@ -132,6 +132,7 @@ export const webhooksGroup = HttpApiGroup.make("webhooks", { topLevel: true })
 				"webhooks_dispatches_replay",
 				"/webhooks/dispatches/:id/replay",
 				{
+					headers: { "x-idempotency-key": Schema.String },
 					params: { id: Schema.String },
 					success: successEnvelope(WebhookDispatchReplayResponseSchema).pipe(
 						s202

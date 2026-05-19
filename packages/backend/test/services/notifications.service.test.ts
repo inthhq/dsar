@@ -376,6 +376,10 @@ const makeServices = (input: {
 			: [
 					{
 						capability: "notifications",
+						channels:
+							input.adapterKey === "outbound-resend"
+								? (["email"] as const)
+								: (["webhook"] as const),
 						diagnostics: () =>
 							Effect.succeed({
 								capability: "notifications",

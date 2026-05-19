@@ -251,6 +251,7 @@ export const makeOutboundResendAdapter = (
 
 	return {
 		capability: "notifications",
+		channels: ["email"],
 		diagnostics: () =>
 			Effect.succeed({
 				capability: "notifications",

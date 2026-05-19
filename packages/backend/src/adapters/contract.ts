@@ -138,6 +138,11 @@ export interface NotificationDispatchResult {
 }
 
 /**
+ * Notification delivery channels that a notification adapter can handle.
+ */
+export type NotificationAdapterChannel = "email" | "webhook";
+
+/**
  * Adapter contract for notification delivery channels (email, webhook, etc.).
  */
 export interface NotificationAdapterContract extends AdapterContractBase<
@@ -145,6 +150,8 @@ export interface NotificationAdapterContract extends AdapterContractBase<
 > {
 	/** Adapter capability handled by this contract entry. */
 	readonly capability: "notifications";
+	/** Explicit channels handled by this adapter. Omit only for legacy adapters. */
+	readonly channels?: readonly NotificationAdapterChannel[];
 	/** Sends a notification message through the adapter provider. */
 	readonly send: (
 		input: NotificationDispatchInput

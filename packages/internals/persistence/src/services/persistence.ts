@@ -995,6 +995,34 @@ const makePersistence = (
 						);
 						return yield* mapNotificationDeliveryAttemptRecordEffect(row);
 					}),
+				count: (input?: ListNotificationDeliveryAttemptsInput) =>
+					Effect.gen(function* countNotificationDeliveryAttempts() {
+						const tenantId = yield* requireTenantId;
+						const clauses: (SqlFragment | SqlStatement<unknown>)[] = [
+							sql`tenant_id = ${tenantId}`,
+						];
+						if (input?.channel) {
+							clauses.push(sql`channel = ${input.channel}`);
+						}
+						const statusValues = input?.status ?? [];
+						if (statusValues.length > 0) {
+							clauses.push(sql.in("status", [...new Set(statusValues)]));
+						}
+						if (input?.destination) {
+							clauses.push(sql`destination = ${input.destination}`);
+						}
+						if (input?.createdAfter) {
+							clauses.push(sql`created_at > ${input.createdAfter}`);
+						}
+						if (input?.createdBefore) {
+							clauses.push(sql`created_at < ${input.createdBefore}`);
+						}
+						const rows = yield* sql<{
+							readonly count: bigint | number | string;
+						}>`SELECT COUNT(*) AS count FROM notification_delivery_attempts
+					WHERE ${sql.and(clauses)}`;
+						return Number(rows[0]?.count ?? 0);
+					}),
 				getById: (id) =>
 					Effect.gen(function* getNotificationDeliveryAttemptById() {
 						const tenantId = yield* requireTenantId;
@@ -1023,6 +1051,8 @@ const makePersistence = (
 				list: (input?: ListNotificationDeliveryAttemptsInput) =>
 					Effect.gen(function* listNotificationDeliveryAttempts() {
 						const tenantId = yield* requireTenantId;
+						const limit = limitWithFallback(input?.limit);
+						const offset = offsetWithFallback(input?.offset);
 						const clauses: (SqlFragment | SqlStatement<unknown>)[] = [
 							sql`tenant_id = ${tenantId}`,
 						];
@@ -1056,7 +1086,8 @@ const makePersistence = (
 							readonly created_at: string;
 						}>`SELECT * FROM notification_delivery_attempts
 					WHERE ${sql.and(clauses)}
-					ORDER BY created_at DESC, id DESC`;
+					ORDER BY created_at DESC, id DESC
+					LIMIT ${limit} OFFSET ${offset}`;
 						return yield* Effect.forEach(
 							rows,
 							mapNotificationDeliveryAttemptRecordEffect
