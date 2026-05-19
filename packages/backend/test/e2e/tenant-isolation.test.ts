@@ -382,6 +382,37 @@ const makeTenantScopedMemoryPersistence = (): PersistenceService => {
 					notificationAttempts.push(record);
 					return record;
 				}),
+			getById: (id: string) =>
+				Effect.gen(function* getNotificationAttempt() {
+					const tenantId = yield* currentTenantId;
+					const record = notificationAttempts.find(
+						(attempt) => attempt.tenantId === tenantId && attempt.id === id
+					);
+					if (!record) {
+						return yield* Effect.fail(notFound("notification attempt", id));
+					}
+					return record;
+				}),
+			list: (input) =>
+				Effect.gen(function* listNotificationAttempts() {
+					const tenantId = yield* currentTenantId;
+					return notificationAttempts.filter((attempt) => {
+						if (attempt.tenantId !== tenantId) {
+							return false;
+						}
+						if (input?.channel && attempt.channel !== input.channel) {
+							return false;
+						}
+						if (
+							input?.status &&
+							input.status.length > 0 &&
+							!input.status.includes(attempt.status)
+						) {
+							return false;
+						}
+						return true;
+					});
+				}),
 			listByNotificationEventId: (notificationEventId: string) =>
 				Effect.gen(function* listNotificationAttempts() {
 					const tenantId = yield* currentTenantId;

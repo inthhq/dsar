@@ -8,6 +8,8 @@ const requiredCapabilityPaths = [
 	"/webhooks/inbound/resend",
 	"/webhooks/inbound/slack",
 	"/webhooks/endpoints/{id}/rotate-key",
+	"/webhooks/dispatches",
+	"/webhooks/dispatches/{id}/replay",
 	"/requests/capture",
 	"/requests/{id}/timeline",
 	"/requests/{id}/clock/explain",

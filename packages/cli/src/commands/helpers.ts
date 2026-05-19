@@ -179,6 +179,16 @@ const queryForRoute = (
 			until: input.flags.until,
 		};
 	}
+	if (route.id === "webhooks_dispatches_list") {
+		return {
+			created_after: input.flags["created-after"] ?? input.flags.since,
+			created_before: input.flags["created-before"] ?? input.flags.until,
+			endpoint_id: input.flags["endpoint-id"],
+			limit: input.flags.limit,
+			offset: input.flags.offset,
+			status: input.flags.status,
+		};
+	}
 	if (route.id === "requests_manifest_artifact_download") {
 		return {
 			key: requireFlag(

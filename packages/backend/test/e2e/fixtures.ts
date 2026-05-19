@@ -13,6 +13,7 @@ import type {
 	FulfillmentArtifactRecord,
 	JsonValue,
 	ListAuditEventsInput,
+	ListNotificationDeliveryAttemptsInput,
 	ListRequestsBySubjectInput,
 	NotificationDeliveryAttemptRecord,
 	NotificationEventRecord,
@@ -395,6 +396,54 @@ export const makeMemoryPersistence = (): PersistenceService => {
 				notificationAttempts.push(record);
 				return Effect.succeed(record);
 			},
+			getById: (id: string) =>
+				Effect.fromNullishOr(
+					notificationAttempts.find((attempt) => attempt.id === id)
+				).pipe(
+					Effect.mapError(
+						() => new Error(`Missing notification delivery attempt ${id}`)
+					)
+				),
+			list: (input?: ListNotificationDeliveryAttemptsInput) =>
+				Effect.succeed(
+					notificationAttempts
+						.filter((attempt) => {
+							if (input?.channel && attempt.channel !== input.channel) {
+								return false;
+							}
+							if (
+								input?.status &&
+								input.status.length > 0 &&
+								!input.status.includes(attempt.status)
+							) {
+								return false;
+							}
+							if (
+								input?.destination &&
+								attempt.destination !== input.destination
+							) {
+								return false;
+							}
+							if (
+								input?.createdAfter &&
+								attempt.createdAt <= input.createdAfter
+							) {
+								return false;
+							}
+							if (
+								input?.createdBefore &&
+								attempt.createdAt >= input.createdBefore
+							) {
+								return false;
+							}
+							return true;
+						})
+						.toSorted((left, right) =>
+							left.createdAt === right.createdAt
+								? right.id.localeCompare(left.id)
+								: right.createdAt.localeCompare(left.createdAt)
+						)
+				),
 			listByNotificationEventId: (notificationEventId: string) =>
 				Effect.succeed(
 					notificationAttempts.filter(

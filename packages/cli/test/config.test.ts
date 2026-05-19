@@ -35,6 +35,19 @@ describe(parseCliInput, () => {
 		expect(parsed.global.output).toBe("json");
 	});
 
+	it("parses --flag=value arguments", () => {
+		const parsed = parseCliInput({
+			argv: ["webhooks", "list", "--status=failed", "--limit=10"],
+			env: {
+				DSAR_API_URL: "https://example.test",
+			},
+			fetchImpl: fetch,
+		});
+		expect(parsed.commandTokens).toStrictEqual(["webhooks", "list"]);
+		expect(parsed.flags.status).toBe("failed");
+		expect(parsed.flags.limit).toBe("10");
+	});
+
 	it("throws when api url is missing", () => {
 		expect(() =>
 			parseCliInput({

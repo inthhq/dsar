@@ -130,6 +130,30 @@ const makeMemoryPersistence = (): {
 					attempts.push(record);
 					return Effect.succeed(record);
 				},
+				getById: (id: string) =>
+					Effect.fromNullishOr(
+						attempts.find((attempt) => attempt.id === id)
+					).pipe(
+						Effect.mapError(
+							() => new Error(`missing notification attempt in test: ${id}`)
+						)
+					),
+				list: (input) =>
+					Effect.succeed(
+						attempts.filter((attempt) => {
+							if (input?.channel && attempt.channel !== input.channel) {
+								return false;
+							}
+							if (
+								input?.status &&
+								input.status.length > 0 &&
+								!input.status.includes(attempt.status)
+							) {
+								return false;
+							}
+							return true;
+						})
+					),
 				listByNotificationEventId: (notificationEventId: string) =>
 					Effect.succeed(
 						attempts.filter(

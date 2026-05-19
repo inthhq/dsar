@@ -126,6 +126,12 @@ export interface MinimalPersistence {
 		readonly append: (
 			input: Record<string, unknown>
 		) => Effect.Effect<Record<string, unknown>>;
+		readonly getById: (
+			id: string
+		) => Effect.Effect<Record<string, unknown>, Error>;
+		readonly list: (
+			input?: Record<string, unknown>
+		) => Effect.Effect<readonly Record<string, unknown>[]>;
 		readonly listByNotificationEventId: (
 			id: string
 		) => Effect.Effect<readonly Record<string, unknown>[]>;
@@ -568,6 +574,57 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 						]);
 						return record;
 					}),
+				getById: (id: string) =>
+					Ref.get(notificationAttemptsRef).pipe(
+						Effect.flatMap((arr) => {
+							const found = arr.find(
+								(a: Record<string, unknown>) => a.id === id
+							);
+							return found
+								? Effect.succeed(found)
+								: Effect.fail(new Error(`Missing ${id}`));
+						})
+					),
+				list: (input?: Record<string, unknown>) =>
+					Ref.get(notificationAttemptsRef).pipe(
+						Effect.map((arr) =>
+							arr.filter((a: Record<string, unknown>) => {
+								if (
+									typeof input?.channel === "string" &&
+									a.channel !== input.channel
+								) {
+									return false;
+								}
+								if (
+									Array.isArray(input?.status) &&
+									!input.status.includes(a.status)
+								) {
+									return false;
+								}
+								if (
+									typeof input?.destination === "string" &&
+									a.destination !== input.destination
+								) {
+									return false;
+								}
+								if (
+									typeof input?.createdAfter === "string" &&
+									typeof a.createdAt === "string" &&
+									a.createdAt <= input.createdAfter
+								) {
+									return false;
+								}
+								if (
+									typeof input?.createdBefore === "string" &&
+									typeof a.createdAt === "string" &&
+									a.createdAt >= input.createdBefore
+								) {
+									return false;
+								}
+								return true;
+							})
+						)
+					),
 				listByNotificationEventId: (id: string) =>
 					Ref.get(notificationAttemptsRef).pipe(
 						Effect.map((arr) =>

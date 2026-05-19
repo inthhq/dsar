@@ -98,6 +98,20 @@ export const routeParityMap: readonly RouteParityDefinition[] = [
 		path: "/webhooks/endpoints/{id}/rotate-key",
 	},
 	{
+		command: ["webhooks", "list"],
+		description: "List outbound webhook dispatches.",
+		id: "webhooks_dispatches_list",
+		method: "GET",
+		path: "/webhooks/dispatches",
+	},
+	{
+		command: ["webhooks", "replay", ":id"],
+		description: "Replay outbound webhook dispatch.",
+		id: "webhooks_dispatches_replay",
+		method: "POST",
+		path: "/webhooks/dispatches/{id}/replay",
+	},
+	{
 		command: ["requests", "create"],
 		description: "Create request.",
 		id: "requests_create",

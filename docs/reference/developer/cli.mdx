@@ -52,6 +52,7 @@ Global flags:
 - `policies list` -> `GET /policies`
 - `policies custom register|activate|deactivate` -> custom policy endpoints
 - `webhooks inbound resend` -> `POST /webhooks/inbound/resend`
+- `webhooks list|replay ...` -> outbound webhook dispatch inspection and single-dispatch replay
 - `requests create|capture` -> `POST /requests`, `POST /requests/capture`
 - `requests clock explain <id>` -> `GET /requests/{id}/clock/explain`
 - `requests verification ...` -> verification endpoints
@@ -82,6 +83,14 @@ Notification replay is part of the current CLI surface:
 
 - `dsar requests notifications list <request-id>`
 - `dsar requests notifications replay <request-id> <event-id>`
+
+Outbound webhook dispatch replay is available through:
+
+- `dsar webhooks list --status failed`
+- `dsar webhooks replay <dispatch-id>`
+
+This replays one failed webhook delivery attempt at a time. Bulk replay and
+live tailing are intentionally outside the current CLI surface.
 
 ## Parity policy
 

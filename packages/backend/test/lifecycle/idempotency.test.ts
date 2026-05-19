@@ -213,6 +213,28 @@ const makeMemoryPersistence = (): PersistenceService => {
 				notificationAttempts.push(record);
 				return Effect.succeed(record);
 			},
+			getById: (id: string) =>
+				Effect.fromNullishOr(
+					notificationAttempts.find((attempt) => attempt.id === id)
+				).pipe(
+					Effect.mapError(() => new Error(`Missing notification attempt ${id}`))
+				),
+			list: (input) =>
+				Effect.succeed(
+					notificationAttempts.filter((attempt) => {
+						if (input?.channel && attempt.channel !== input.channel) {
+							return false;
+						}
+						if (
+							input?.status &&
+							input.status.length > 0 &&
+							!input.status.includes(attempt.status)
+						) {
+							return false;
+						}
+						return true;
+					})
+				),
 			listByNotificationEventId: (notificationEventId: string) =>
 				Effect.succeed(
 					notificationAttempts.filter(

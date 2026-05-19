@@ -5,6 +5,7 @@ import * as Effect from "effect/Effect";
 import type {
 	ErrorEnvelope,
 	InboundAdapterContract,
+	NotificationAdapterContract,
 	RateLimitStore,
 } from "../src";
 import { dsarInstance } from "../src";
@@ -145,6 +146,23 @@ const makePolicyPack = (version: string) => ({
 		},
 	},
 	version,
+});
+
+const makeNotificationAdapter = (input: {
+	readonly send: NotificationAdapterContract["send"];
+	readonly key?: string;
+}): NotificationAdapterContract => ({
+	capability: "notifications",
+	diagnostics: () =>
+		Effect.succeed({
+			capability: "notifications",
+			key: input.key ?? "custom-webhook",
+		}),
+	healthCheck: () => Effect.succeed({ ok: true, status: "healthy" }),
+	init: () => Effect.void,
+	key: input.key ?? "custom-webhook",
+	send: input.send,
+	validateConfig: () => Effect.void,
 });
 
 const makeSlackInboundFailureAdapter = (input: {
@@ -495,6 +513,140 @@ describe(dsarInstance, () => {
 			actor: "tester-admin",
 			object: "webhook_endpoint:default",
 		});
+	});
+
+	it("lists and replays failed outbound webhook dispatches", async () => {
+		const persistence = makeMemoryPersistence();
+		await Effect.runPromise(
+			persistence.notificationEvents.append({
+				correlationId: "corr-1",
+				createdAt: "2026-02-20T00:00:00.000Z",
+				eventType: "acknowledgement_due",
+				id: "evt-webhook-1",
+				idempotencyKey: "event-1",
+				locale: "en-GB",
+				payload: { note: "failed webhook" },
+				policyVersion: "policy-v1",
+				requestId: "req-webhook-1",
+			})
+		);
+		await Effect.runPromise(
+			persistence.notificationDeliveryAttempts.append({
+				attempt: 1,
+				channel: "webhook",
+				createdAt: "2026-02-20T00:01:00.000Z",
+				destination: "https://tenant.example/webhook",
+				error: "500 Internal Server Error",
+				id: "dispatch-failed-1",
+				notificationEventId: "evt-webhook-1",
+				requestId: "req-webhook-1",
+				responseCode: 500,
+				status: "failed",
+			})
+		);
+		const sent: unknown[] = [];
+		const runtime = dsarInstance({
+			adapters: {
+				notifications: makeNotificationAdapter({
+					send: (input) => {
+						sent.push(input);
+						return Effect.succeed({
+							responseCode: 200,
+							status: "delivered" as const,
+						});
+					},
+				}),
+			},
+			config: {
+				...TEST_RUNTIME_AUTH.config,
+				notificationWebhook: {
+					endpointId: "default",
+					retryDelayMs: 1,
+					retryMaxAttempts: 1,
+					signingSecret: "secret",
+					tenantScoped: true,
+					timeoutMs: 1000,
+					url: "https://tenant.example/webhook",
+				},
+			},
+			repos: { persistence },
+		});
+
+		const listResponse = await runtime.handler(
+			new Request("https://example.test/webhooks/dispatches?status=failed", {
+				headers: adminHeaders,
+			})
+		);
+		const listBody = (await listResponse.json()) as {
+			readonly data: {
+				readonly items: readonly {
+					readonly dispatchId: string;
+					readonly replayable: boolean;
+				}[];
+			};
+		};
+		expect(listResponse.status).toBe(200);
+		expect(listBody.data.items).toStrictEqual([
+			expect.objectContaining({
+				dispatchId: "dispatch-failed-1",
+				replayable: true,
+			}),
+		]);
+
+		const replayResponse = await runtime.handler(
+			new Request(
+				"https://example.test/webhooks/dispatches/dispatch-failed-1/replay",
+				{
+					headers: {
+						...adminHeaders,
+						"x-idempotency-key": "replay-once",
+					},
+					method: "POST",
+				}
+			)
+		);
+		const replayBody = (await replayResponse.json()) as {
+			readonly data: { readonly status: string };
+		};
+		expect(replayResponse.status).toBe(202);
+		expect(replayBody.data.status).toBe("replayed");
+		expect(sent).toHaveLength(1);
+
+		const idempotentReplay = await runtime.handler(
+			new Request(
+				"https://example.test/webhooks/dispatches/dispatch-failed-1/replay",
+				{
+					headers: {
+						...adminHeaders,
+						"x-idempotency-key": "replay-once",
+					},
+					method: "POST",
+				}
+			)
+		);
+		const idempotentReplayBody = (await idempotentReplay.json()) as {
+			readonly data: { readonly status: string };
+		};
+		expect(idempotentReplay.status).toBe(202);
+		expect(idempotentReplayBody.data.status).toBe("already_replayed");
+		expect(sent).toHaveLength(1);
+	});
+
+	it("protects outbound webhook dispatch replay from subject callers", async () => {
+		const runtime = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			repos: { persistence: makeMemoryPersistence() },
+		});
+		const response = await runtime.handler(
+			new Request(
+				"https://example.test/webhooks/dispatches/dispatch-failed-1/replay",
+				{
+					headers: subjectHeaders,
+					method: "POST",
+				}
+			)
+		);
+		expect(response.status).toBe(403);
 	});
 
 	it("defaults omitted webhook signing key rotation grace period", async () => {

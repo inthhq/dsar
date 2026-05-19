@@ -734,6 +734,24 @@ export interface CreateNotificationDeliveryAttemptInput {
 }
 
 /**
+ * Filter contract for notification delivery-attempt lookup.
+ *
+ * @public
+ */
+export interface ListNotificationDeliveryAttemptsInput {
+	/** Optional channel filter, for example `webhook` or `email`. */
+	readonly channel?: string;
+	/** Optional delivery statuses to include. */
+	readonly status?: readonly NotificationDeliveryStatus[];
+	/** Optional exact destination filter. */
+	readonly destination?: string;
+	/** Return attempts created strictly after this ISO timestamp. */
+	readonly createdAfter?: string;
+	/** Return attempts created strictly before this ISO timestamp. */
+	readonly createdBefore?: string;
+}
+
+/**
  * Persisted outbound webhook endpoint configuration.
  *
  * @public
@@ -1440,6 +1458,36 @@ export interface NotificationDeliveryAttemptsRepository {
 		input: CreateNotificationDeliveryAttemptInput
 	) => Effect.Effect<
 		NotificationDeliveryAttemptRecord,
+		PersistenceError | SqlError,
+		TenantContext
+	>;
+	/**
+	 * Retrieves a delivery attempt by id.
+	 *
+	 * @param id - Delivery attempt identifier to look up.
+	 * @returns The matching {@link NotificationDeliveryAttemptRecord}.
+	 * @throws {@link PersistenceError} when no record exists for `id`.
+	 * @throws {@link SqlError} on underlying database failures.
+	 */
+	readonly getById: (
+		id: string
+	) => Effect.Effect<
+		NotificationDeliveryAttemptRecord,
+		PersistenceError | SqlError,
+		TenantContext
+	>;
+	/**
+	 * Lists delivery attempts for dispatch inspection surfaces.
+	 *
+	 * @param input - Optional filters.
+	 * @returns Ordered {@link NotificationDeliveryAttemptRecord} entries.
+	 * @throws {@link PersistenceError} on mapping failures.
+	 * @throws {@link SqlError} on underlying database failures.
+	 */
+	readonly list: (
+		input?: ListNotificationDeliveryAttemptsInput
+	) => Effect.Effect<
+		readonly NotificationDeliveryAttemptRecord[],
 		PersistenceError | SqlError,
 		TenantContext
 	>;

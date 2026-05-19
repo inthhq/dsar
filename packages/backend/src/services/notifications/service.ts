@@ -1,6 +1,10 @@
 import { asNonEmptyString, asRecordOrEmpty } from "@dsar/guards";
 /* oxlint-disable complexity */
 import { withTenant } from "@dsar/persistence";
+import type {
+	NotificationDeliveryAttemptRecord,
+	NotificationEventRecord,
+} from "@dsar/persistence";
 import * as Effect from "effect/Effect";
 
 import { normalizeAdapterError, toAdapterFailureEvent } from "../../adapters";
@@ -215,7 +219,10 @@ const deliverWithRetries = (input: {
 	>;
 	readonly retryMaxAttempts: number;
 	readonly retryDelayMs: number;
+	readonly startAttempt?: number;
 }): Effect.Effect<void, AppendDeliveryAttemptError, RuntimeServicesTag> => {
+	const startAttempt = input.startAttempt ?? 1;
+	const maxAttempt = startAttempt + input.retryMaxAttempts - 1;
 	const runAttempt = (
 		attempt: number
 	): Effect.Effect<void, AppendDeliveryAttemptError, RuntimeServicesTag> =>
@@ -247,7 +254,7 @@ const deliverWithRetries = (input: {
 					status: "failed",
 					tenantId: input.tenantId,
 				});
-				if (attempt >= input.retryMaxAttempts || !normalized.retriable) {
+				if (attempt >= maxAttempt || !normalized.retriable) {
 					return;
 				}
 				yield* Effect.sleep(input.retryDelayMs);
@@ -271,14 +278,103 @@ const deliverWithRetries = (input: {
 			if (result.status === "skipped") {
 				return;
 			}
-			if (attempt >= input.retryMaxAttempts) {
+			if (attempt >= maxAttempt) {
 				return;
 			}
 			yield* Effect.sleep(input.retryDelayMs);
 			return yield* runAttempt(attempt + 1);
 		});
-	return runAttempt(1);
+	return runAttempt(startAttempt);
 };
+
+const nextWebhookAttemptNumber = (input: {
+	readonly attempts: readonly NotificationDeliveryAttemptRecord[];
+}): number => {
+	let maxAttempt = 0;
+	for (const attempt of input.attempts) {
+		if (attempt.channel === "webhook") {
+			maxAttempt = Math.max(maxAttempt, attempt.attempt);
+		}
+	}
+	return maxAttempt + 1;
+};
+
+/**
+ * Replays a persisted webhook dispatch without re-sending other notification
+ * channels such as email.
+ *
+ * @param input - Original notification event and failed webhook attempt.
+ * @returns Effect that records replay delivery attempts.
+ */
+export const replayWebhookDispatch = (input: {
+	readonly event: NotificationEventRecord;
+	readonly idempotencyKey: string;
+	readonly tenantId: string;
+}): Effect.Effect<void, RequestValidationError, RuntimeServicesTag> =>
+	Effect.gen(function* replayWebhookDispatchProgram() {
+		const services = yield* Effect.service(RuntimeServicesTag);
+		const webhookConfig = services.config.notificationWebhook;
+		if (!webhookConfig || webhookConfig.url.length === 0) {
+			return yield* Effect.fail(
+				new RequestValidationError({
+					message:
+						"Webhook dispatch cannot be replayed because no webhook endpoint is configured.",
+					reasonCode: "REQUEST_VALIDATION_FAILED",
+				})
+			);
+		}
+		const resolvedNotificationAdapter =
+			services.adapterRegistry.resolveNotification();
+		const webhookAdapter =
+			resolvedNotificationAdapter &&
+			resolvedNotificationAdapter.key !== "outbound-resend"
+				? resolvedNotificationAdapter
+				: undefined;
+		const signingKey = yield* resolveWebhookSigningKey({
+			config: webhookConfig,
+			services,
+			tenantId: input.tenantId,
+		});
+		const attempts =
+			yield* services.repos.persistence.notificationDeliveryAttempts
+				.listByNotificationEventId(input.event.id)
+				.pipe(withTenant(input.tenantId));
+		const dispatchInput = toDispatchInput({
+			correlationId: services.requestContext.requestId,
+			draft: {
+				eventType: input.event.eventType as NotificationEventDraft["eventType"],
+				locale: input.event.locale,
+				payload: input.event.payload,
+				policyVersion: input.event.policyVersion,
+				requestId: input.event.requestId,
+			},
+			eventId: input.event.id,
+			idempotencyKey: input.idempotencyKey,
+		});
+		yield* deliverWithRetries({
+			adapterKey: webhookAdapter?.key ?? "webhook-fallback",
+			channel: "webhook",
+			destination: webhookConfig.url,
+			eventId: input.event.id,
+			requestId: input.event.requestId,
+			retryDelayMs: webhookConfig.retryDelayMs,
+			retryMaxAttempts: webhookConfig.retryMaxAttempts,
+			send: () =>
+				webhookAdapter
+					? webhookAdapter.send({
+							...dispatchInput,
+							webhookSigningKey: signingKey,
+						})
+					: dispatchWebhookNotification({
+							event: dispatchInput,
+							signingKey,
+							timeoutMs: webhookConfig.timeoutMs,
+							url: webhookConfig.url,
+						}),
+			startAttempt: nextWebhookAttemptNumber({ attempts }),
+			tenantId: input.tenantId,
+		});
+	}).pipe(Effect.mapError(toNotificationDispatchValidationError));
 
 /**
  * Persists and dispatches a notification event across configured

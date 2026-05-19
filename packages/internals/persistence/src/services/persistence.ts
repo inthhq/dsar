@@ -21,6 +21,7 @@ import type {
 	CreateNotificationEventInput,
 	FulfillmentArtifactsRepository,
 	ListAuditEventsInput,
+	ListNotificationDeliveryAttemptsInput,
 	ListRequestsBySubjectInput,
 	NotificationDeliveryAttemptsRepository,
 	NotificationEventsRepository,
@@ -993,6 +994,73 @@ const makePersistence = (
 							input.id
 						);
 						return yield* mapNotificationDeliveryAttemptRecordEffect(row);
+					}),
+				getById: (id) =>
+					Effect.gen(function* getNotificationDeliveryAttemptById() {
+						const tenantId = yield* requireTenantId;
+						const rows = yield* sql<{
+							readonly id: string;
+							readonly tenant_id: string;
+							readonly notification_event_id: string;
+							readonly request_id: string;
+							readonly channel: string;
+							readonly destination: string;
+							readonly attempt: number;
+							readonly status: string;
+							readonly response_code: number | null;
+							readonly error_text: string | null;
+							readonly created_at: string;
+						}>`SELECT * FROM notification_delivery_attempts
+					WHERE tenant_id = ${tenantId} AND id = ${id}
+					LIMIT 1`;
+						const row = yield* findRequired(
+							rows[0],
+							"notification_delivery_attempts",
+							id
+						);
+						return yield* mapNotificationDeliveryAttemptRecordEffect(row);
+					}),
+				list: (input?: ListNotificationDeliveryAttemptsInput) =>
+					Effect.gen(function* listNotificationDeliveryAttempts() {
+						const tenantId = yield* requireTenantId;
+						const clauses: (SqlFragment | SqlStatement<unknown>)[] = [
+							sql`tenant_id = ${tenantId}`,
+						];
+						if (input?.channel) {
+							clauses.push(sql`channel = ${input.channel}`);
+						}
+						const statusValues = input?.status ?? [];
+						if (statusValues.length > 0) {
+							clauses.push(sql.in("status", [...new Set(statusValues)]));
+						}
+						if (input?.destination) {
+							clauses.push(sql`destination = ${input.destination}`);
+						}
+						if (input?.createdAfter) {
+							clauses.push(sql`created_at > ${input.createdAfter}`);
+						}
+						if (input?.createdBefore) {
+							clauses.push(sql`created_at < ${input.createdBefore}`);
+						}
+						const rows = yield* sql<{
+							readonly id: string;
+							readonly tenant_id: string;
+							readonly notification_event_id: string;
+							readonly request_id: string;
+							readonly channel: string;
+							readonly destination: string;
+							readonly attempt: number;
+							readonly status: string;
+							readonly response_code: number | null;
+							readonly error_text: string | null;
+							readonly created_at: string;
+						}>`SELECT * FROM notification_delivery_attempts
+					WHERE ${sql.and(clauses)}
+					ORDER BY created_at DESC, id DESC`;
+						return yield* Effect.forEach(
+							rows,
+							mapNotificationDeliveryAttemptRecordEffect
+						);
 					}),
 				listByNotificationEventId: (notificationEventId) =>
 					Effect.gen(function* listNotificationDeliveryAttemptsByEventId() {
