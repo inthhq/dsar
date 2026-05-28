@@ -38,7 +38,7 @@ See:
 
 ## Support
 
-- Join our [Discord community](https://c15t.link/discord)
+- Join our [Discord community](https://inth.com/discord)
 - Open an issue on our [GitHub repository](https://github.com/inthhq/dsar/issues)
 - Visit [inth.com](https://inth.com) and use the chat widget
 - Contact our support team via email [support@inth.com](mailto:support@inth.com)
@@ -46,8 +46,8 @@ See:
 ## Contributing
 
 - We're open to all community contributions!
-- Read our [Contribution Guidelines](https://dsar-sdk.dev/docs/oss/contributing)
-- Review our [Code of Conduct](https://dsar-sdk.dev/docs/oss/code-of-conduct)
+- Read our [Contribution Guidelines](CONTRIBUTING.md)
+- Review our [Code of Conduct](CODE_OF_CONDUCT.md)
 - Fork the repository
 - Create a new branch for your feature
 - Submit a pull request
@@ -55,7 +55,7 @@ See:
 
 ## Security
 
-If you believe you have found a security vulnerability in c15t, we encourage you to **_responsibly disclose this and NOT open a public issue_**. We will investigate all legitimate reports.
+If you believe you have found a security vulnerability in DSAR, we encourage you to **_responsibly disclose this and NOT open a public issue_**. We will investigate all legitimate reports.
 
 Our preference is that you make use of GitHub's private vulnerability reporting feature to disclose potential security vulnerabilities in our Open Source Software. To do this, please visit [https://github.com/inthhq/dsar/security](https://github.com/inthhq/dsar/security) and click the "Report a vulnerability" button.
 
