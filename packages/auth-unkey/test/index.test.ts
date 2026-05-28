@@ -162,6 +162,20 @@ const mapVerifiedSubjectIdentity = ({
 	};
 };
 
+const mapRequestedTenantIdentity = ({
+	defaultIdentity,
+	request,
+}: {
+	readonly defaultIdentity: DsarResolvedIdentity | null;
+	readonly request: Request;
+}) => {
+	const requestedTenantId = request.headers.get("x-requested-tenant-id");
+	if (defaultIdentity?.tenantId !== requestedTenantId) {
+		return null;
+	}
+	return defaultIdentity;
+};
+
 describe("makeUnkeyBearerResolver", () => {
 	it("maps Unkey verification metadata into a DSAR identity", async () => {
 		const resolver = makeUnkeyBearerResolver({
@@ -417,5 +431,27 @@ describe("makeUnkeyBearerResolver fail-closed coverage", () => {
 			role: "admin",
 			tenantId: "tenant-2",
 		});
+	});
+
+	it("lets tenant-scoped hosts reject keys for a different requested tenant", async () => {
+		const resolver = makeUnkeyBearerResolver({
+			client: {
+				keys: {
+					verifyKey: verifyAdminKey,
+				},
+			},
+			mapIdentity: mapRequestedTenantIdentity,
+		});
+
+		await expect(
+			resolver({
+				request: new Request("https://example.test", {
+					headers: {
+						"x-requested-tenant-id": "tenant-2",
+					},
+				}),
+				token: "tenant-a-token",
+			})
+		).resolves.toBeUndefined();
 	});
 });
