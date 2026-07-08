@@ -231,6 +231,14 @@ export const webhooksTailCommand: CommandDefinition = {
 			process.removeListener("SIGINT", onInterrupt);
 		}
 	},
+	flagHelp: [
+		"--status <statuses>      Comma-separated delivery statuses (e.g. failed)",
+		"--endpoint-id <id>       Filter by configured webhook endpoint id",
+		"--created-after <iso>    Start tailing after this timestamp",
+		"--interval <ms>          Poll interval in milliseconds (default 2000)",
+		"--limit <n>              Page size per poll, 1-500 (default 200)",
+		"--once                   Poll once and exit",
+	],
 	id: "webhooks_tail",
 	usage: ["webhooks", "tail"],
 };

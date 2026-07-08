@@ -1,6 +1,7 @@
 /* oxlint-disable jest/no-conditional-in-test, max-statements -- test helpers branch on stub state. */
 import { describe, expect, it } from "@effect/vitest";
 
+import { webhooksCommands } from "#src/commands/webhooks";
 import { runWebhookTailLoop } from "#src/commands/webhooks-tail";
 import type {
 	ApiClient,
@@ -240,4 +241,28 @@ describe("webhooks tail polling loop", () => {
 			runWebhookTailLoop(failingCtx, new AbortController().signal)
 		).rejects.toThrow(/api unavailable/);
 	});
+});
+
+describe("webhook command flag help", () => {
+	it.each([
+		["webhooks_dispatches_list", ["--status", "--endpoint-id", "--limit"]],
+		["webhooks_dispatches_replay", ["--idempotency-key"]],
+		[
+			"webhooks_dispatches_replay_bulk",
+			["--idempotency-key", "--status", "--limit"],
+		],
+		["webhooks_tail", ["--status", "--interval", "--once"]],
+	] as const)(
+		"declares command flag help for %s",
+		(commandId, expectedFlags) => {
+			const command = webhooksCommands.find((entry) => entry.id === commandId);
+			if (!command) {
+				throw new Error(`Missing webhook command '${commandId}'.`);
+			}
+			const helpText = (command.flagHelp ?? []).join("\n");
+			for (const flag of expectedFlags) {
+				expect(helpText).toContain(flag);
+			}
+		}
+	);
 });

@@ -100,6 +100,14 @@ export const routeParityMap: readonly RouteParityDefinition[] = [
 	{
 		command: ["webhooks", "list"],
 		description: "List outbound webhook dispatches.",
+		flagHelp: [
+			"--status <statuses>      Comma-separated delivery statuses (e.g. failed)",
+			"--endpoint-id <id>       Filter by configured webhook endpoint id",
+			"--created-after <iso>    Only include attempts created after this time",
+			"--created-before <iso>   Only include attempts created before this time",
+			"--limit <n>              Page size, 1-500 (default 50)",
+			"--offset <n>             Zero-based page offset",
+		],
 		id: "webhooks_dispatches_list",
 		method: "GET",
 		path: "/webhooks/dispatches",
@@ -107,6 +115,7 @@ export const routeParityMap: readonly RouteParityDefinition[] = [
 	{
 		command: ["webhooks", "replay", ":id"],
 		description: "Replay outbound webhook dispatch.",
+		flagHelp: ["--idempotency-key <key>  Replay dedupe key (required)"],
 		id: "webhooks_dispatches_replay",
 		method: "POST",
 		path: "/webhooks/dispatches/{id}/replay",
@@ -114,6 +123,14 @@ export const routeParityMap: readonly RouteParityDefinition[] = [
 	{
 		command: ["webhooks", "replay-all"],
 		description: "Replay failed outbound webhook dispatches.",
+		flagHelp: [
+			"--idempotency-key <key>  Bulk replay dedupe key (required)",
+			"--status <status>        Must be 'failed' when present",
+			"--endpoint-id <id>       Filter by configured webhook endpoint id",
+			"--created-after <iso>    Only replay attempts created after this time",
+			"--created-before <iso>   Only replay attempts created before this time",
+			"--limit <n>              Maximum dispatches to replay, 1-100",
+		],
 		id: "webhooks_dispatches_replay_bulk",
 		method: "POST",
 		path: "/webhooks/dispatches/replay",
