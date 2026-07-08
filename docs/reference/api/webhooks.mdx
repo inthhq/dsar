@@ -8,7 +8,7 @@ group: reference-api
 
 Webhook endpoints accept public inbound provider events and map them into DSAR
 intake flows. Protected outbound endpoints let operator and service principals
-inspect delivery attempts and replay one failed webhook dispatch.
+inspect delivery attempts and replay failed webhook dispatches.
 
 ## POST /webhooks/inbound/resend
 
@@ -159,6 +159,65 @@ Required headers:
 }
 ```
 
-This endpoint intentionally performs single-dispatch replay only. Bulk replay
-and live dispatch tailing are deferred so operators can first validate the
-smaller recovery flow safely.
+## POST /webhooks/dispatches/replay
+
+Replay a batch of failed outbound webhook dispatches.
+
+This endpoint is protected and reserved for operator or service principals. Only
+failed webhook delivery attempts are replayable; the endpoint always selects
+`channel="webhook"` and `status="failed"` attempts in the caller's tenant.
+
+The `x-idempotency-key` header is required. The server derives a per-dispatch
+idempotency key from the caller key and dispatch id, so retrying the same bulk
+request does not re-send dispatches that were already accepted.
+
+Bulk replay is capped at 100 dispatches per request. Use filters to narrow large
+recovery batches.
+
+Required headers:
+
+- `x-idempotency-key` (string, required): caller-provided bulk replay dedupe key
+
+**Request body:**
+
+- `status` (string, optional): must be `"failed"` when present
+- `endpoint_id` (string, optional): configured outbound webhook endpoint id
+- `created_after` (string, optional): only include attempts created after this
+  timestamp
+- `created_before` (string, optional): only include attempts created before this
+  timestamp
+- `limit` (number, optional): maximum dispatches to replay, from 1 to 100
+
+An empty body replays failed webhook dispatches for the tenant up to the cap.
+
+**Response (202):**
+
+```json
+{
+	"alreadyReplayed": 1,
+	"replayed": 2,
+	"results": [
+		{
+			"dispatchId": "dispatch-123",
+			"eventId": "event-123",
+			"status": "replayed"
+		},
+		{
+			"dispatchId": "dispatch-456",
+			"eventId": "event-456",
+			"status": "already_replayed"
+		},
+		{
+			"dispatchId": "dispatch-789",
+			"error": "Webhook dispatch cannot be replayed because no webhook endpoint is configured.",
+			"eventId": "event-789",
+			"status": "failed"
+		}
+	],
+	"total": 3
+}
+```
+
+Per-dispatch delivery failures are reported in `results` and do not fail the
+whole bulk request. Delivery attempts and replay audit events are recorded per
+dispatch.

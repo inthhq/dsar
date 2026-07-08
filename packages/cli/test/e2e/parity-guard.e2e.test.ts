@@ -4,7 +4,7 @@ import { describe, expect, it } from "@effect/vitest";
 import { allCommands } from "#src/commands/registry";
 import { routeParityMap } from "#src/parity/route-map";
 
-const NON_ROUTE_COMMAND_IDS = new Set(["audit_tail"]);
+const NON_ROUTE_COMMAND_IDS = new Set(["audit_tail", "webhooks_tail"]);
 
 describe("cLI e2e parity guard", () => {
 	it("covers every registry command id in e2e matrix", () => {

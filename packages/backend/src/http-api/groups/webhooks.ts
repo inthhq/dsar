@@ -55,6 +55,28 @@ const WebhookDispatchReplayResponseSchema = Schema.Struct({
 	status: Schema.Literals(["replayed", "already_replayed"]),
 });
 
+const WebhookDispatchBulkReplayPayloadSchema = Schema.Struct({
+	created_after: Schema.optional(Schema.String),
+	created_before: Schema.optional(Schema.String),
+	endpoint_id: Schema.optional(Schema.String),
+	limit: Schema.optional(Schema.Number),
+	status: Schema.optional(Schema.Literal("failed")),
+});
+
+const WebhookDispatchBulkReplayResultSchema = Schema.Struct({
+	dispatchId: Schema.String,
+	error: Schema.optional(Schema.String),
+	eventId: Schema.String,
+	status: Schema.Literals(["replayed", "already_replayed", "failed"]),
+});
+
+const WebhookDispatchBulkReplayResponseSchema = Schema.Struct({
+	alreadyReplayed: Schema.Number,
+	replayed: Schema.Number,
+	results: Schema.Array(WebhookDispatchBulkReplayResultSchema),
+	total: Schema.Number,
+});
+
 /** OpenAPI group describing public inbound webhook endpoints. */
 export const webhooksGroup = HttpApiGroup.make("webhooks", { topLevel: true })
 	.add(
@@ -124,6 +146,22 @@ export const webhooksGroup = HttpApiGroup.make("webhooks", { topLevel: true })
 				success: successEnvelope(WebhookDispatchListResponseSchema),
 			}),
 			"List outbound webhook dispatches"
+		)
+	)
+	.add(
+		protectedOperation(
+			HttpApiEndpoint.post(
+				"webhooks_dispatches_replay_bulk",
+				"/webhooks/dispatches/replay",
+				{
+					headers: { "x-idempotency-key": Schema.String },
+					payload: WebhookDispatchBulkReplayPayloadSchema,
+					success: successEnvelope(
+						WebhookDispatchBulkReplayResponseSchema
+					).pipe(s202),
+				}
+			),
+			"Replay failed outbound webhook dispatches"
 		)
 	)
 	.add(

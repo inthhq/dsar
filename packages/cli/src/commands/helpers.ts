@@ -86,6 +86,44 @@ const parseCreateIntakePayload = (
 	return { intakeSource };
 };
 
+const parsePositiveIntegerFlag = (
+	flags: Readonly<Record<string, string>>,
+	key: string
+): number | undefined => {
+	const raw = flags[key];
+	if (!raw) {
+		return undefined;
+	}
+	const parsed = Number.parseInt(raw, 10);
+	if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+		throw new Error(`Invalid --${key}: must be a positive integer.`);
+	}
+	return parsed;
+};
+
+const parseWebhookBulkReplayPayload = (
+	flags: Readonly<Record<string, string>>
+): Readonly<Record<string, unknown>> => {
+	const payload: Record<string, unknown> = {};
+	if (flags.status) {
+		payload.status = flags.status;
+	}
+	if (flags["endpoint-id"]) {
+		payload.endpoint_id = flags["endpoint-id"];
+	}
+	if (flags["created-after"] ?? flags.since) {
+		payload.created_after = flags["created-after"] ?? flags.since;
+	}
+	if (flags["created-before"] ?? flags.until) {
+		payload.created_before = flags["created-before"] ?? flags.until;
+	}
+	const limit = parsePositiveIntegerFlag(flags, "limit");
+	if (limit !== undefined) {
+		payload.limit = limit;
+	}
+	return payload;
+};
+
 const binaryUploadRouteIds = new Set([
 	"requests_verification_evidence_upload",
 	"requests_manifest_artifact_upload",
@@ -130,6 +168,9 @@ const payloadForRoute = (
 	if (binaryUploadRouteIds.has(route.id)) {
 		const upload = resolveUploadFileMeta(input);
 		return readFile(upload.filePath).then((bytes) => new Uint8Array(bytes));
+	}
+	if (route.id === "webhooks_dispatches_replay_bulk") {
+		return parseWebhookBulkReplayPayload(input.flags);
 	}
 	const parsedJson = getJsonBody(input.flags);
 	if (parsedJson !== undefined) {
@@ -242,7 +283,10 @@ const headersForRoute = (
 				: {}),
 		};
 	}
-	if (route.id === "webhooks_dispatches_replay") {
+	if (
+		route.id === "webhooks_dispatches_replay" ||
+		route.id === "webhooks_dispatches_replay_bulk"
+	) {
 		return {
 			"x-idempotency-key": requireFlag(
 				input.flags,

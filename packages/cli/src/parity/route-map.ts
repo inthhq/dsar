@@ -112,6 +112,13 @@ export const routeParityMap: readonly RouteParityDefinition[] = [
 		path: "/webhooks/dispatches/{id}/replay",
 	},
 	{
+		command: ["webhooks", "replay-all"],
+		description: "Replay failed outbound webhook dispatches.",
+		id: "webhooks_dispatches_replay_bulk",
+		method: "POST",
+		path: "/webhooks/dispatches/replay",
+	},
+	{
 		command: ["requests", "create"],
 		description: "Create request.",
 		id: "requests_create",

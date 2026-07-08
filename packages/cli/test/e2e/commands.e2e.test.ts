@@ -165,6 +165,25 @@ const commandCases: readonly CommandCase[] = [
 		outputIncludes: ["dispatch-1"],
 	},
 	{
+		argv: ["webhooks", "replay-all"],
+		expectedExitCode: 1,
+		id: "webhooks_dispatches_replay_bulk",
+		outputIncludes: ["--idempotency-key"],
+	},
+	{
+		argv: [
+			"webhooks",
+			"replay-all",
+			"--status=failed",
+			"--endpoint-id=default",
+			"--limit=10",
+			"--idempotency-key=replay-all-1",
+		],
+		expectedExitCode: 0,
+		id: "webhooks_dispatches_replay_bulk",
+		outputIncludes: ['"results":[]', '"total":0'],
+	},
+	{
 		argv: ["requests", "create", "--json", commonCreateBody],
 		expectedExitCode: 0,
 		id: "requests_create",

@@ -1,5 +1,6 @@
 import type { RouteDefinition } from "./types";
 import {
+	bulkReplayWebhookDispatchesRoute,
 	listWebhookDispatchesRoute,
 	replayWebhookDispatchRoute,
 } from "./webhooks/dispatches";
@@ -16,5 +17,6 @@ export const webhookRoutes: readonly RouteDefinition[] = [
 	slackWebhookRoute,
 	rotateWebhookKeyRoute,
 	listWebhookDispatchesRoute,
+	bulkReplayWebhookDispatchesRoute,
 	replayWebhookDispatchRoute,
 ];

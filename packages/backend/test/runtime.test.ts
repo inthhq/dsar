@@ -167,6 +167,48 @@ const makeNotificationAdapter = (input: {
 	validateConfig: () => Effect.void,
 });
 
+const seedWebhookDispatch = async (
+	persistence: ReturnType<typeof makeMemoryPersistence>,
+	input: {
+		readonly channel?: "webhook" | "email";
+		readonly createdAt?: string;
+		readonly destination?: string;
+		readonly eventId: string;
+		readonly id: string;
+		readonly requestId?: string;
+		readonly status?: "pending" | "delivered" | "failed" | "skipped";
+	}
+): Promise<void> => {
+	const requestId = input.requestId ?? `req-${input.id}`;
+	await Effect.runPromise(
+		persistence.notificationEvents.append({
+			correlationId: `corr-${input.eventId}`,
+			createdAt: input.createdAt ?? "2026-02-20T00:00:00.000Z",
+			eventType: "acknowledgement_sent",
+			id: input.eventId,
+			idempotencyKey: `event-${input.eventId}`,
+			locale: "en-GB",
+			payload: { note: input.id },
+			policyVersion: "policy-v1",
+			requestId,
+		})
+	);
+	await Effect.runPromise(
+		persistence.notificationDeliveryAttempts.append({
+			attempt: 1,
+			channel: input.channel ?? "webhook",
+			createdAt: input.createdAt ?? "2026-02-20T00:01:00.000Z",
+			destination: input.destination ?? "https://tenant.example/webhook",
+			error: input.status === "failed" ? "500 Internal Server Error" : "",
+			id: input.id,
+			notificationEventId: input.eventId,
+			requestId,
+			responseCode: input.status === "failed" ? 500 : 200,
+			status: input.status ?? "failed",
+		})
+	);
+};
+
 const makeSlackInboundFailureAdapter = (input: {
 	readonly category: string;
 	readonly details?: Readonly<Record<string, unknown>>;
@@ -745,6 +787,273 @@ describe(dsarInstance, () => {
 				"REQUEST_VALIDATION_FAILED",
 			]);
 		}
+	});
+
+	it("bulk replays failed outbound webhook dispatches idempotently", async () => {
+		const persistence = makeMemoryPersistence();
+		await seedWebhookDispatch(persistence, {
+			eventId: "evt-bulk-1",
+			id: "dispatch-bulk-1",
+			requestId: "req-bulk-1",
+		});
+		await seedWebhookDispatch(persistence, {
+			eventId: "evt-bulk-2",
+			id: "dispatch-bulk-2",
+			requestId: "req-bulk-2",
+		});
+		await seedWebhookDispatch(persistence, {
+			eventId: "evt-bulk-delivered",
+			id: "dispatch-bulk-delivered",
+			requestId: "req-bulk-delivered",
+			status: "delivered",
+		});
+		await seedWebhookDispatch(persistence, {
+			channel: "email",
+			destination: "subject@example.test",
+			eventId: "evt-bulk-email",
+			id: "dispatch-bulk-email",
+			requestId: "req-bulk-email",
+		});
+		const sent: unknown[] = [];
+		const runtime = dsarInstance({
+			adapters: {
+				notifications: makeNotificationAdapter({
+					send: (input) => {
+						sent.push(input);
+						return Effect.succeed({
+							responseCode: 200,
+							status: "delivered" as const,
+						});
+					},
+				}),
+			},
+			config: {
+				...TEST_RUNTIME_AUTH.config,
+				notificationWebhook: {
+					endpointId: "default",
+					retryDelayMs: 1,
+					retryMaxAttempts: 1,
+					signingSecret: "secret",
+					tenantScoped: true,
+					timeoutMs: 1000,
+					url: "https://tenant.example/webhook",
+				},
+			},
+			repos: { persistence },
+		});
+
+		const response = await runtime.handler(
+			new Request("https://example.test/webhooks/dispatches/replay", {
+				headers: {
+					...adminHeaders,
+					"x-idempotency-key": "bulk-once",
+				},
+				method: "POST",
+			})
+		);
+		const body = (await response.json()) as {
+			readonly data: {
+				readonly alreadyReplayed: number;
+				readonly replayed: number;
+				readonly results: readonly {
+					readonly dispatchId: string;
+					readonly status: string;
+				}[];
+				readonly total: number;
+			};
+		};
+		expect(response.status).toBe(202);
+		expect(body.data).toMatchObject({
+			alreadyReplayed: 0,
+			replayed: 2,
+			total: 2,
+		});
+		expect(body.data.results.map((result) => result.dispatchId)).toStrictEqual([
+			"dispatch-bulk-2",
+			"dispatch-bulk-1",
+		]);
+		expect(sent).toHaveLength(2);
+
+		const idempotentResponse = await runtime.handler(
+			new Request("https://example.test/webhooks/dispatches/replay", {
+				headers: {
+					...adminHeaders,
+					"x-idempotency-key": "bulk-once",
+				},
+				method: "POST",
+			})
+		);
+		const idempotentBody = (await idempotentResponse.json()) as {
+			readonly data: {
+				readonly alreadyReplayed: number;
+				readonly replayed: number;
+				readonly total: number;
+			};
+		};
+		expect(idempotentResponse.status).toBe(202);
+		expect(idempotentBody.data).toMatchObject({
+			alreadyReplayed: 2,
+			replayed: 0,
+			total: 2,
+		});
+		expect(sent).toHaveLength(2);
+	});
+
+	it("bulk replay respects filters and continues after per-dispatch failures", async () => {
+		const persistence = makeMemoryPersistence();
+		await seedWebhookDispatch(persistence, {
+			createdAt: "2026-02-20T00:01:00.000Z",
+			eventId: "evt-filter-before",
+			id: "dispatch-filter-before",
+			requestId: "req-filter-before",
+		});
+		await seedWebhookDispatch(persistence, {
+			createdAt: "2026-02-20T00:02:00.000Z",
+			eventId: "evt-filter-match",
+			id: "dispatch-filter-match",
+			requestId: "req-filter-match",
+		});
+		await seedWebhookDispatch(persistence, {
+			createdAt: "2026-02-20T00:03:00.000Z",
+			destination: "https://other.example/webhook",
+			eventId: "evt-filter-other",
+			id: "dispatch-filter-other",
+			requestId: "req-filter-other",
+		});
+		await Effect.runPromise(
+			persistence.notificationDeliveryAttempts.append({
+				attempt: 1,
+				channel: "webhook",
+				createdAt: "2026-02-20T00:02:30.000Z",
+				destination: "https://tenant.example/webhook",
+				error: "500 Internal Server Error",
+				id: "dispatch-filter-missing-event",
+				notificationEventId: "evt-filter-missing",
+				requestId: "req-filter-missing",
+				responseCode: 500,
+				status: "failed",
+			})
+		);
+		const sent: unknown[] = [];
+		const runtime = dsarInstance({
+			adapters: {
+				notifications: makeNotificationAdapter({
+					send: (input) => {
+						sent.push(input);
+						return Effect.succeed({
+							responseCode: 200,
+							status: "delivered" as const,
+						});
+					},
+				}),
+			},
+			config: {
+				...TEST_RUNTIME_AUTH.config,
+				notificationWebhook: {
+					endpointId: "default",
+					retryDelayMs: 1,
+					retryMaxAttempts: 1,
+					signingSecret: "secret",
+					tenantScoped: true,
+					timeoutMs: 1000,
+					url: "https://tenant.example/webhook",
+				},
+			},
+			repos: { persistence },
+		});
+
+		const response = await runtime.handler(
+			new Request("https://example.test/webhooks/dispatches/replay", {
+				body: JSON.stringify({
+					created_after: "2026-02-20T00:01:30.000Z",
+					created_before: "2026-02-20T00:02:45.000Z",
+					endpoint_id: "default",
+					limit: 10,
+					status: "failed",
+				}),
+				headers: {
+					"content-type": "application/json",
+					...adminHeaders,
+					"x-idempotency-key": "bulk-filter",
+				},
+				method: "POST",
+			})
+		);
+		const body = (await response.json()) as {
+			readonly data: {
+				readonly replayed: number;
+				readonly results: readonly {
+					readonly dispatchId: string;
+					readonly error?: string;
+					readonly status: string;
+				}[];
+				readonly total: number;
+			};
+		};
+		expect(response.status).toBe(202);
+		expect(body.data.total).toBe(2);
+		expect(body.data.replayed).toBe(1);
+		expect(body.data.results).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					dispatchId: "dispatch-filter-match",
+					status: "replayed",
+				}),
+				expect.objectContaining({
+					dispatchId: "dispatch-filter-missing-event",
+					status: "failed",
+				}),
+			])
+		);
+		expect(sent).toHaveLength(1);
+	});
+
+	it("validates and protects bulk outbound webhook dispatch replay", async () => {
+		const runtime = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			repos: { persistence: makeMemoryPersistence() },
+		});
+
+		const missingKeyResponse = await runtime.handler(
+			new Request("https://example.test/webhooks/dispatches/replay", {
+				headers: adminHeaders,
+				method: "POST",
+			})
+		);
+		const missingKeyBody = (await missingKeyResponse.json()) as ErrorEnvelope;
+		expect([
+			missingKeyResponse.status,
+			missingKeyBody.error.code,
+		]).toStrictEqual([400, "REQUEST_VALIDATION_FAILED"]);
+
+		const invalidStatusResponse = await runtime.handler(
+			new Request("https://example.test/webhooks/dispatches/replay", {
+				body: JSON.stringify({ status: "delivered" }),
+				headers: {
+					"content-type": "application/json",
+					...adminHeaders,
+					"x-idempotency-key": "bulk-invalid",
+				},
+				method: "POST",
+			})
+		);
+		const invalidStatusBody =
+			(await invalidStatusResponse.json()) as ErrorEnvelope;
+		expect([
+			invalidStatusResponse.status,
+			invalidStatusBody.error.code,
+		]).toStrictEqual([400, "REQUEST_VALIDATION_FAILED"]);
+
+		const subjectResponse = await runtime.handler(
+			new Request("https://example.test/webhooks/dispatches/replay", {
+				headers: {
+					...subjectHeaders,
+					"x-idempotency-key": "bulk-subject",
+				},
+				method: "POST",
+			})
+		);
+		expect(subjectResponse.status).toBe(403);
 	});
 
 	it("returns 404 for missing outbound webhook dispatch replay", async () => {
