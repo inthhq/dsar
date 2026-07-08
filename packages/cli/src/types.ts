@@ -96,6 +96,11 @@ export interface CommandExecutionContext {
 export interface CommandDefinition {
 	/** Allows command parsing to continue without `--api-url` / `DSAR_API_URL`. */
 	readonly allowMissingApiUrl?: boolean;
+	/**
+	 * Preformatted command-specific flag lines rendered by `--help`, e.g.
+	 * `"--request <id>          Request id to tail (required)"`.
+	 */
+	readonly flagHelp?: readonly string[];
 	/** Stable command identifier used in registry/help tooling. */
 	readonly id: string;
 	/** Optional route parity id linking command to HTTP surface. */

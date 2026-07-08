@@ -108,6 +108,15 @@ const renderGlobalHelp = (): string => {
 
 const usageFor = (usage: readonly string[]): string => usage.join(" ");
 
+const renderCommandFlagLines = (
+	command: (typeof allCommands)[number]
+): string[] => {
+	if (!command.flagHelp || command.flagHelp.length === 0) {
+		return [];
+	}
+	return ["Command flags:", ...command.flagHelp.map((line) => `  ${line}`), ""];
+};
+
 const renderCommandHelp = (command: (typeof allCommands)[number]): string =>
 	[
 		"DSAR CLI",
@@ -118,6 +127,7 @@ const renderCommandHelp = (command: (typeof allCommands)[number]): string =>
 		"Description:",
 		`  ${command.description}`,
 		"",
+		...renderCommandFlagLines(command),
 		"Global flags:",
 		...renderGlobalFlagLines(),
 	].join("\n");

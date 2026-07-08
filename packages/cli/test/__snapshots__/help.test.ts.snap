@@ -91,6 +91,10 @@ Usage:
 Description:
   Stream audit events for a request, polling the audit log endpoint.
 
+Command flags:
+  --request <id>           Request id to tail (required)
+  --interval <ms>          Poll interval in milliseconds (default 2000)
+
 Global flags:
   --api-url <url>          Override DSAR_API_URL
   --token <token>          Override DSAR_API_TOKEN
