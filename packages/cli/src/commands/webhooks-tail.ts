@@ -7,6 +7,7 @@ import type {
 
 const DEFAULT_INTERVAL_MS = 2000;
 const DEFAULT_LIMIT = 200;
+const POLL_DRAIN_PAGE_CAP = 50;
 
 interface WebhookDispatchTailEvent {
 	readonly createdAt: string;
@@ -92,12 +93,13 @@ const formatLine = (
 	} request=${event.requestId}${event.error ? ` error=${event.error}` : ""}`;
 };
 
-const pollOnce = async (
+const fetchDispatchPage = async (
 	api: ApiClient,
 	input: {
 		readonly createdAfter?: string;
 		readonly endpointId?: string;
 		readonly limit: number;
+		readonly offset: number;
 		readonly status?: string;
 	}
 ): Promise<readonly WebhookDispatchTailEvent[]> => {
@@ -108,11 +110,44 @@ const pollOnce = async (
 			created_after: input.createdAfter,
 			endpoint_id: input.endpointId,
 			limit: String(input.limit),
+			offset: String(input.offset),
 			status: input.status,
 		},
 	})) as WebhookDispatchListEnvelope;
-	const items = response.data?.items ?? [];
-	return items.toSorted((left, right) => {
+	return response.data?.items ?? [];
+};
+
+/**
+ * Drains every `/webhooks/dispatches` page matching the current
+ * `created_after` watermark, returning dispatches in ascending creation
+ * order. Walking `offset` pages until a short page is what prevents a
+ * burst larger than `--limit` from silently dropping the older tail of
+ * the burst on the next iteration (the watermark would otherwise jump
+ * over unseen dispatches). Rows inserted mid-drain shift pages and can
+ * repeat across pages; the caller dedupes by dispatch id.
+ */
+const pollOnce = async (
+	api: ApiClient,
+	input: {
+		readonly createdAfter?: string;
+		readonly endpointId?: string;
+		readonly limit: number;
+		readonly status?: string;
+	}
+): Promise<readonly WebhookDispatchTailEvent[]> => {
+	const collected: WebhookDispatchTailEvent[] = [];
+	let offset = 0;
+	let pages = 0;
+	for (;;) {
+		const items = await fetchDispatchPage(api, { ...input, offset });
+		collected.push(...items);
+		pages += 1;
+		if (items.length < input.limit || pages >= POLL_DRAIN_PAGE_CAP) {
+			break;
+		}
+		offset += input.limit;
+	}
+	return collected.toSorted((left, right) => {
 		const order = left.createdAt.localeCompare(right.createdAt);
 		return order === 0
 			? left.dispatchId.localeCompare(right.dispatchId)

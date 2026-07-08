@@ -34,6 +34,14 @@ const makeContext = (input: {
 	writeLine: input.writeLine,
 });
 
+const makeDispatch = (index: number) => ({
+	createdAt: `2026-01-01T00:00:0${index}.000Z`,
+	dispatchId: `dispatch-${index}`,
+	eventId: `evt-${index}`,
+	requestId: `req-${index}`,
+	status: "failed",
+});
+
 describe("webhooks tail polling loop", () => {
 	it("streams dispatches and advances the created_after cursor", async () => {
 		const calls: ApiRequest[] = [];
@@ -88,6 +96,40 @@ describe("webhooks tail polling loop", () => {
 		]);
 		expect(calls[0]?.query?.status).toBe("failed");
 		expect(calls[1]?.query?.created_after).toBe("2026-01-01T00:00:00.000Z");
+	});
+
+	it("drains every page when a burst exceeds the poll limit", async () => {
+		const lines: string[] = [];
+		const calls: ApiRequest[] = [];
+		const pagesByOffset: Readonly<Record<string, readonly unknown[]>> = {
+			// Newest-first pages, mirroring the DESC ordering of the endpoint.
+			"0": [makeDispatch(3), makeDispatch(2)],
+			"2": [makeDispatch(1)],
+		};
+		const ctx = makeContext({
+			flags: {
+				interval: "1",
+				limit: "2",
+				"max-polls": "1",
+			},
+			invoke: (request) => {
+				calls.push(request);
+				const offset = request.query?.offset ?? "0";
+				return Promise.resolve({
+					data: { items: pagesByOffset[offset] ?? [] },
+				});
+			},
+			writeLine: (line) => lines.push(line),
+		});
+		const result = await runWebhookTailLoop(ctx, new AbortController().signal);
+		expect(result.polls).toBe(1);
+		expect(result.emitted).toBe(3);
+		expect(lines.map((line) => JSON.parse(line).dispatchId)).toStrictEqual([
+			"dispatch-1",
+			"dispatch-2",
+			"dispatch-3",
+		]);
+		expect(calls.map((call) => call.query?.offset)).toStrictEqual(["0", "2"]);
 	});
 
 	it("deduplicates dispatches seen across overlapping polls", async () => {
