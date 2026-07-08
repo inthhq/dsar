@@ -20,7 +20,7 @@ DSAR uses storage adapters to persist fulfilment artifacts — the files, docume
 
 When a DSAR request reaches the fulfilment stage, the runtime assembles artifacts into a manifest and stores them through the configured adapter. Each artifact gets a deterministic key:
 
-```
+```text
 <prefix>/<requestId>/<manifestId>/<category>/<redaction>/<thirdParty>/<artifactName>
 ```
 
