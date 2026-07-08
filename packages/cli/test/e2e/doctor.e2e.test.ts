@@ -71,6 +71,34 @@ const findCheck = (
 	return check;
 };
 
+const isDiagnosticsUrl = (input: string | URL | Request): boolean => {
+	const url = input instanceof Request ? input.url : input.toString();
+	return url.includes("/status/diagnostics");
+};
+
+const forbiddenDiagnosticsResponse = (): Response =>
+	Response.json(
+		{
+			error: {
+				code: "AUTH_REQUEST_ACCESS_FORBIDDEN",
+				message:
+					"Runtime diagnostics are reserved for operator or service principals.",
+			},
+			ok: false,
+		},
+		{ status: 403 }
+	);
+
+const runtimeFetchForForbiddenDiagnostics = makeRuntimeFetch();
+
+const forbiddenDiagnosticsFetch = async (
+	input: string | URL | Request,
+	init?: RequestInit
+): Promise<Response> =>
+	isDiagnosticsUrl(input)
+		? forbiddenDiagnosticsResponse()
+		: await runtimeFetchForForbiddenDiagnostics(input, init);
+
 const runDoctorJson = async (
 	argv: readonly string[],
 	fetchImpl: ReturnType<typeof makeRuntimeFetch> = makeRuntimeFetch()
@@ -208,6 +236,34 @@ describe("doctor command", () => {
 		expect(findCheck(report, "auth.protectedRequest")).toMatchObject({
 			status: "fail",
 		});
+	});
+
+	it("warns instead of failing when diagnostics are forbidden for the token", async () => {
+		const stdout: string[] = [];
+		const exitCode = await runCli({
+			argv: [
+				"doctor",
+				"--api-url",
+				E2E_API_URL,
+				"--output",
+				"json",
+				"--token",
+				E2E_API_TOKEN,
+			],
+			fetch: forbiddenDiagnosticsFetch,
+			stdout: (line) => stdout.push(line),
+		});
+		const report = parseDoctorEnvelope(stdout);
+		expect(exitCode).toBe(0);
+		expect(report.ok).toBe(true);
+		expect(findCheck(report, "persistence.migrations")).toMatchObject({
+			status: "warn",
+		});
+		expect(findCheck(report, "adapters.health")).toMatchObject({
+			status: "warn",
+		});
+		const output = stdout.join("\n");
+		expect(output).toContain("operator or service");
 	});
 
 	it("renders readable text output by default", async () => {

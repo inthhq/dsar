@@ -117,6 +117,15 @@ const unwrapDiagnostics = (value: unknown): DiagnosticsData | undefined => {
 const isUnavailableDiagnosticsError = (error: unknown): boolean =>
 	error instanceof Error && /\(404\)/.test(error.message);
 
+const isForbiddenDiagnosticsError = (error: unknown): boolean =>
+	error instanceof Error && /\((?:401|403)\)/.test(error.message);
+
+const FORBIDDEN_MIGRATION_MESSAGE =
+	"The configured token is not an operator or service principal, so migration freshness could not be verified. Rerun doctor with an operator or service token for full diagnostics.";
+
+const FORBIDDEN_ADAPTER_MESSAGE =
+	"The configured token is not an operator or service principal, so adapter health could not be verified. Rerun doctor with an operator or service token for full diagnostics.";
+
 const statusLabel = (status: DoctorCheckStatus): string => `[${status}]`;
 
 const incrementSummary = (
@@ -253,6 +262,28 @@ const checkProtectedRead = async (
 	}
 };
 
+const unavailableMigrationCheck = (diagnosticsError: unknown): DoctorCheck => {
+	if (isForbiddenDiagnosticsError(diagnosticsError)) {
+		return {
+			message: FORBIDDEN_MIGRATION_MESSAGE,
+			name: CHECK_MIGRATIONS,
+			status: "warn",
+		};
+	}
+	if (diagnosticsError && !isUnavailableDiagnosticsError(diagnosticsError)) {
+		return {
+			message: `Migration diagnostics failed: ${messageFromError(diagnosticsError)}`,
+			name: CHECK_MIGRATIONS,
+			status: "fail",
+		};
+	}
+	return {
+		message: LEGACY_MIGRATION_MESSAGE,
+		name: CHECK_MIGRATIONS,
+		status: "warn",
+	};
+};
+
 const missingMigrations = (
 	migrations: DiagnosticsData["migrations"]
 ): readonly DiagnosticsMigration[] => {
@@ -278,18 +309,7 @@ const checkMigrations = (
 		};
 	}
 	if (!diagnostics) {
-		if (diagnosticsError && !isUnavailableDiagnosticsError(diagnosticsError)) {
-			return {
-				message: `Migration diagnostics failed: ${messageFromError(diagnosticsError)}`,
-				name: CHECK_MIGRATIONS,
-				status: "fail",
-			};
-		}
-		return {
-			message: LEGACY_MIGRATION_MESSAGE,
-			name: CHECK_MIGRATIONS,
-			status: "warn",
-		};
+		return unavailableMigrationCheck(diagnosticsError);
 	}
 	if (diagnostics.migrations.current) {
 		return {
@@ -315,6 +335,13 @@ const checkMigrations = (
 };
 
 const unavailableAdapterCheck = (diagnosticsError: unknown): DoctorCheck => {
+	if (isForbiddenDiagnosticsError(diagnosticsError)) {
+		return {
+			message: FORBIDDEN_ADAPTER_MESSAGE,
+			name: CHECK_ADAPTERS,
+			status: "warn",
+		};
+	}
 	if (diagnosticsError && !isUnavailableDiagnosticsError(diagnosticsError)) {
 		return {
 			message: `Adapter diagnostics failed: ${messageFromError(diagnosticsError)}`,
