@@ -1459,6 +1459,12 @@ const makeRouteProbes = (): readonly RouteProbe[] => [
 		method: "GET",
 		path: "/status",
 	},
+	{
+		headers: tenantAHeaders,
+		key: "GET /status/diagnostics",
+		method: "GET",
+		path: "/status/diagnostics",
+	},
 ];
 
 const assertNoTenantBMarker = async (

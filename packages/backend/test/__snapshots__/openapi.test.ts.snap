@@ -9824,6 +9824,227 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
         ],
       },
     },
+    "/status/diagnostics": {
+      "get": {
+        "operationId": "status_diagnostics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "adapters": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "capability": {
+                                "type": "string",
+                              },
+                              "details": {
+                                "anyOf": [
+                                  {
+                                    "additionalProperties": {
+                                      "type": "null",
+                                    },
+                                    "type": "object",
+                                  },
+                                  {
+                                    "type": "null",
+                                  },
+                                ],
+                              },
+                              "key": {
+                                "type": "string",
+                              },
+                              "status": {
+                                "type": "string",
+                              },
+                            },
+                            "required": [
+                              "capability",
+                              "key",
+                              "status",
+                            ],
+                            "type": "object",
+                          },
+                          "type": "array",
+                        },
+                        "migrations": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "applied": {
+                              "items": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "id": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                      },
+                                      {
+                                        "enum": [
+                                          "NaN",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "-Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
+                                    ],
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                  },
+                                },
+                                "required": [
+                                  "id",
+                                  "name",
+                                ],
+                                "type": "object",
+                              },
+                              "type": "array",
+                            },
+                            "current": {
+                              "type": "boolean",
+                            },
+                            "expected": {
+                              "items": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "id": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                      },
+                                      {
+                                        "enum": [
+                                          "NaN",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "-Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
+                                    ],
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                  },
+                                },
+                                "required": [
+                                  "id",
+                                  "name",
+                                ],
+                                "type": "object",
+                              },
+                              "type": "array",
+                            },
+                          },
+                          "required": [
+                            "applied",
+                            "current",
+                            "expected",
+                          ],
+                          "type": "object",
+                        },
+                        "persistence": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "reachable": {
+                              "enum": [
+                                true,
+                              ],
+                              "type": "boolean",
+                            },
+                          },
+                          "required": [
+                            "reachable",
+                          ],
+                          "type": "object",
+                        },
+                      },
+                      "required": [
+                        "adapters",
+                        "migrations",
+                        "persistence",
+                      ],
+                      "type": "object",
+                    },
+                    "meta": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": {
+                            "type": "null",
+                          },
+                          "type": "object",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+                    "ok": {
+                      "enum": [
+                        true,
+                      ],
+                      "type": "boolean",
+                    },
+                  },
+                  "required": [
+                    "data",
+                    "ok",
+                  ],
+                  "type": "object",
+                },
+              },
+            },
+            "description": "Success",
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
+                },
+              },
+            },
+            "description": "The request or response did not match the expected schema",
+          },
+        },
+        "security": [
+          {
+            "BearerAuth": [],
+          },
+        ],
+        "summary": "Runtime diagnostics",
+        "tags": [
+          "status",
+        ],
+      },
+    },
     "/subjects/{subjectId}": {
       "get": {
         "operationId": "subjects_get_profile",

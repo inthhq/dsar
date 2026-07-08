@@ -1,10 +1,43 @@
+import { currentPersistenceMigrationStatus } from "@dsar/persistence";
 import * as Effect from "effect/Effect";
 
+import type { AdapterHealth } from "../adapters";
+import { RuntimeServicesTag } from "../types/runtime";
+import { requirePrincipalKinds, requireRequestActor } from "./authz";
 import { ok } from "./helpers";
 import type { RouteDefinition } from "./types";
 
+const OPERATOR_MESSAGE =
+	"Runtime diagnostics are reserved for operator or service principals.";
+
+const adapterDown = {
+	ok: false,
+	status: "down",
+} as const satisfies AdapterHealth;
+
+const messageFromError = (error: unknown): string =>
+	error instanceof Error ? error.message : String(error);
+
+const toDetails = (
+	version: string | undefined,
+	diagnosticsDetails: Readonly<Record<string, unknown>> | undefined,
+	healthDetails: Readonly<Record<string, unknown>> | undefined
+): Readonly<Record<string, unknown>> | undefined => {
+	const details: Record<string, unknown> = {};
+	if (version) {
+		details.version = version;
+	}
+	if (diagnosticsDetails) {
+		details.diagnostics = diagnosticsDetails;
+	}
+	if (healthDetails) {
+		details.health = healthDetails;
+	}
+	return Object.keys(details).length > 0 ? details : undefined;
+};
+
 /**
- * Health-check route definitions exposing `GET /status` for runtime liveness.
+ * Health-check route definitions exposing runtime liveness and operator diagnostics.
  */
 export const statusRoutes: readonly RouteDefinition[] = [
 	{
@@ -19,5 +52,60 @@ export const statusRoutes: readonly RouteDefinition[] = [
 		path: "/status",
 		protected: false,
 		summary: "Runtime health status",
+	},
+	{
+		handler: () =>
+			Effect.gen(function* diagnosticsHandler() {
+				const services = yield* Effect.service(RuntimeServicesTag);
+				const actor = yield* requireRequestActor(services.requestContext);
+				yield* requirePrincipalKinds({
+					actor,
+					allowedKinds: ["operator", "service"],
+					message: OPERATOR_MESSAGE,
+				});
+				const migrations = yield* (
+					services.repos.persistence.migrationStatus?.() ??
+						Effect.succeed(currentPersistenceMigrationStatus())
+				);
+				const adapters: {
+					readonly capability: string;
+					readonly details?: Readonly<Record<string, unknown>>;
+					readonly key: string;
+					readonly status: string;
+				}[] = [];
+				for (const adapter of services.adapterRegistry.list()) {
+					const health = yield* adapter
+						.healthCheck()
+						.pipe(Effect.catch(() => Effect.succeed(adapterDown)));
+					const diagnostics = yield* adapter.diagnostics().pipe(
+						Effect.catch((error) =>
+							Effect.succeed({
+								capability: adapter.capability,
+								details: { error: messageFromError(error) },
+								key: adapter.key,
+							})
+						)
+					);
+					adapters.push({
+						capability: diagnostics.capability,
+						details: toDetails(
+							diagnostics.version,
+							diagnostics.details,
+							health.details
+						),
+						key: diagnostics.key,
+						status: health.status,
+					});
+				}
+				return ok({
+					adapters,
+					migrations,
+					persistence: { reachable: true },
+				});
+			}),
+		method: "GET",
+		path: "/status/diagnostics",
+		protected: true,
+		summary: "Runtime diagnostics",
 	},
 ];

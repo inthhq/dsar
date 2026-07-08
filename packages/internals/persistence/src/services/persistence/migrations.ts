@@ -40,6 +40,28 @@ interface AppliedMigrationRow {
 	readonly name: string;
 }
 
+/**
+ * Public migration descriptor exposed through diagnostic surfaces.
+ */
+export interface PersistenceMigrationInfo {
+	/** Monotonic migration identifier. */
+	readonly id: number;
+	/** Human-readable migration name recorded in metadata. */
+	readonly name: string;
+}
+
+/**
+ * Read-only migration freshness report for operator diagnostics.
+ */
+export interface PersistenceMigrationStatus {
+	/** Migration metadata rows currently recorded by the database. */
+	readonly applied: readonly PersistenceMigrationInfo[];
+	/** Indicates whether every expected migration is recorded with the matching name. */
+	readonly current: boolean;
+	/** Ordered migration registry expected by this application version. */
+	readonly expected: readonly PersistenceMigrationInfo[];
+}
+
 const migrations = [
 	{
 		down: revertMigration0001,
@@ -72,6 +94,26 @@ const readAppliedMigrations = (
 	sql<AppliedMigrationRow>`SELECT id, name
 		FROM dsar_schema_migrations
 		ORDER BY id`;
+
+const toMigrationInfo = (
+	migration: Pick<PersistenceMigrationInfo, "id" | "name">
+): PersistenceMigrationInfo => ({
+	id: Number(migration.id),
+	name: migration.name,
+});
+
+const expectedMigrationInfo = (): readonly PersistenceMigrationInfo[] =>
+	migrations.map(toMigrationInfo);
+
+const migrationsAreCurrent = (
+	applied: readonly PersistenceMigrationInfo[],
+	expected: readonly PersistenceMigrationInfo[]
+): boolean =>
+	applied.length === expected.length &&
+	applied.every((row, index) => {
+		const expectedRow = expected[index];
+		return expectedRow?.id === row.id && expectedRow.name === row.name;
+	});
 
 const assertAppliedMigrationsMatchRegistry = (
 	rows: readonly AppliedMigrationRow[]
@@ -150,6 +192,42 @@ export const ensureMigrationMetadataTableForTest = ensureMigrationMetadataTable;
  * @returns An effect that succeeds when metadata is written.
  */
 export const recordAppliedMigrationForTest = recordAppliedMigration;
+
+/**
+ * Builds a current migration status report for persistence implementations
+ * that do not own a physical DSAR schema, such as in-memory test facades.
+ *
+ * @returns A migration status report with all registered migrations marked as applied.
+ */
+export const currentPersistenceMigrationStatus =
+	(): PersistenceMigrationStatus => {
+		const expected = expectedMigrationInfo();
+		return {
+			applied: expected,
+			current: true,
+			expected,
+		};
+	};
+
+/**
+ * Reads migration metadata without applying migrations.
+ *
+ * @param sql - SQL client connection used to query migration metadata.
+ * @returns A read-only freshness report comparing applied metadata with the
+ *   application migration registry.
+ */
+export const readMigrationStatus = (
+	sql: Sql
+): Effect.Effect<PersistenceMigrationStatus, SqlError> =>
+	Effect.gen(function* readMigrationStatusProgram() {
+		const applied = (yield* readAppliedMigrations(sql)).map(toMigrationInfo);
+		const expected = expectedMigrationInfo();
+		return {
+			applied,
+			current: migrationsAreCurrent(applied, expected),
+			expected,
+		};
+	});
 
 /**
  * Applies all unapplied persistence migrations in registry order.

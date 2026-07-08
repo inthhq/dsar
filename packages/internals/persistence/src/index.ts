@@ -1,11 +1,15 @@
 export {
+	currentPersistenceMigrationStatus,
 	makePersistenceLayer,
 	Persistence,
+	readMigrationStatus,
 	resolvePersistenceService,
 	runMigrations,
 } from "./services/persistence";
 export type {
+	PersistenceMigrationInfo,
 	PersistenceMigrationHooks,
+	PersistenceMigrationStatus,
 	PersistenceService,
 	WebhookSigningSecretEncryptionOptions,
 } from "./services/persistence";
