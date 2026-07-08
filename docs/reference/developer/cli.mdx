@@ -58,11 +58,15 @@ Global flags:
 - public runtime status reachability
 - authenticated request reachability when `--token` or `DSAR_API_TOKEN` is set
 - runtime database read operations through the authenticated request probe
-- migration and adapter health visibility
+- persistence reachability and schema migration freshness through
+  `GET /status/diagnostics`
+- registered storage, inbound, and notification adapter health through
+  `GET /status/diagnostics`
 
-The current backend does not expose dedicated migration freshness or adapter
-health endpoints. `doctor` reports those checks as warning/skipped diagnostics
-instead of pretending they were fully validated.
+When the diagnostics endpoint is unavailable on an older backend, `doctor`
+keeps the migration check as a warning and adapter health as skipped. Current
+backends fail `doctor` when migrations are stale or any registered adapter is
+down, and warn when adapters are degraded.
 
 Use `--output json` when you need the structured diagnostic envelope for
 automation or CI logs.
@@ -106,7 +110,7 @@ Interactive mode still uses the same final output envelope after command executi
 
 ## Exit codes
 
-- `0`: command completed successfully. `doctor` can still include warning or skipped checks when a diagnostic surface is unavailable.
+- `0`: command completed successfully. `doctor` can still include warnings for degraded adapters or skipped checks when optional diagnostics are unavailable.
 - `1`: command failed, an unknown command was requested, or `doctor` found one or more failed checks.
 
 ## Notification replay

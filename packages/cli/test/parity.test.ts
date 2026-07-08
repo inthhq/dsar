@@ -5,6 +5,7 @@ import { allCommands } from "#src/commands/registry";
 import { deferredCapabilities, routeParityMap } from "#src/parity/route-map";
 
 const supportedMethods = ["get", "post", "put"] as const;
+const compositeCommandRoutes = new Set(["GET /status/diagnostics"]);
 
 const buildOpenApiRouteSet = () => {
 	const spec = createOpenApiSpec("/");
@@ -25,7 +26,10 @@ describe("cLI parity", () => {
 		const mapped = new Set(
 			routeParityMap.map((route) => `${route.method} ${route.path}`)
 		);
-		for (const route of openApiRoutes) {
+		const directlyMappedRoutes = [...openApiRoutes].filter(
+			(route) => !compositeCommandRoutes.has(route)
+		);
+		for (const route of directlyMappedRoutes) {
 			expect(mapped.has(route)).toBeTruthy();
 		}
 	});

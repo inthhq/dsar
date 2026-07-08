@@ -22,6 +22,33 @@ interface DoctorReport {
 	readonly summary: DoctorSummary;
 }
 
+interface DiagnosticsMigration {
+	readonly id: number;
+	readonly name: string;
+}
+
+interface DiagnosticsAdapter {
+	readonly capability: string;
+	readonly key: string;
+	readonly status: string;
+}
+
+interface AdapterStatusSummary {
+	readonly capability: string;
+	readonly key: string;
+	readonly status: string;
+}
+
+interface DiagnosticsData {
+	readonly adapters: readonly DiagnosticsAdapter[];
+	readonly migrations: {
+		readonly applied: readonly DiagnosticsMigration[];
+		readonly current: boolean;
+		readonly expected: readonly DiagnosticsMigration[];
+	};
+	readonly persistence: { readonly reachable: true };
+}
+
 interface MutableDoctorSummary {
 	failed: number;
 	passed: number;
@@ -35,8 +62,60 @@ const CHECK_AUTH = "auth.protectedRequest";
 const CHECK_MIGRATIONS = "persistence.migrations";
 const CHECK_ADAPTERS = "adapters.health";
 
+const LEGACY_MIGRATION_MESSAGE =
+	"No dedicated migration diagnostic endpoint is exposed. The authenticated persistence read probe passed, but migration freshness cannot be proven from the CLI alone.";
+
+const LEGACY_ADAPTER_MESSAGE =
+	"No public adapter health endpoint is exposed. Add backend diagnostics to validate storage, inbound, and outbound adapter initialization from the CLI.";
+
 const messageFromError = (error: unknown): string =>
 	error instanceof Error ? error.message : String(error);
+
+const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
+	typeof value === "object" && value !== null;
+
+const isMigration = (value: unknown): value is DiagnosticsMigration =>
+	isRecord(value) &&
+	typeof value.id === "number" &&
+	typeof value.name === "string";
+
+const isAdapter = (value: unknown): value is DiagnosticsAdapter =>
+	isRecord(value) &&
+	typeof value.capability === "string" &&
+	typeof value.key === "string" &&
+	typeof value.status === "string";
+
+const isDiagnosticsData = (value: unknown): value is DiagnosticsData => {
+	if (!isRecord(value)) {
+		return false;
+	}
+	const { adapters, migrations, persistence } = value;
+	return (
+		Array.isArray(adapters) &&
+		adapters.every(isAdapter) &&
+		isRecord(migrations) &&
+		Array.isArray(migrations.applied) &&
+		migrations.applied.every(isMigration) &&
+		typeof migrations.current === "boolean" &&
+		Array.isArray(migrations.expected) &&
+		migrations.expected.every(isMigration) &&
+		isRecord(persistence) &&
+		persistence.reachable === true
+	);
+};
+
+const unwrapDiagnostics = (value: unknown): DiagnosticsData | undefined => {
+	if (isDiagnosticsData(value)) {
+		return value;
+	}
+	if (isRecord(value) && isDiagnosticsData(value.data)) {
+		return value.data;
+	}
+	return undefined;
+};
+
+const isUnavailableDiagnosticsError = (error: unknown): boolean =>
+	error instanceof Error && /\(404\)/.test(error.message);
 
 const statusLabel = (status: DoctorCheckStatus): string => `[${status}]`;
 
@@ -174,7 +253,22 @@ const checkProtectedRead = async (
 	}
 };
 
-const checkMigrations = (authCheck: DoctorCheck): DoctorCheck => {
+const missingMigrations = (
+	migrations: DiagnosticsData["migrations"]
+): readonly DiagnosticsMigration[] => {
+	const appliedKeys = new Set(
+		migrations.applied.map((migration) => `${migration.id}:${migration.name}`)
+	);
+	return migrations.expected.filter(
+		(migration) => !appliedKeys.has(`${migration.id}:${migration.name}`)
+	);
+};
+
+const checkMigrations = (
+	authCheck: DoctorCheck,
+	diagnostics: DiagnosticsData | undefined,
+	diagnosticsError: unknown
+): DoctorCheck => {
 	if (authCheck.status !== "pass") {
 		return {
 			message:
@@ -183,20 +277,150 @@ const checkMigrations = (authCheck: DoctorCheck): DoctorCheck => {
 			status: "skip",
 		};
 	}
+	if (!diagnostics) {
+		if (diagnosticsError && !isUnavailableDiagnosticsError(diagnosticsError)) {
+			return {
+				message: `Migration diagnostics failed: ${messageFromError(diagnosticsError)}`,
+				name: CHECK_MIGRATIONS,
+				status: "fail",
+			};
+		}
+		return {
+			message: LEGACY_MIGRATION_MESSAGE,
+			name: CHECK_MIGRATIONS,
+			status: "warn",
+		};
+	}
+	if (diagnostics.migrations.current) {
+		return {
+			details: {
+				applied: diagnostics.migrations.applied.length,
+				expected: diagnostics.migrations.expected.length,
+			},
+			message: "Persistence is reachable and schema migrations are current.",
+			name: CHECK_MIGRATIONS,
+			status: "pass",
+		};
+	}
+	const missing = missingMigrations(diagnostics.migrations);
 	return {
+		details: { missing },
 		message:
-			"No dedicated migration diagnostic endpoint is exposed. The authenticated persistence read probe passed, but migration freshness cannot be proven from the CLI alone.",
+			missing.length > 0
+				? `Schema migrations are not current. Missing migrations: ${missing.map((migration) => `${migration.id} ${migration.name}`).join(", ")}.`
+				: "Schema migration metadata does not match the expected registry.",
 		name: CHECK_MIGRATIONS,
-		status: "warn",
+		status: "fail",
 	};
 };
 
-const checkAdapters = (): DoctorCheck => ({
-	message:
-		"No public adapter health endpoint is exposed. Add backend diagnostics to validate storage, inbound, and outbound adapter initialization from the CLI.",
-	name: CHECK_ADAPTERS,
-	status: "skip",
-});
+const unavailableAdapterCheck = (diagnosticsError: unknown): DoctorCheck => {
+	if (diagnosticsError && !isUnavailableDiagnosticsError(diagnosticsError)) {
+		return {
+			message: `Adapter diagnostics failed: ${messageFromError(diagnosticsError)}`,
+			name: CHECK_ADAPTERS,
+			status: "fail",
+		};
+	}
+	return {
+		message: LEGACY_ADAPTER_MESSAGE,
+		name: CHECK_ADAPTERS,
+		status: "skip",
+	};
+};
+
+const adapterNames = (adapters: readonly AdapterStatusSummary[]): string =>
+	adapters.map((adapter) => `${adapter.capability}:${adapter.key}`).join(", ");
+
+const checkRegisteredAdapters = (
+	adapterStatuses: readonly AdapterStatusSummary[]
+): DoctorCheck => {
+	const down = adapterStatuses.filter((adapter) => adapter.status === "down");
+	if (down.length > 0) {
+		return {
+			details: { adapters: adapterStatuses },
+			message: `One or more adapters are down: ${adapterNames(down)}.`,
+			name: CHECK_ADAPTERS,
+			status: "fail",
+		};
+	}
+	const degraded = adapterStatuses.filter(
+		(adapter) => adapter.status !== "healthy"
+	);
+	if (degraded.length > 0) {
+		return {
+			details: { adapters: adapterStatuses },
+			message: `One or more adapters are degraded: ${adapterNames(degraded)}.`,
+			name: CHECK_ADAPTERS,
+			status: "warn",
+		};
+	}
+	return {
+		details: { adapters: adapterStatuses },
+		message: "All registered adapters reported healthy status.",
+		name: CHECK_ADAPTERS,
+		status: "pass",
+	};
+};
+
+const checkAdapters = (
+	authCheck: DoctorCheck,
+	diagnostics: DiagnosticsData | undefined,
+	diagnosticsError: unknown
+): DoctorCheck => {
+	if (authCheck.status !== "pass") {
+		return {
+			message: "Skipped because authenticated diagnostics did not pass.",
+			name: CHECK_ADAPTERS,
+			status: "skip",
+		};
+	}
+	if (!diagnostics) {
+		return unavailableAdapterCheck(diagnosticsError);
+	}
+	if (diagnostics.adapters.length === 0) {
+		return {
+			message:
+				"No adapters are registered with the runtime; storage, inbound, and notification adapter health checks were skipped.",
+			name: CHECK_ADAPTERS,
+			status: "skip",
+		};
+	}
+	const adapterStatuses = diagnostics.adapters.map((adapter) => ({
+		capability: adapter.capability,
+		key: adapter.key,
+		status: adapter.status,
+	}));
+	return checkRegisteredAdapters(adapterStatuses);
+};
+
+const fetchDiagnostics = async (
+	ctx: CommandExecutionContext,
+	authCheck: DoctorCheck
+): Promise<{
+	readonly data: DiagnosticsData | undefined;
+	readonly error: unknown;
+}> => {
+	if (authCheck.status !== "pass") {
+		return { data: undefined, error: undefined };
+	}
+	try {
+		const result = await ctx.api.invoke({
+			method: "GET",
+			path: "/status/diagnostics",
+		});
+		const data = unwrapDiagnostics(result);
+		if (!data) {
+			return {
+				data: undefined,
+				error: new Error("Diagnostics response did not match expected shape."),
+			};
+		}
+		return { data, error: undefined };
+	} catch (error) {
+		return { data: undefined, error };
+	}
+};
 
 const runDoctor = async (
 	ctx: CommandExecutionContext
@@ -204,12 +428,13 @@ const runDoctor = async (
 	const configCheck = checkApiUrl(ctx);
 	const statusCheck = await checkRuntimeStatus(ctx, configCheck);
 	const authCheck = await checkProtectedRead(ctx, statusCheck);
+	const diagnostics = await fetchDiagnostics(ctx, authCheck);
 	const checks = [
 		configCheck,
 		statusCheck,
 		authCheck,
-		checkMigrations(authCheck),
-		checkAdapters(),
+		checkMigrations(authCheck, diagnostics.data, diagnostics.error),
+		checkAdapters(authCheck, diagnostics.data, diagnostics.error),
 	] as const;
 	const summary = summarize(checks);
 	return {

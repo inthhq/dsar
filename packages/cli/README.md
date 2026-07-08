@@ -43,7 +43,7 @@ bun add @dsar/cli
 - `dsar --help`: Print help (does not start interactive wizard).
 - `dsar <command> --help`: Print command-specific help.
 - `dsar`: Start interactive command wizard when no arguments provided.
-- `dsar doctor`: Run CLI diagnostics for API URL config, runtime status, authenticated request reachability, and exposed health checks.
+- `dsar doctor`: Run CLI diagnostics for API URL config, runtime status, authenticated request reachability, migration freshness, and adapter health.
   Use `--output json` for the structured diagnostic envelope.
 
 ## Global Flags
@@ -56,7 +56,7 @@ bun add @dsar/cli
 
 ## Exit Codes
 
-- `0`: command completed successfully. `doctor` may still report warning or skipped checks when the current backend does not expose a diagnostic surface.
+- `0`: command completed successfully. `doctor` may still report warnings for degraded adapters or skipped checks when optional diagnostics are unavailable.
 - `1`: command failed, an unknown command was requested, or `doctor` found one or more failed checks.
 
 ## Support

@@ -72,7 +72,8 @@ const findCheck = (
 };
 
 const runDoctorJson = async (
-	argv: readonly string[]
+	argv: readonly string[],
+	fetchImpl: ReturnType<typeof makeRuntimeFetch> = makeRuntimeFetch()
 ): Promise<{
 	readonly exitCode: number;
 	readonly report: DoctorEnvelope;
@@ -80,7 +81,7 @@ const runDoctorJson = async (
 	const stdout: string[] = [];
 	const exitCode = await runCli({
 		argv: ["doctor", "--api-url", E2E_API_URL, "--output", "json", ...argv],
-		fetch: makeRuntimeFetch(),
+		fetch: fetchImpl,
 		stdout: (line) => stdout.push(line),
 	});
 	return {
@@ -100,6 +101,37 @@ const expectSanitizedAuthProbe = (report: DoctorEnvelope): void => {
 	const authCheckText = asJsonText(authCheck);
 	expect(authCheckText).not.toContain("items");
 	expect(authCheckText).not.toContain("subject");
+};
+
+const makeStaleMigrationFetch = (): typeof fetch => {
+	const runtimeFetch = makeRuntimeFetch();
+	return async (input, init) => {
+		const request =
+			input instanceof Request
+				? new Request(input, init)
+				: new Request(input.toString(), init);
+		const path = new URL(request.url).pathname;
+		return path === "/status/diagnostics"
+			? Response.json(
+					{
+						data: {
+							adapters: [],
+							migrations: {
+								applied: [{ id: 1, name: "initial" }],
+								current: false,
+								expected: [
+									{ id: 1, name: "initial" },
+									{ id: 2, name: "webhook-endpoints" },
+								],
+							},
+							persistence: { reachable: true },
+						},
+						ok: true,
+					},
+					{ status: 200 }
+				)
+			: await runtimeFetch(request);
+	};
 };
 
 describe("doctor command", () => {
@@ -132,11 +164,26 @@ describe("doctor command", () => {
 		});
 		expectSanitizedAuthProbe(report);
 		expect(findCheck(report, "persistence.migrations")).toMatchObject({
-			status: "warn",
+			status: "pass",
 		});
 		expect(findCheck(report, "adapters.health")).toMatchObject({
 			status: "skip",
 		});
+	});
+
+	it("fails when diagnostics report missing migrations", async () => {
+		const { exitCode, report } = await runDoctorJson(
+			["--token", E2E_API_TOKEN],
+			makeStaleMigrationFetch()
+		);
+		expect(exitCode).toBe(1);
+		expect(report.data.ok).toBe(false);
+		expect(findCheck(report, "persistence.migrations")).toMatchObject({
+			status: "fail",
+		});
+		expect(findCheck(report, "persistence.migrations").message).toContain(
+			"2 webhook-endpoints"
+		);
 	});
 
 	it("fails when authenticated probe rejects the configured token", async () => {
