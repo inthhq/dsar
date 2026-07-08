@@ -189,11 +189,13 @@ const verifyUnkeyToken = async (
 	client: UnkeyBearerResolverClient,
 	verifyInput:
 		| { readonly key: string }
-		| { readonly key: string; readonly permissions: string }
+		| { readonly key: string; readonly permissions: string },
+	onVerifyError?: (error: unknown) => void
 ): Promise<UnkeyVerifyResultShape | undefined> => {
 	try {
 		return (await client.keys.verifyKey(verifyInput)) as UnkeyVerifyResultShape;
-	} catch {
+	} catch (error) {
+		onVerifyError?.(error);
 		return undefined;
 	}
 };
@@ -214,7 +216,11 @@ export const makeUnkeyBearerResolver = (config: UnkeyBearerResolverConfig) => {
 		const verifyInput = config.permissions
 			? { key: input.token, permissions: config.permissions }
 			: { key: input.token };
-		const result = await verifyUnkeyToken(client, verifyInput);
+		const result = await verifyUnkeyToken(
+			client,
+			verifyInput,
+			config.onVerifyError
+		);
 		if (!isValidResult(result)) {
 			return undefined;
 		}

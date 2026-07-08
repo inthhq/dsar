@@ -51,6 +51,14 @@ export interface UnkeyBearerResolverConfig {
 	readonly client?: UnkeyBearerResolverClient;
 	/** Optional permission expression required during key verification. */
 	readonly permissions?: string;
+	/**
+	 * Optional observer invoked when Unkey key verification throws.
+	 *
+	 * The resolver still fails closed (the request resolves as
+	 * unauthenticated), but this hook lets hosts log or emit metrics so
+	 * provider outages and misconfiguration stay diagnosable.
+	 */
+	readonly onVerifyError?: (error: unknown) => void;
 	/** Default principal kind when Unkey metadata does not provide one. */
 	readonly fallbackPrincipalKind?: DsarPrincipalKind;
 	/** Default role when Unkey metadata and roles do not provide one. */
