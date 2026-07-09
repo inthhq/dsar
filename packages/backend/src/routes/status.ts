@@ -11,6 +11,7 @@ const OPERATOR_MESSAGE =
 	"Runtime diagnostics are reserved for operator or service principals.";
 
 const adapterDown = {
+	details: undefined,
 	ok: false,
 	status: "down",
 } as const satisfies AdapterHealth;
@@ -63,9 +64,28 @@ export const statusRoutes: readonly RouteDefinition[] = [
 					allowedKinds: ["operator", "service"],
 					message: OPERATOR_MESSAGE,
 				});
-				const migrations = yield* (
+				const migrationStatusEffect =
 					services.repos.persistence.migrationStatus?.() ??
-						Effect.succeed(currentPersistenceMigrationStatus())
+					Effect.succeed(currentPersistenceMigrationStatus());
+
+				const migrationCheck = yield* migrationStatusEffect.pipe(
+					Effect.map((status) => ({
+						migrations: status,
+						persistence: { reachable: true },
+					})),
+					Effect.catch((error) =>
+						Effect.succeed({
+							migrations: {
+								applied: [],
+								current: false,
+								expected: [],
+							},
+							persistence: {
+								error: messageFromError(error),
+								reachable: false,
+							},
+						})
+					)
 				);
 				const adapters: {
 					readonly capability: string;
@@ -83,6 +103,7 @@ export const statusRoutes: readonly RouteDefinition[] = [
 								capability: adapter.capability,
 								details: { error: messageFromError(error) },
 								key: adapter.key,
+								version: undefined,
 							})
 						)
 					);
@@ -99,8 +120,8 @@ export const statusRoutes: readonly RouteDefinition[] = [
 				}
 				return ok({
 					adapters,
-					migrations,
-					persistence: { reachable: true },
+					migrations: migrationCheck.migrations,
+					persistence: migrationCheck.persistence,
 				});
 			}),
 		method: "GET",

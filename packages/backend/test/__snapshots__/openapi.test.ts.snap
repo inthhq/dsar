@@ -9973,10 +9973,17 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "persistence": {
                           "additionalProperties": false,
                           "properties": {
-                            "reachable": {
-                              "enum": [
-                                true,
+                            "error": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                },
+                                {
+                                  "type": "null",
+                                },
                               ],
+                            },
+                            "reachable": {
                               "type": "boolean",
                             },
                           },

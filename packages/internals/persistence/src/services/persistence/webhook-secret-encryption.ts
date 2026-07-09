@@ -113,7 +113,9 @@ const normalizeMasterKey = (key: string | Uint8Array): Buffer => {
 	if (keyBytes.length === AES_256_KEY_BYTES) {
 		return keyBytes;
 	}
-	return createHash("sha256").update(keyBytes).digest();
+	return createHash("sha256")
+		.update(keyBytes as Uint8Array)
+		.digest();
 };
 
 const authenticatedData = (
@@ -133,9 +135,16 @@ const encryptBytes = (
 	aad: Buffer
 ): CiphertextParts => {
 	const nonce = randomBytes(GCM_NONCE_BYTES);
-	const cipher = createCipheriv(AES_256_GCM, key, nonce);
-	cipher.setAAD(aad);
-	const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+	const cipher = createCipheriv(
+		AES_256_GCM,
+		key as Uint8Array,
+		nonce as Uint8Array
+	);
+	cipher.setAAD(aad as Uint8Array);
+	const ciphertext = Buffer.concat([
+		cipher.update(plaintext as Uint8Array) as Uint8Array,
+		cipher.final() as Uint8Array,
+	]);
 	return {
 		ciphertext,
 		nonce,
@@ -148,10 +157,17 @@ const decryptBytes = (
 	parts: CiphertextParts,
 	aad: Buffer
 ): Buffer => {
-	const decipher = createDecipheriv(AES_256_GCM, key, parts.nonce);
-	decipher.setAAD(aad);
-	decipher.setAuthTag(parts.tag);
-	return Buffer.concat([decipher.update(parts.ciphertext), decipher.final()]);
+	const decipher = createDecipheriv(
+		AES_256_GCM,
+		key as Uint8Array,
+		parts.nonce as Uint8Array
+	);
+	decipher.setAAD(aad as Uint8Array);
+	decipher.setAuthTag(parts.tag as Uint8Array);
+	return Buffer.concat([
+		decipher.update(parts.ciphertext as Uint8Array) as Uint8Array,
+		decipher.final() as Uint8Array,
+	]);
 };
 
 const encryptionFailure = (

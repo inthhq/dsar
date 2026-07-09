@@ -162,6 +162,74 @@ const makeStaleMigrationFetch = (): typeof fetch => {
 	};
 };
 
+const makeDegradedAdapterFetch = (): typeof fetch => {
+	const runtimeFetch = makeRuntimeFetch();
+	return async (input, init) => {
+		const request =
+			input instanceof Request
+				? new Request(input, init)
+				: new Request(input.toString(), init);
+		const path = new URL(request.url).pathname;
+		return path === "/status/diagnostics"
+			? Response.json(
+					{
+						data: {
+							adapters: [
+								{
+									capability: "notifications",
+									key: "fixture-notifications",
+									status: "warn",
+								},
+							],
+							migrations: {
+								applied: [{ id: 1, name: "initial" }],
+								current: true,
+								expected: [{ id: 1, name: "initial" }],
+							},
+							persistence: { reachable: true },
+						},
+						ok: true,
+					},
+					{ status: 200 }
+				)
+			: await runtimeFetch(request);
+	};
+};
+
+const makeDownAdapterFetch = (): typeof fetch => {
+	const runtimeFetch = makeRuntimeFetch();
+	return async (input, init) => {
+		const request =
+			input instanceof Request
+				? new Request(input, init)
+				: new Request(input.toString(), init);
+		const path = new URL(request.url).pathname;
+		return path === "/status/diagnostics"
+			? Response.json(
+					{
+						data: {
+							adapters: [
+								{
+									capability: "notifications",
+									key: "fixture-notifications",
+									status: "down",
+								},
+							],
+							migrations: {
+								applied: [{ id: 1, name: "initial" }],
+								current: true,
+								expected: [{ id: 1, name: "initial" }],
+							},
+							persistence: { reachable: true },
+						},
+						ok: true,
+					},
+					{ status: 200 }
+				)
+			: await runtimeFetch(request);
+	};
+};
+
 describe("doctor command", () => {
 	it("reports missing API URL as a diagnostic result", async () => {
 		const stdout: string[] = [];
@@ -277,5 +345,31 @@ describe("doctor command", () => {
 		expect(exitCode).toBe(0);
 		expect(() => JSON.parse(output)).toThrow();
 		expect(output).not.toContain('"items"');
+	});
+
+	it("warns and exits with 0 when adapters are degraded", async () => {
+		const { exitCode, report } = await runDoctorJson(
+			["--token", E2E_API_TOKEN],
+			makeDegradedAdapterFetch()
+		);
+		expect(exitCode).toBe(0);
+		expect(report.ok).toBe(true);
+		expect(report.data.ok).toBe(true);
+		expect(findCheck(report, "adapters.health")).toMatchObject({
+			status: "warn",
+		});
+	});
+
+	it("fails and exits with 1 when adapters are down", async () => {
+		const { exitCode, report } = await runDoctorJson(
+			["--token", E2E_API_TOKEN],
+			makeDownAdapterFetch()
+		);
+		expect(exitCode).toBe(1);
+		expect(report.ok).toBe(false);
+		expect(report.data.ok).toBe(false);
+		expect(findCheck(report, "adapters.health")).toMatchObject({
+			status: "fail",
+		});
 	});
 });

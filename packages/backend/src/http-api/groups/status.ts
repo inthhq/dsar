@@ -51,7 +51,8 @@ export const statusGroup = HttpApiGroup.make("status", { topLevel: true })
 							),
 						}),
 						persistence: Schema.Struct({
-							reachable: Schema.Literal(true),
+							error: Schema.optional(Schema.String),
+							reachable: Schema.Boolean,
 						}),
 					})
 				).pipe(s200),

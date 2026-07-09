@@ -1,4 +1,5 @@
 import { describe, expect, it } from "@effect/vitest";
+import * as Effect from "effect/Effect";
 
 import { dsarInstance } from "../../src";
 import { makeNotificationFixture } from "../adapters/conformance/fixtures";
@@ -13,6 +14,7 @@ interface DiagnosticsEnvelope {
 	readonly data: {
 		readonly adapters: readonly {
 			readonly capability: string;
+			readonly details?: Readonly<Record<string, unknown>>;
 			readonly key: string;
 			readonly status: string;
 		}[];
@@ -27,7 +29,10 @@ interface DiagnosticsEnvelope {
 				readonly name: string;
 			}[];
 		};
-		readonly persistence: { readonly reachable: true };
+		readonly persistence: {
+			readonly error?: string;
+			readonly reachable: boolean;
+		};
 	};
 }
 
@@ -79,5 +84,67 @@ describe("status routes", () => {
 				status: "healthy",
 			},
 		]);
+	});
+
+	it("GET /status/diagnostics handles persistence migration status failure gracefully", async () => {
+		const failingPersistence = {
+			...makeMemoryPersistence(),
+			migrationStatus: () =>
+				Effect.fail(new Error("Database connection failed")),
+		};
+
+		const failingRuntime = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			adapters: {
+				notifications: makeNotificationFixture(),
+				storage: "stub",
+			},
+			repos: { persistence: failingPersistence },
+		});
+
+		const response = await failingRuntime.handler(
+			new Request("https://example.test/status/diagnostics", {
+				headers: TEST_MEMBER_HEADERS,
+				method: "GET",
+			})
+		);
+		expect(response.status).toBe(200);
+		const body = (await response.json()) as DiagnosticsEnvelope;
+		expect(body.data.persistence.reachable).toBe(false);
+		expect(body.data.persistence.error).toBe("Database connection failed");
+		expect(body.data.migrations.current).toBe(false);
+		expect(body.data.migrations.applied).toStrictEqual([]);
+	});
+
+	it("GET /status/diagnostics handles adapter health check and diagnostics failures gracefully", async () => {
+		const failingNotificationAdapter = makeNotificationFixture({
+			diagnostics: () => Effect.fail(new Error("Diagnostics failed")),
+			healthCheck: () => Effect.fail(new Error("Health check failed")),
+		});
+
+		const failingRuntime = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			adapters: {
+				notifications: failingNotificationAdapter,
+				storage: "stub",
+			},
+			repos: { persistence: makeMemoryPersistence() },
+		});
+
+		const response = await failingRuntime.handler(
+			new Request("https://example.test/status/diagnostics", {
+				headers: TEST_MEMBER_HEADERS,
+				method: "GET",
+			})
+		);
+		expect(response.status).toBe(200);
+		const body = (await response.json()) as DiagnosticsEnvelope;
+		expect(body.data.adapters[0]).toMatchObject({
+			capability: "notifications",
+			status: "down",
+		});
+		expect(body.data.adapters[0]?.details?.diagnostics).toStrictEqual({
+			error: "Diagnostics failed",
+		});
 	});
 });

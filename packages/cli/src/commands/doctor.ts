@@ -114,6 +114,9 @@ const unwrapDiagnostics = (value: unknown): DiagnosticsData | undefined => {
 	return undefined;
 };
 
+// NOTE: These helper guards match HTTP status code patterns formatted into
+// error messages by `@dsar/guards`'s `toApiError` client helper (which wraps
+// status codes in parentheses, e.g., `(404)` or `(403)`).
 const isUnavailableDiagnosticsError = (error: unknown): boolean =>
 	error instanceof Error && /\(404\)/.test(error.message);
 
