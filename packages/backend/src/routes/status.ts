@@ -1,7 +1,6 @@
 import { currentPersistenceMigrationStatus } from "@dsar/persistence";
 import * as Effect from "effect/Effect";
 
-import type { AdapterHealth } from "../adapters";
 import { RuntimeServicesTag } from "../types/runtime";
 import { requirePrincipalKinds, requireRequestActor } from "./authz";
 import { ok } from "./helpers";
@@ -9,12 +8,6 @@ import type { RouteDefinition } from "./types";
 
 const OPERATOR_MESSAGE =
 	"Runtime diagnostics are reserved for operator or service principals.";
-
-const adapterDown = {
-	details: undefined,
-	ok: false,
-	status: "down",
-} as const satisfies AdapterHealth;
 
 const messageFromError = (error: unknown): string =>
 	error instanceof Error ? error.message : String(error);
@@ -94,9 +87,15 @@ export const statusRoutes: readonly RouteDefinition[] = [
 					readonly status: string;
 				}[] = [];
 				for (const adapter of services.adapterRegistry.list()) {
-					const health = yield* adapter
-						.healthCheck()
-						.pipe(Effect.catch(() => Effect.succeed(adapterDown)));
+					const health = yield* adapter.healthCheck().pipe(
+						Effect.catch((error) =>
+							Effect.succeed({
+								details: { error: messageFromError(error) },
+								ok: false,
+								status: "down" as const,
+							})
+						)
+					);
 					const diagnostics = yield* adapter.diagnostics().pipe(
 						Effect.catch((error) =>
 							Effect.succeed({

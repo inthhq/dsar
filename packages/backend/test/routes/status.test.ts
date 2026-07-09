@@ -146,5 +146,8 @@ describe("status routes", () => {
 		expect(body.data.adapters[0]?.details?.diagnostics).toStrictEqual({
 			error: "Diagnostics failed",
 		});
+		expect(body.data.adapters[0]?.details?.health).toStrictEqual({
+			error: "Health check failed",
+		});
 	});
 });

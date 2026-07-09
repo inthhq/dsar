@@ -46,7 +46,10 @@ interface DiagnosticsData {
 		readonly current: boolean;
 		readonly expected: readonly DiagnosticsMigration[];
 	};
-	readonly persistence: { readonly reachable: true };
+	readonly persistence: {
+		readonly error?: string;
+		readonly reachable: boolean;
+	};
 }
 
 interface MutableDoctorSummary {
@@ -100,7 +103,8 @@ const isDiagnosticsData = (value: unknown): value is DiagnosticsData => {
 		Array.isArray(migrations.expected) &&
 		migrations.expected.every(isMigration) &&
 		isRecord(persistence) &&
-		persistence.reachable === true
+		typeof persistence.reachable === "boolean" &&
+		(persistence.error === undefined || typeof persistence.error === "string")
 	);
 };
 
@@ -313,6 +317,14 @@ const checkMigrations = (
 	}
 	if (!diagnostics) {
 		return unavailableMigrationCheck(diagnosticsError);
+	}
+	if (diagnostics.persistence.reachable === false) {
+		return {
+			details: { error: diagnostics.persistence.error },
+			message: `Persistence outage: ${diagnostics.persistence.error ?? "Database connection failed"}.`,
+			name: CHECK_MIGRATIONS,
+			status: "fail",
+		};
 	}
 	if (diagnostics.migrations.current) {
 		return {

@@ -230,6 +230,43 @@ const makeDownAdapterFetch = (): typeof fetch => {
 	};
 };
 
+const makeOutagePersistenceFetch = (): typeof fetch => {
+	const runtimeFetch = makeRuntimeFetch();
+	return async (input, init) => {
+		const request =
+			input instanceof Request
+				? new Request(input, init)
+				: new Request(input.toString(), init);
+		const path = new URL(request.url).pathname;
+		return path === "/status/diagnostics"
+			? Response.json(
+					{
+						data: {
+							adapters: [
+								{
+									capability: "notifications",
+									key: "fixture-notifications",
+									status: "healthy",
+								},
+							],
+							migrations: {
+								applied: [],
+								current: false,
+								expected: [],
+							},
+							persistence: {
+								error: "Database connection failed",
+								reachable: false,
+							},
+						},
+						ok: true,
+					},
+					{ status: 200 }
+				)
+			: await runtimeFetch(request);
+	};
+};
+
 describe("doctor command", () => {
 	it("reports missing API URL as a diagnostic result", async () => {
 		const stdout: string[] = [];
@@ -370,6 +407,23 @@ describe("doctor command", () => {
 		expect(report.data.ok).toBe(false);
 		expect(findCheck(report, "adapters.health")).toMatchObject({
 			status: "fail",
+		});
+	});
+
+	it("fails with exit code 1 and surfaces the database error message during a persistence outage", async () => {
+		const { exitCode, report } = await runDoctorJson(
+			["--token", E2E_API_TOKEN],
+			makeOutagePersistenceFetch()
+		);
+		expect(exitCode).toBe(1);
+		expect(report.ok).toBe(false);
+		expect(report.data.ok).toBe(false);
+		expect(findCheck(report, "persistence.migrations")).toMatchObject({
+			message: "Persistence outage: Database connection failed.",
+			status: "fail",
+		});
+		expect(findCheck(report, "adapters.health")).toMatchObject({
+			status: "pass",
 		});
 	});
 });
