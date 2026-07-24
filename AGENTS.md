@@ -185,6 +185,34 @@ accepting the snapshot.
 
 ## Testing and validation
 
+Optimize for confidence in observable behavior, not test count or a fixed
+unit/integration/E2E ratio.
+
+- For a defect, add a regression test at the highest stable boundary that
+  could reasonably have caught it before implementing the fix.
+- For user-visible behavior, prefer an acceptance path through a public API,
+  CLI, SDK, or adapter contract. Assert responses and durable side effects,
+  not internal calls.
+- Prefer real implementations for code owned by this repository. Replace
+  external providers or deliberately controlled effects such as time and
+  randomness; do not mock internal layers merely to make a test easy.
+- Use focused unit or property tests for pure algorithms, schemas,
+  state-machine invariants, combinatorial edge cases, and failures that are
+  impractical to reproduce through a wider boundary.
+- Do not repeat the same behavior at every layer. Add a narrower test only
+  when it protects a distinct contract or makes an important failure easier to
+  diagnose.
+- Use `@effect/vitest` for Effect programs. Prefer `it.effect`, shared
+  `layer(...)` setup, and `TestClock` over manual runtimes, repeated local
+  provisioning, or real-time sleeps.
+- Call a test E2E only when it crosses the real process, transport, runtime,
+  and storage boundaries. A test using injected `fetch`, an in-memory
+  repository, or direct function invocation is an integration or component
+  test even if it covers a complete business flow.
+- Keep E2E coverage small, deterministic, and centered on critical journeys.
+  The strongest path exercises the built CLI or SDK against a real HTTP server
+  and real SQLite or Postgres persistence.
+
 Use the smallest relevant loop while developing:
 
 ```sh
