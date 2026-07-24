@@ -40,4 +40,7 @@ export default defineConfig({
 	fixedExtension: true,
 	format: "esm",
 	publint: "ci-only",
+	suppressWarnings: [
+		"TypeScript 7.0 does not yet have a stable API and is experimental. Some options will be unavailable.",
+	],
 });
