@@ -1,6 +1,6 @@
 {
 	"name": "dsar",
-	"version": "0.0.5",
+	"version": "1.0.0",
 	"private": false,
 	"description": "Data Subject Access Request framework — umbrella package with subpath exports.",
 	"license": "Apache-2.0",
