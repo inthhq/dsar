@@ -35,6 +35,8 @@ less than 24 hours ago.
 Read the relevant project skill before changing its area:
 
 - `.agents/skills/effect-ts/SKILL.md` for Effect code
+- `.agents/skills/leadtype/SKILL.md` for documentation components, conversion,
+  bundles, and linting
 - `.agents/skills/turborepo/SKILL.md` for task graph or cache changes
 - `.agents/skills/tsdown/SKILL.md` for package build changes
 - `.agents/skills/ultracite/SKILL.md` for lint or format configuration
