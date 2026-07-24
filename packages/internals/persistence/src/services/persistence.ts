@@ -1266,8 +1266,36 @@ const makePersistence = (
 				sql.withTransaction(
 					Effect.gen(function* appendChatRuntimeListValue() {
 						const tenantId = yield* requireTenantId;
+						yield* sql`DELETE FROM chat_state_lists
+						WHERE tenant_id = ${tenantId}
+							AND list_key = ${input.key}
+							AND EXISTS (
+								SELECT 1 FROM chat_state_list_keys
+								WHERE tenant_id = ${tenantId}
+									AND list_key = ${input.key}
+									AND expires_at IS NOT NULL
+									AND expires_at <= ${dbCurrentTimestamp}
+							)`;
+						yield* sql`DELETE FROM chat_state_list_keys
+						WHERE tenant_id = ${tenantId}
+							AND list_key = ${input.key}
+							AND expires_at IS NOT NULL
+							AND expires_at <= ${dbCurrentTimestamp}`;
+						yield* sql`INSERT INTO chat_state_list_keys (
+							expires_at,
+							list_key,
+							tenant_id
+						) VALUES (
+							${input.expiresAt ?? null},
+							${input.key},
+							${tenantId}
+						)
+						ON CONFLICT(tenant_id, list_key) DO UPDATE SET
+							expires_at = COALESCE(
+								excluded.expires_at,
+								chat_state_list_keys.expires_at
+							)`;
 						yield* sql`INSERT INTO chat_state_lists ${sql.insert({
-							expires_at: input.expiresAt ?? null,
 							list_key: input.key,
 							tenant_id: tenantId,
 							value_json: jsonEncode(input.value),
@@ -1284,22 +1312,20 @@ const makePersistence = (
 									LIMIT ${input.maxLength}
 								)`;
 						}
-						if (input.expiresAt !== undefined) {
-							yield* sql`UPDATE chat_state_lists
-							SET expires_at = ${input.expiresAt}
-							WHERE tenant_id = ${tenantId}
-								AND list_key = ${input.key}`;
-						}
 					})
 				),
 			delete: (key) =>
-				Effect.gen(function* deleteChatRuntimeState() {
-					const tenantId = yield* requireTenantId;
-					yield* sql`DELETE FROM chat_state_entries
-					WHERE tenant_id = ${tenantId} AND cache_key = ${key}`;
-					yield* sql`DELETE FROM chat_state_lists
-					WHERE tenant_id = ${tenantId} AND list_key = ${key}`;
-				}),
+				sql.withTransaction(
+					Effect.gen(function* deleteChatRuntimeState() {
+						const tenantId = yield* requireTenantId;
+						yield* sql`DELETE FROM chat_state_entries
+						WHERE tenant_id = ${tenantId} AND cache_key = ${key}`;
+						yield* sql`DELETE FROM chat_state_lists
+						WHERE tenant_id = ${tenantId} AND list_key = ${key}`;
+						yield* sql`DELETE FROM chat_state_list_keys
+						WHERE tenant_id = ${tenantId} AND list_key = ${key}`;
+					})
+				),
 			dequeue: (threadId) =>
 				Effect.gen(function* dequeueChatRuntimeValue() {
 					const tenantId = yield* requireTenantId;
@@ -1400,21 +1426,33 @@ const makePersistence = (
 					return rows[0] ? mapChatStateRecord(rows[0]) : null;
 				}),
 			getList: (key) =>
-				Effect.gen(function* getChatRuntimeList() {
-					const tenantId = yield* requireTenantId;
-					yield* sql`DELETE FROM chat_state_lists
-					WHERE tenant_id = ${tenantId}
-						AND list_key = ${key}
-						AND expires_at IS NOT NULL
-						AND expires_at <= ${dbCurrentTimestamp}`;
-					const rows = yield* sql<{
-						readonly value_json: string;
-					}>`SELECT value_json FROM chat_state_lists
-					WHERE tenant_id = ${tenantId}
-						AND list_key = ${key}
-					ORDER BY seq ASC`;
-					return rows.map((row) => jsonDecode(row.value_json));
-				}),
+				sql.withTransaction(
+					Effect.gen(function* getChatRuntimeList() {
+						const tenantId = yield* requireTenantId;
+						yield* sql`DELETE FROM chat_state_lists
+						WHERE tenant_id = ${tenantId}
+							AND list_key = ${key}
+							AND EXISTS (
+								SELECT 1 FROM chat_state_list_keys
+								WHERE tenant_id = ${tenantId}
+									AND list_key = ${key}
+									AND expires_at IS NOT NULL
+									AND expires_at <= ${dbCurrentTimestamp}
+							)`;
+						yield* sql`DELETE FROM chat_state_list_keys
+						WHERE tenant_id = ${tenantId}
+							AND list_key = ${key}
+							AND expires_at IS NOT NULL
+							AND expires_at <= ${dbCurrentTimestamp}`;
+						const rows = yield* sql<{
+							readonly value_json: string;
+						}>`SELECT value_json FROM chat_state_lists
+						WHERE tenant_id = ${tenantId}
+							AND list_key = ${key}
+						ORDER BY seq ASC`;
+						return rows.map((row) => jsonDecode(row.value_json));
+					})
+				),
 			isSubscribed: (threadId) =>
 				Effect.gen(function* isChatThreadSubscribed() {
 					const tenantId = yield* requireTenantId;

@@ -920,7 +920,10 @@ export interface ChatRuntimeStateRepository {
 		PersistenceError | SqlError,
 		TenantContext
 	>;
-	/** Atomically appends a value to an ordered list and applies optional retention controls. */
+	/**
+	 * Atomically appends a value to an ordered list. A supplied expiry refreshes
+	 * the whole list; omitting it preserves the list's current expiry.
+	 */
 	readonly appendToList: (input: {
 		readonly key: string;
 		readonly value: JsonValue;

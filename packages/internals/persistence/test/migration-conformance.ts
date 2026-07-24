@@ -158,6 +158,9 @@ export const defineMigrationConformanceTests = (
 				await expectCurrentMigrationMetadata(context);
 				expect(snapshot.tables).toEqual(
 					expect.arrayContaining([
+						"chat_state_list_keys",
+						"chat_state_lists",
+						"chat_state_queues",
 						"dsar_schema_migrations",
 						"requests",
 						"webhook_endpoints",
@@ -166,6 +169,10 @@ export const defineMigrationConformanceTests = (
 				);
 				expect(snapshot.indexes).toEqual(
 					expect.arrayContaining([
+						"idx_chat_list_keys_tenant_expiry",
+						"idx_chat_lists_tenant_key_seq",
+						"idx_chat_queues_tenant_expiry",
+						"idx_chat_queues_tenant_thread_seq",
 						"idx_requests_tenant_due",
 						"idx_webhook_keys_primary",
 					])
@@ -198,6 +205,24 @@ export const defineMigrationConformanceTests = (
 							expect(snapshot.afterUp.tables).toContain("webhook_endpoints");
 							expect(snapshot.afterDown.tables).not.toContain(
 								"webhook_endpoints"
+							);
+						}
+						if (migration.id === 3) {
+							expect(snapshot.afterUp.tables).toEqual(
+								expect.arrayContaining([
+									"chat_state_list_keys",
+									"chat_state_lists",
+									"chat_state_queues",
+								])
+							);
+							expect(snapshot.afterDown.tables).not.toContain(
+								"chat_state_list_keys"
+							);
+							expect(snapshot.afterDown.tables).not.toContain(
+								"chat_state_lists"
+							);
+							expect(snapshot.afterDown.tables).not.toContain(
+								"chat_state_queues"
 							);
 						}
 					}

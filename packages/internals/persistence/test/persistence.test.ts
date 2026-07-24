@@ -999,4 +999,41 @@ describe(Persistence, () => {
 		expect(result.dequeued).toStrictEqual({ message: "queued-second" });
 		expect(result.finalDepth).toBe(0);
 	});
+
+	it("keeps list TTL scoped to the whole list across ttl-less appends", async () => {
+		const dbPath = sqliteFile("chat-runtime-list-ttl");
+
+		const result = await runForTenant(
+			dbPath,
+			"tenant-a",
+			Effect.gen(function* exerciseChatRuntimeListTtl() {
+				const persistence = yield* Effect.service(Persistence);
+				const expiresAt = new Date(Date.now() + 1000).toISOString();
+				yield* persistence.chatRuntimeState.appendToList({
+					expiresAt,
+					key: "transcript:user-ttl",
+					value: { message: "expiring" },
+				});
+				yield* persistence.chatRuntimeState.appendToList({
+					key: "transcript:user-ttl",
+					value: { message: "also-expiring" },
+				});
+				yield* Effect.sleep("1100 millis");
+				const expiredList = yield* persistence.chatRuntimeState.getList(
+					"transcript:user-ttl"
+				);
+				yield* persistence.chatRuntimeState.appendToList({
+					key: "transcript:user-ttl",
+					value: { message: "fresh" },
+				});
+				const freshList = yield* persistence.chatRuntimeState.getList(
+					"transcript:user-ttl"
+				);
+				return { expiredList, freshList };
+			})
+		);
+
+		expect(result.expiredList).toStrictEqual([]);
+		expect(result.freshList).toStrictEqual([{ message: "fresh" }]);
+	});
 });
