@@ -50,6 +50,7 @@
 		"format:write": "turbo run format -- --write",
 		"lint": "turbo run lint",
 		"prepare": "lefthook install",
+		"prepare:effect": "./scripts/prepare-effect.sh",
 		"release": "bun run build && rm -rf packages/dsar/docs packages/dsar/AGENTS.md packages/dsar/SKILL.md && bunx leadtype generate --bundle --src . --out packages/dsar --name dsar --enrich-git && changeset publish",
 		"release:canary": "bun run build && rm -rf packages/dsar/docs packages/dsar/AGENTS.md packages/dsar/SKILL.md && bunx leadtype generate --bundle --src . --out packages/dsar --name dsar --enrich-git && changeset publish --tag canary",
 		"smoke": "turbo run smoke",

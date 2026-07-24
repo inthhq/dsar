@@ -9,6 +9,7 @@ coverage
 .turbo
 .DS_Store
 *.log
+.repos/effect/
 
 # Copied docs for npm publish
 packages/dsar/docs
