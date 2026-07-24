@@ -15,19 +15,18 @@
 		"format": "oxfmt --check src test package.json tsconfig.json tsdown.config.ts README.md",
 		"lint": "oxlint .",
 		"test": "vitest run",
-		"typecheck": "tsgo --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@dsar/internals-error-codes": "workspace:*",
 		"@dsar/schema": "workspace:*",
-		"defu": "6.1.4",
+		"defu": "6.1.7",
 		"effect": "catalog:effect"
 	},
 	"devDependencies": {
 		"@dsar/typescript-config": "workspace:*",
 		"@effect/language-service": "catalog:effect",
 		"@effect/vitest": "catalog:effect",
-		"@typescript/native-preview": "catalog:utils",
 		"tsdown": "catalog:utils",
 		"typescript": "catalog:utils",
 		"vitest": "catalog:utils"

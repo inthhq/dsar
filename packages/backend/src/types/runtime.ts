@@ -1,5 +1,5 @@
 import type { PersistenceService } from "@dsar/persistence";
-import * as ServiceMap from "effect/ServiceMap";
+import * as Context from "effect/Context";
 
 import type {
 	AdapterOperationalEvent,
@@ -221,7 +221,7 @@ export interface RuntimeServices {
 /**
  * Effect service tag used to provide runtime services to handlers.
  */
-export class RuntimeServicesTag extends ServiceMap.Service<
+export class RuntimeServicesTag extends Context.Service<
 	RuntimeServicesTag,
 	RuntimeServices
 >()("RuntimeServices") {}

@@ -935,4 +935,105 @@ describe(Persistence, () => {
 		expect(result.staleTokenExtend).toBeFalsy();
 		expect(result.activeOwnerExtend).toBeTruthy();
 	});
+
+	it("persists bounded chat lists and queues", async () => {
+		const dbPath = sqliteFile("chat-runtime-lists-and-queues");
+		const expiresAt = new Date(Date.now() + 60_000).toISOString();
+
+		const result = await runForTenant(
+			dbPath,
+			"tenant-a",
+			Effect.gen(function* exerciseChatRuntimeCollections() {
+				const persistence = yield* Effect.service(Persistence);
+				yield* persistence.chatRuntimeState.appendToList({
+					key: "transcript:user-1",
+					maxLength: 2,
+					value: { message: "first" },
+				});
+				yield* persistence.chatRuntimeState.appendToList({
+					key: "transcript:user-1",
+					maxLength: 2,
+					value: { message: "second" },
+				});
+				yield* persistence.chatRuntimeState.appendToList({
+					key: "transcript:user-1",
+					maxLength: 2,
+					value: { message: "third" },
+				});
+				const list =
+					yield* persistence.chatRuntimeState.getList("transcript:user-1");
+
+				const firstDepth = yield* persistence.chatRuntimeState.enqueue({
+					expiresAt,
+					maxSize: 1,
+					threadId: "thread-1",
+					value: { message: "queued-first" },
+				});
+				const boundedDepth = yield* persistence.chatRuntimeState.enqueue({
+					expiresAt,
+					maxSize: 1,
+					threadId: "thread-1",
+					value: { message: "queued-second" },
+				});
+				const dequeued =
+					yield* persistence.chatRuntimeState.dequeue("thread-1");
+				const finalDepth =
+					yield* persistence.chatRuntimeState.queueDepth("thread-1");
+
+				return {
+					boundedDepth,
+					dequeued,
+					finalDepth,
+					firstDepth,
+					list,
+				};
+			})
+		);
+
+		expect(result.list).toStrictEqual([
+			{ message: "second" },
+			{ message: "third" },
+		]);
+		expect(result.firstDepth).toBe(1);
+		expect(result.boundedDepth).toBe(1);
+		expect(result.dequeued).toStrictEqual({ message: "queued-second" });
+		expect(result.finalDepth).toBe(0);
+	});
+
+	it("keeps list TTL scoped to the whole list across ttl-less appends", async () => {
+		const dbPath = sqliteFile("chat-runtime-list-ttl");
+
+		const result = await runForTenant(
+			dbPath,
+			"tenant-a",
+			Effect.gen(function* exerciseChatRuntimeListTtl() {
+				const persistence = yield* Effect.service(Persistence);
+				const expiresAt = new Date(Date.now() + 1000).toISOString();
+				yield* persistence.chatRuntimeState.appendToList({
+					expiresAt,
+					key: "transcript:user-ttl",
+					value: { message: "expiring" },
+				});
+				yield* persistence.chatRuntimeState.appendToList({
+					key: "transcript:user-ttl",
+					value: { message: "also-expiring" },
+				});
+				yield* Effect.sleep("1100 millis");
+				const expiredList = yield* persistence.chatRuntimeState.getList(
+					"transcript:user-ttl"
+				);
+				yield* persistence.chatRuntimeState.appendToList({
+					key: "transcript:user-ttl",
+					value: { message: "fresh" },
+				});
+				const freshList = yield* persistence.chatRuntimeState.getList(
+					"transcript:user-ttl"
+				);
+				return { expiredList, freshList };
+			})
+		);
+
+		expect(result.expiredList).toStrictEqual([]);
+		expect(result.freshList).toStrictEqual([{ message: "fresh" }]);
+	});
 });

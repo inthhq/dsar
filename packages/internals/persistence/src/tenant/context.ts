@@ -1,6 +1,6 @@
+import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
-import * as ServiceMap from "effect/ServiceMap";
 
 import { resolvePersistenceErrorCatalogEntry } from "../types/error-codes";
 import { MissingTenantScopeError } from "../types/errors";
@@ -19,7 +19,7 @@ export interface TenantContextShape {
 /**
  * Effect service tag for tenant scope propagation.
  */
-export class TenantContext extends ServiceMap.Service<
+export class TenantContext extends Context.Service<
 	TenantContext,
 	TenantContextShape
 >()("TenantContext") {}

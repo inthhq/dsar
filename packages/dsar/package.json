@@ -100,7 +100,7 @@
 	},
 	"scripts": {
 		"build": "tsdown",
-		"typecheck": "tsgo --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@dsar/auth-unkey": "workspace:*",
@@ -119,16 +119,18 @@
 		"@dsar/storage-vercel-blob": "workspace:*",
 		"@dsar/upstash": "workspace:*",
 		"@effect/platform-node": "catalog:effect",
-		"dotenv": "17.3.1"
+		"dotenv": "17.4.2"
 	},
 	"devDependencies": {
 		"@dsar/typescript-config": "workspace:*",
 		"@types/node": "catalog:types",
-		"@typescript/native-preview": "catalog:utils",
 		"tsdown": "catalog:utils",
 		"typescript": "catalog:utils"
 	},
 	"peerDependencies": {
 		"effect": "catalog:effect"
+	},
+	"engines": {
+		"node": ">=24 <25"
 	}
 }

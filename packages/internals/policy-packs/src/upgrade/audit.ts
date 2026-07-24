@@ -1,7 +1,7 @@
+import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Ref from "effect/Ref";
-import * as ServiceMap from "effect/ServiceMap";
 
 import type { AuditEvent } from "../types/domain";
 
@@ -33,7 +33,7 @@ export interface PolicyAuditService {
  *
  * @public
  */
-export class PolicyAudit extends ServiceMap.Service<
+export class PolicyAudit extends Context.Service<
 	PolicyAudit,
 	PolicyAuditService
 >()("PolicyAudit") {}

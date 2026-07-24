@@ -38,7 +38,7 @@
 		"format": "oxfmt --check src test package.json tsconfig.json README.md",
 		"lint": "oxlint .",
 		"test": "vitest run",
-		"typecheck": "tsgo --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@dsar/guards": "workspace:*",
@@ -53,10 +53,9 @@
 		"@effect/vitest": "catalog:effect",
 		"@types/express": "^5.0.6",
 		"@types/node": "catalog:types",
-		"@typescript/native-preview": "catalog:utils",
 		"express": "^5.2.1",
-		"hono": "^4.12.15",
-		"next": "^16.2.4",
+		"hono": "^4.12.31",
+		"next": "^16.2.11",
 		"typescript": "catalog:utils",
 		"vitest": "catalog:utils"
 	},
