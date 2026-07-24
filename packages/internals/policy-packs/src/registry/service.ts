@@ -1,11 +1,11 @@
 import { PolicyPackSchema } from "@dsar/policy-engine";
 import * as Cause from "effect/Cause";
+import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as Layer from "effect/Layer";
 import * as Ref from "effect/Ref";
 import * as Schema from "effect/Schema";
-import * as ServiceMap from "effect/ServiceMap";
 
 import { launchPolicyPackCatalog } from "../packs";
 import type { PolicyPackVersionRecord } from "../types/domain";
@@ -83,7 +83,7 @@ export interface PolicyRegistryService {
  * Effect service tag for injecting a {@link PolicyRegistryService}
  * implementation into the dependency graph.
  */
-export class PolicyRegistry extends ServiceMap.Service<
+export class PolicyRegistry extends Context.Service<
 	PolicyRegistry,
 	PolicyRegistryService
 >()("PolicyRegistry") {}

@@ -29,6 +29,7 @@ Yes. Network failures are often transient.
 ## Minimal Trigger Example
 
 ```ts
+// @noErrors
 // Request to unreachable host
 const client = createClient({ baseUrl: "http://nonexistent.invalid" });
 await client.requests.capture({ ... });

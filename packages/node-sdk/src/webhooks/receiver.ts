@@ -56,11 +56,15 @@ export interface WebhookReceiverResult {
  * Framework-neutral DSAR webhook receiver.
  */
 export interface WebhookReceiver {
-	on<T extends WebhookEventType>(
+	/** Registers a handler for one webhook event type. */
+	readonly on: <T extends WebhookEventType>(
 		eventType: T,
 		handler: WebhookEventHandler<T>
-	): WebhookReceiver;
-	handle(input: WebhookReceiverHandleInput): Promise<WebhookReceiverResult>;
+	) => WebhookReceiver;
+	/** Verifies, parses, and dispatches an incoming webhook request. */
+	readonly handle: (
+		input: WebhookReceiverHandleInput
+	) => Promise<WebhookReceiverResult>;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

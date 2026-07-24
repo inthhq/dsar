@@ -920,16 +920,42 @@ export interface ChatRuntimeStateRepository {
 		PersistenceError | SqlError,
 		TenantContext
 	>;
+	/** Atomically appends a value to an ordered list and applies optional retention controls. */
+	readonly appendToList: (input: {
+		readonly key: string;
+		readonly value: JsonValue;
+		readonly expiresAt?: string;
+		readonly maxLength?: number;
+	}) => Effect.Effect<void, PersistenceError | SqlError, TenantContext>;
 	/** Deletes a cached state entry by key. */
 	readonly delete: (
 		key: string
 	) => Effect.Effect<void, PersistenceError | SqlError, TenantContext>;
+	/** Removes and returns the oldest unexpired queued value for a thread. */
+	readonly dequeue: (
+		threadId: string
+	) => Effect.Effect<
+		JsonValue | null,
+		PersistenceError | SqlError,
+		TenantContext
+	>;
+	/** Appends a value to a bounded thread queue and returns its new depth. */
+	readonly enqueue: (input: {
+		readonly threadId: string;
+		readonly value: JsonValue;
+		readonly expiresAt: string;
+		readonly maxSize: number;
+	}) => Effect.Effect<number, PersistenceError | SqlError, TenantContext>;
 	/** Extends the TTL of an existing unexpired lock owned by `token`. */
 	readonly extendLock: (input: {
 		readonly threadId: string;
 		readonly token: string;
 		readonly expiresAt: string;
 	}) => Effect.Effect<boolean, PersistenceError | SqlError, TenantContext>;
+	/** Releases a thread lock without requiring an ownership token. */
+	readonly forceReleaseLock: (
+		threadId: string
+	) => Effect.Effect<void, PersistenceError | SqlError, TenantContext>;
 	/** Retrieves a cached state entry, returning `null` when absent or expired. */
 	readonly get: (
 		key: string
@@ -938,10 +964,22 @@ export interface ChatRuntimeStateRepository {
 		PersistenceError | SqlError,
 		TenantContext
 	>;
+	/** Retrieves all unexpired values from an ordered list. */
+	readonly getList: (
+		key: string
+	) => Effect.Effect<
+		readonly JsonValue[],
+		PersistenceError | SqlError,
+		TenantContext
+	>;
 	/** Returns whether a thread is currently subscribed. */
 	readonly isSubscribed: (
 		threadId: string
 	) => Effect.Effect<boolean, PersistenceError | SqlError, TenantContext>;
+	/** Returns the number of unexpired values queued for a thread. */
+	readonly queueDepth: (
+		threadId: string
+	) => Effect.Effect<number, PersistenceError | SqlError, TenantContext>;
 	/** Releases a lock only when the token matches the current owner. */
 	readonly releaseLock: (input: {
 		readonly threadId: string;

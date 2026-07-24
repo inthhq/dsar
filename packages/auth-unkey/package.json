@@ -22,15 +22,14 @@
 		"format": "oxfmt --check src test package.json tsconfig.json README.md",
 		"lint": "oxlint .",
 		"test": "vitest run",
-		"typecheck": "tsgo --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@unkey/api": "^2.3.1"
+		"@unkey/api": "^2.5.0"
 	},
 	"devDependencies": {
 		"@dsar/typescript-config": "workspace:*",
 		"@effect/vitest": "catalog:effect",
-		"@typescript/native-preview": "catalog:utils",
 		"typescript": "catalog:utils",
 		"vitest": "catalog:utils"
 	}

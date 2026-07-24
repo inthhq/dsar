@@ -112,7 +112,9 @@ const mapNotFound = (error: unknown): MappedError | undefined =>
 			}
 		: undefined;
 
-const mapPolicyActivationNotFound = (error: unknown): MappedError | undefined =>
+const mapPolicyActivationNotFound = (
+	error: unknown
+): MappedError | undefined =>
 	hasErrorTag(error, "PolicyActivationNotFoundError")
 		? {
 				code: "POLICY_ACTIVATION_NOT_FOUND",

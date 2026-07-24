@@ -1,7 +1,7 @@
+import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Ref from "effect/Ref";
-import * as ServiceMap from "effect/ServiceMap";
 
 import { PolicyPackDiff } from "../diff/service";
 import { PolicyPinning } from "../pinning/service";
@@ -100,7 +100,7 @@ export interface PolicyUpgradeService {
 /**
  * Effect tag for the policy upgrade lifecycle service.
  */
-export class PolicyUpgrade extends ServiceMap.Service<
+export class PolicyUpgrade extends Context.Service<
 	PolicyUpgrade,
 	PolicyUpgradeService
 >()("PolicyUpgrade") {}

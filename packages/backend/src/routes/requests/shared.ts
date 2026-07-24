@@ -314,8 +314,9 @@ export const parseRequestSortBy = (value: string | null): RequestSortBy => {
  * @param value - Raw sort direction query parameter.
  * @returns A supported request sort direction.
  */
-export const parseRequestSortOrder = (value: string | null): RequestSortOrder =>
-	value === "asc" ? "asc" : "desc";
+export const parseRequestSortOrder = (
+	value: string | null
+): RequestSortOrder => (value === "asc" ? "asc" : "desc");
 
 /**
  * Converts an ISO timestamp to epoch milliseconds.

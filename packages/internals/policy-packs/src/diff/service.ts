@@ -1,7 +1,7 @@
 import type { PolicyPack } from "@dsar/policy-engine";
+import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as ServiceMap from "effect/ServiceMap";
 
 import type { PolicyDiffItem, PolicyUpgradeDiff } from "../types/domain";
 
@@ -68,7 +68,7 @@ export interface PolicyPackDiffService {
  * Effect service tag for injecting the {@link PolicyPackDiffService}
  * implementation.
  */
-export class PolicyPackDiff extends ServiceMap.Service<
+export class PolicyPackDiff extends Context.Service<
 	PolicyPackDiff,
 	PolicyPackDiffService
 >()("PolicyPackDiff") {}

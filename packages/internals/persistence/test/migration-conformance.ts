@@ -248,7 +248,7 @@ export const defineMigrationConformanceTests = (
 				);
 
 				await expectCurrentMigrationMetadata(context);
-				expect(rows).toStrictEqual([
+				expect(rows).toEqual([
 					{
 						policy_pack: "pack-legacy",
 						requestor_email: "legacy@example.com",

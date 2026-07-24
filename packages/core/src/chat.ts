@@ -5,7 +5,7 @@ import type {
 	TenantContext,
 } from "@dsar/persistence";
 import { withTenant } from "@dsar/persistence";
-import type { Lock, StateAdapter } from "chat";
+import type { Lock, QueueEntry, StateAdapter } from "chat";
 import * as Effect from "effect/Effect";
 
 /**
@@ -211,12 +211,47 @@ export const makePersistenceStateAdapter = (
 					}
 				: null;
 		},
+		appendToList: (key, value, listOptions) => {
+			const tenantId = resolveTenant(options, { kind: "key", value: key });
+			return runWithTenant(
+				tenantId,
+				repository.appendToList({
+					expiresAt: toExpiresAt(now(), listOptions?.ttlMs),
+					key,
+					maxLength: listOptions?.maxLength,
+					value: toJsonValue(value),
+				})
+			);
+		},
 		connect: () => Promise.resolve(),
 		delete: async (key) => {
 			const tenantId = resolveTenant(options, { kind: "key", value: key });
 			await runWithTenant(tenantId, repository.delete(key));
 		},
+		dequeue: async (threadId): Promise<QueueEntry | null> => {
+			const tenantId = resolveTenant(options, {
+				kind: "thread",
+				value: threadId,
+			});
+			const value = await runWithTenant(tenantId, repository.dequeue(threadId));
+			return value as QueueEntry | null;
+		},
 		disconnect: () => Promise.resolve(),
+		enqueue: (threadId, entry, maxSize) => {
+			const tenantId = resolveTenant(options, {
+				kind: "thread",
+				value: threadId,
+			});
+			return runWithTenant(
+				tenantId,
+				repository.enqueue({
+					expiresAt: new Date(entry.expiresAt).toISOString(),
+					maxSize,
+					threadId,
+					value: toJsonValue(entry),
+				})
+			);
+		},
 		extendLock: (lock, ttlMs) => {
 			const tenantId = resolveTenant(options, {
 				kind: "thread",
@@ -233,10 +268,22 @@ export const makePersistenceStateAdapter = (
 				})
 			);
 		},
+		forceReleaseLock: (threadId) => {
+			const tenantId = resolveTenant(options, {
+				kind: "thread",
+				value: threadId,
+			});
+			return runWithTenant(tenantId, repository.forceReleaseLock(threadId));
+		},
 		get: async <T = unknown>(key: string) => {
 			const tenantId = resolveTenant(options, { kind: "key", value: key });
 			const record = await runWithTenant(tenantId, repository.get(key));
 			return fromRecordValue<T>(record);
+		},
+		getList: async <T = unknown>(key: string): Promise<T[]> => {
+			const tenantId = resolveTenant(options, { kind: "key", value: key });
+			const values = await runWithTenant(tenantId, repository.getList(key));
+			return values.map((value) => value as T);
 		},
 		isSubscribed: (threadId) => {
 			const tenantId = resolveTenant(options, {
@@ -244,6 +291,13 @@ export const makePersistenceStateAdapter = (
 				value: threadId,
 			});
 			return runWithTenant(tenantId, repository.isSubscribed(threadId));
+		},
+		queueDepth: (threadId) => {
+			const tenantId = resolveTenant(options, {
+				kind: "thread",
+				value: threadId,
+			});
+			return runWithTenant(tenantId, repository.queueDepth(threadId));
 		},
 		releaseLock: async (lock: Lock) => {
 			const tenantId = resolveTenant(options, {

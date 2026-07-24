@@ -4,8 +4,8 @@ import type {
 	RequestTimelineEventRecord,
 } from "@dsar/persistence";
 import type { Effect } from "effect";
+import * as Context from "effect/Context";
 import * as Layer from "effect/Layer";
-import * as ServiceMap from "effect/ServiceMap";
 
 import { computeLegalClock } from "./engine";
 import type { LegalClockComputation } from "./engine";
@@ -40,7 +40,7 @@ export interface LegalClockService {
  * Effect service tag for {@link LegalClockService}, used for dependency injection
  * via the Effect service map.
  */
-export class LegalClock extends ServiceMap.Service<
+export class LegalClock extends Context.Service<
 	LegalClock,
 	LegalClockService
 >()("LegalClock") {}

@@ -29,6 +29,7 @@ No. Retry only after fixing response format.
 ## Minimal Trigger Example
 
 ```ts
+// @noErrors
 // Server returns HTML error page instead of JSON
 await client.requests.capture({ ... });
 ```

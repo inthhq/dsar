@@ -32,7 +32,7 @@
 		"lint": "oxlint .",
 		"test": "vitest run --passWithNoTests",
 		"test:e2e": "vitest run test/e2e/*.test.ts",
-		"typecheck": "tsgo --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@dsar/guards": "workspace:*",
@@ -47,7 +47,6 @@
 		"@dsar/typescript-config": "workspace:*",
 		"@effect/language-service": "catalog:effect",
 		"@effect/vitest": "catalog:effect",
-		"@typescript/native-preview": "catalog:utils",
 		"typescript": "catalog:utils",
 		"vitest": "catalog:utils"
 	}
