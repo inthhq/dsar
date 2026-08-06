@@ -154,7 +154,7 @@ export interface WebhooksApi {
 	/**
 	 * Creates a framework-neutral DSAR webhook receiver for event dispatching and signature verification.
 	 *
-	 * @param options - Signing secret and optional verifier override.
+	 * @param options - Signing secret, optional verifier override, and optional initial event handlers.
 	 */
 	readonly receiver: (options: WebhookReceiverOptions) => WebhookReceiver;
 	/**

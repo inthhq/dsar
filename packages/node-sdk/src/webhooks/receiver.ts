@@ -276,7 +276,7 @@ const dispatchEvent = async (
 /**
  * Creates a framework-neutral DSAR webhook receiver.
  *
- * @param options - Signing secret and optional verifier override.
+ * @param options - Signing secret, optional verifier override, and optional initial event handlers.
  * @returns Receiver with event registration and raw request handling APIs.
  */
 export const createWebhookReceiver = (

@@ -146,4 +146,10 @@ describe("expressWebhookHandler", () => {
 		expect(status2).toHaveBeenCalledWith(200);
 		expect(capturedHandler).toHaveBeenCalledTimes(2);
 	});
+
+	it("fails immediately at construction when signing secret is empty", () => {
+		expect(() => expressWebhookMiddleware({ signingSecret: " " })).toThrow(
+			"Webhook signing secret is required."
+		);
+	});
 });
