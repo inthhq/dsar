@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { createWebhookReceiver } from "./receiver";
+import { resolveReceiver } from "./receiver";
 import type { WebhookReceiver, WebhookReceiverOptions } from "./receiver";
 
 /**
@@ -25,23 +25,20 @@ const rawBodyFromRequest = (request: ExpressWebhookRequest): string => {
 	return "";
 };
 
-const resolveReceiver = (
-	receiverOrOptions: WebhookReceiver | WebhookReceiverOptions
-): WebhookReceiver =>
-	"handle" in receiverOrOptions && typeof receiverOrOptions.handle === "function"
-		? receiverOrOptions
-		: createWebhookReceiver(receiverOrOptions as WebhookReceiverOptions);
-
 /**
  * Creates an Express-compatible DSAR webhook request handler.
  *
  * @param receiverOrOptions - Webhook receiver instance or configuration options.
  * @returns Express handler that writes the receiver result as JSON.
  */
-export const expressWebhookHandler =
-	(receiverOrOptions: WebhookReceiver | WebhookReceiverOptions) =>
-	async (request: ExpressWebhookRequest, response: Response): Promise<void> => {
-		const receiver = resolveReceiver(receiverOrOptions);
+export const expressWebhookHandler = (
+	receiverOrOptions: WebhookReceiver | WebhookReceiverOptions
+) => {
+	const receiver = resolveReceiver(receiverOrOptions);
+	return async (
+		request: ExpressWebhookRequest,
+		response: Response
+	): Promise<void> => {
 		const result = await receiver.handle({
 			rawBody: rawBodyFromRequest(request),
 			signature: headerValue(request.headers["x-dsar-signature"]),
@@ -49,6 +46,7 @@ export const expressWebhookHandler =
 
 		response.status(result.status).json(result.body);
 	};
+};
 
 /** Alias for {@link expressWebhookHandler}. */
 export const expressWebhookMiddleware = expressWebhookHandler;

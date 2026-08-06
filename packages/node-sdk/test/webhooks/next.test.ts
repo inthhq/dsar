@@ -43,9 +43,13 @@ describe("nextWebhookHandler", () => {
 		expect(response.status).toBe(401);
 	});
 
-	it("accepts WebhookReceiverOptions directly and handles nextWebhookMiddleware alias", async () => {
+	it("accepts WebhookReceiverOptions directly, registers handlers, and persists across requests", async () => {
 		const verify = vi.fn().mockResolvedValue(undefined);
+		const capturedHandler = vi.fn();
 		const middleware = nextWebhookMiddleware({
+			handlers: {
+				request_captured: capturedHandler,
+			},
 			signingSecret: "test-secret",
 			verify,
 		});
@@ -56,19 +60,32 @@ describe("nextWebhookHandler", () => {
 			eventType: "request_captured",
 			idempotencyKey: "idem_1",
 			locale: "en-US",
-			payload: {},
+			payload: { sample: true },
 			policyVersion: "2026.1",
 			requestId: "req_1",
 		});
 
-		const request = new Request("https://example.test/webhook", {
-			body,
-			headers: { "x-dsar-signature": "valid-sig" },
-			method: "POST",
-		});
+		const makeReq = () =>
+			new Request("https://example.test/webhook", {
+				body,
+				headers: { "x-dsar-signature": "valid-sig" },
+				method: "POST",
+			});
 
-		const response = await middleware(request);
-		expect(verify).toHaveBeenCalled();
-		expect(response.status).toBe(200);
+		const res1 = await middleware(makeReq());
+		expect(verify).toHaveBeenCalledTimes(1);
+		expect(res1.status).toBe(200);
+		expect(capturedHandler).toHaveBeenCalledTimes(1);
+		expect(capturedHandler).toHaveBeenCalledWith(
+			expect.objectContaining({
+				eventId: "evt_1",
+				eventType: "request_captured",
+				requestId: "req_1",
+			})
+		);
+
+		const res2 = await middleware(makeReq());
+		expect(res2.status).toBe(200);
+		expect(capturedHandler).toHaveBeenCalledTimes(2);
 	});
 });

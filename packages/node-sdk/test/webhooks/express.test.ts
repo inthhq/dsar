@@ -90,32 +90,60 @@ describe("expressWebhookHandler", () => {
 		expect(status).toHaveBeenCalledWith(401);
 	});
 
-	it("accepts WebhookReceiverOptions directly and handles expressWebhookMiddleware alias", async () => {
+	it("accepts WebhookReceiverOptions directly, registers handlers, and persists across requests", async () => {
 		const verify = vi.fn().mockResolvedValue(undefined);
+		const capturedHandler = vi.fn();
 		const middleware = expressWebhookMiddleware({
+			handlers: {
+				request_captured: capturedHandler,
+			},
 			signingSecret: "test-secret",
 			verify,
 		});
-		const { response, status } = makeResponse();
 
-		await middleware(
-			{
-				body: JSON.stringify({
-					correlationId: "corr_1",
-					eventId: "evt_1",
-					eventType: "request_captured",
-					idempotencyKey: "idem_1",
-					locale: "en-US",
-					payload: {},
-					policyVersion: "2026.1",
-					requestId: "req_1",
-				}),
-				headers: { "x-dsar-signature": "valid-sig" },
-			} as ExpressWebhookRequest,
-			response
+		const reqBody = Buffer.from(
+			JSON.stringify({
+				correlationId: "corr_1",
+				eventId: "evt_1",
+				eventType: "request_captured",
+				idempotencyKey: "idem_1",
+				locale: "en-US",
+				payload: { sample: true },
+				policyVersion: "2026.1",
+				requestId: "req_1",
+			})
 		);
 
-		expect(verify).toHaveBeenCalled();
-		expect(status).toHaveBeenCalledWith(200);
+		const { response: res1, status: status1 } = makeResponse();
+		await middleware(
+			{
+				body: reqBody,
+				headers: { "x-dsar-signature": "valid-sig" },
+			} as ExpressWebhookRequest,
+			res1
+		);
+
+		expect(verify).toHaveBeenCalledTimes(1);
+		expect(status1).toHaveBeenCalledWith(200);
+		expect(capturedHandler).toHaveBeenCalledTimes(1);
+		expect(capturedHandler).toHaveBeenCalledWith(
+			expect.objectContaining({
+				eventId: "evt_1",
+				eventType: "request_captured",
+				requestId: "req_1",
+			})
+		);
+
+		const { response: res2, status: status2 } = makeResponse();
+		await middleware(
+			{
+				body: reqBody,
+				headers: { "x-dsar-signature": "valid-sig" },
+			} as ExpressWebhookRequest,
+			res2
+		);
+
+		expect(status2).toHaveBeenCalledWith(200);
+		expect(capturedHandler).toHaveBeenCalledTimes(2);
 	});
 });

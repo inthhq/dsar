@@ -41,9 +41,13 @@ describe("honoWebhookHandler", () => {
 		expect(response.status).toBe(401);
 	});
 
-	it("accepts WebhookReceiverOptions directly and handles honoWebhookMiddleware alias", async () => {
+	it("accepts WebhookReceiverOptions directly, registers handlers, and persists across requests", async () => {
 		const verify = vi.fn().mockResolvedValue(undefined);
+		const capturedHandler = vi.fn();
 		const middleware = honoWebhookMiddleware({
+			handlers: {
+				request_captured: capturedHandler,
+			},
 			signingSecret: "test-secret",
 			verify,
 		});
@@ -54,13 +58,25 @@ describe("honoWebhookHandler", () => {
 			eventType: "request_captured",
 			idempotencyKey: "idem_1",
 			locale: "en-US",
-			payload: {},
+			payload: { sample: true },
 			policyVersion: "2026.1",
 			requestId: "req_1",
 		});
 
-		const response = await middleware(makeContext("valid-sig", body));
-		expect(verify).toHaveBeenCalled();
-		expect(response.status).toBe(200);
+		const res1 = await middleware(makeContext("valid-sig", body));
+		expect(verify).toHaveBeenCalledTimes(1);
+		expect(res1.status).toBe(200);
+		expect(capturedHandler).toHaveBeenCalledTimes(1);
+		expect(capturedHandler).toHaveBeenCalledWith(
+			expect.objectContaining({
+				eventId: "evt_1",
+				eventType: "request_captured",
+				requestId: "req_1",
+			})
+		);
+
+		const res2 = await middleware(makeContext("valid-sig", body));
+		expect(res2.status).toBe(200);
+		expect(capturedHandler).toHaveBeenCalledTimes(2);
 	});
 });

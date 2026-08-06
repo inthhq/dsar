@@ -11,6 +11,10 @@ export interface WebhookReceiverOptions {
 	readonly signingSecret: string;
 	/** Override for tests. Defaults to `verifyWebhook`. */
 	readonly verify?: (input: VerifyWebhookInput) => Promise<void>;
+	/** Initial event handlers to register on receiver creation. */
+	readonly handlers?: {
+		readonly [T in WebhookEventType]?: WebhookEventHandler<T>;
+	};
 }
 
 /**
@@ -288,6 +292,17 @@ export const createWebhookReceiver = (
 		WebhookEventHandler<WebhookEventType>
 	>();
 
+	if (options.handlers) {
+		for (const [type, handler] of Object.entries(options.handlers)) {
+			if (isWebhookEventType(type) && typeof handler === "function") {
+				handlers.set(
+					type,
+					handler as WebhookEventHandler<WebhookEventType>
+				);
+			}
+		}
+	}
+
 	const receiver: WebhookReceiver = {
 		async handle(input) {
 			if (!input.signature || input.signature.trim().length === 0) {
@@ -315,3 +330,15 @@ export const createWebhookReceiver = (
 
 	return receiver;
 };
+
+/**
+ * Resolves a {@link WebhookReceiver} from an existing instance or options object.
+ *
+ * @param receiverOrOptions - Receiver instance or creation options.
+ */
+export const resolveReceiver = (
+	receiverOrOptions: WebhookReceiver | WebhookReceiverOptions
+): WebhookReceiver =>
+	"handle" in receiverOrOptions
+		? receiverOrOptions
+		: createWebhookReceiver(receiverOrOptions);

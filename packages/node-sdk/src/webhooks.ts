@@ -1,7 +1,4 @@
 export { makeWebhooksApi, verifyWebhook } from "./endpoints/webhooks";
-export { expressWebhookHandler, expressWebhookMiddleware } from "./webhooks/express";
-export { honoWebhookHandler, honoWebhookMiddleware } from "./webhooks/hono";
-export { nextWebhookHandler, nextWebhookMiddleware } from "./webhooks/next";
 export { createWebhookReceiver } from "./webhooks/receiver";
 export {
 	verifyWebhook as verifyWebhookSignature,
@@ -32,8 +29,6 @@ export type {
 	WebhookEventPayloadMap,
 	WebhookEventType,
 } from "./webhooks/types";
-export type { ExpressWebhookRequest } from "./webhooks/express";
-export type { NextWebhookRequest } from "./webhooks/next";
 export type {
 	VerifyWebhookInput as VerifyWebhookSignatureInput,
 	WebhookVerificationErrorCode,
