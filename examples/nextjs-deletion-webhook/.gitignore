@@ -1,0 +1,6 @@
+.next/
+.env
+.demo-users.json
+*.db
+*.db-shm
+*.db-wal
