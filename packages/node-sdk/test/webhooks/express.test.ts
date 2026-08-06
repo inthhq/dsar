@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import type { Response } from "express";
 
-import { expressWebhookHandler } from "#src/webhooks/express";
+import { expressWebhookHandler, expressWebhookMiddleware } from "#src/webhooks/express";
 import type { ExpressWebhookRequest } from "#src/webhooks/express";
 import type { WebhookReceiver } from "#src/webhooks/receiver";
 
@@ -88,5 +88,34 @@ describe("expressWebhookHandler", () => {
 			signature: undefined,
 		});
 		expect(status).toHaveBeenCalledWith(401);
+	});
+
+	it("accepts WebhookReceiverOptions directly and handles expressWebhookMiddleware alias", async () => {
+		const verify = vi.fn().mockResolvedValue(undefined);
+		const middleware = expressWebhookMiddleware({
+			signingSecret: "test-secret",
+			verify,
+		});
+		const { response, status } = makeResponse();
+
+		await middleware(
+			{
+				body: JSON.stringify({
+					correlationId: "corr_1",
+					eventId: "evt_1",
+					eventType: "request_captured",
+					idempotencyKey: "idem_1",
+					locale: "en-US",
+					payload: {},
+					policyVersion: "2026.1",
+					requestId: "req_1",
+				}),
+				headers: { "x-dsar-signature": "valid-sig" },
+			} as ExpressWebhookRequest,
+			response
+		);
+
+		expect(verify).toHaveBeenCalled();
+		expect(status).toHaveBeenCalledWith(200);
 	});
 });

@@ -315,4 +315,16 @@ describe("@dsar/node-sdk client", () => {
 		expect(sdkError.errorId).toBe("DSAR-BE-1199");
 		expect(sdkError.meta).toBeUndefined();
 	});
+
+	it("creates a webhook receiver from sdk.webhooks.receiver()", () => {
+		const sdk = createNodeSdk({
+			baseUrl: "http://localhost:3000/api/v1",
+			token: TEST_API_TOKEN,
+		});
+
+		const receiver = sdk.webhooks.receiver({ signingSecret: "test-secret" });
+		expect(receiver).toBeDefined();
+		expect(typeof receiver.handle).toBe("function");
+		expect(typeof receiver.on).toBe("function");
+	});
 });

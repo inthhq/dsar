@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import type { Context } from "hono";
 
-import { honoWebhookHandler } from "#src/webhooks/hono";
+import { honoWebhookHandler, honoWebhookMiddleware } from "#src/webhooks/hono";
 import type { WebhookReceiver } from "#src/webhooks/receiver";
 
 const makeReceiver = (status: 200 | 400 | 401 | 500): WebhookReceiver => ({
@@ -9,11 +9,11 @@ const makeReceiver = (status: 200 | 400 | 401 | 500): WebhookReceiver => ({
 	on: vi.fn(),
 });
 
-const makeContext = (signature?: string): Context =>
+const makeContext = (signature?: string, body = '{"ok":true}'): Context =>
 	({
 		req: {
 			header: vi.fn().mockReturnValue(signature),
-			text: vi.fn().mockResolvedValue('{"ok":true}'),
+			text: vi.fn().mockResolvedValue(body),
 		},
 	}) as unknown as Context;
 
@@ -39,5 +39,28 @@ describe("honoWebhookHandler", () => {
 			signature: undefined,
 		});
 		expect(response.status).toBe(401);
+	});
+
+	it("accepts WebhookReceiverOptions directly and handles honoWebhookMiddleware alias", async () => {
+		const verify = vi.fn().mockResolvedValue(undefined);
+		const middleware = honoWebhookMiddleware({
+			signingSecret: "test-secret",
+			verify,
+		});
+
+		const body = JSON.stringify({
+			correlationId: "corr_1",
+			eventId: "evt_1",
+			eventType: "request_captured",
+			idempotencyKey: "idem_1",
+			locale: "en-US",
+			payload: {},
+			policyVersion: "2026.1",
+			requestId: "req_1",
+		});
+
+		const response = await middleware(makeContext("valid-sig", body));
+		expect(verify).toHaveBeenCalled();
+		expect(response.status).toBe(200);
 	});
 });

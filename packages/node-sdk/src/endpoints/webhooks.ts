@@ -2,6 +2,8 @@ import { Buffer } from "node:buffer";
 import { timingSafeEqual } from "node:crypto";
 
 import type { DsarResult, RequestOptions } from "../types";
+import { createWebhookReceiver } from "../webhooks/receiver";
+import type { WebhookReceiver, WebhookReceiverOptions } from "../webhooks/receiver";
 import type {
 	EndpointContext,
 	WebhookInboundResendPayload,
@@ -150,6 +152,12 @@ export const verifyWebhook = async (
  */
 export interface WebhooksApi {
 	/**
+	 * Creates a framework-neutral DSAR webhook receiver for event dispatching and signature verification.
+	 *
+	 * @param options - Signing secret and optional verifier override.
+	 */
+	readonly receiver: (options: WebhookReceiverOptions) => WebhookReceiver;
+	/**
 	 * Replays a Resend inbound webhook payload into the DSAR ingestion
 	 * pipeline. The call is synchronous — the server processes the event
 	 * inline and returns the outcome immediately.
@@ -212,6 +220,7 @@ export const makeWebhooksApi = (ctx: EndpointContext): WebhooksApi => ({
 			options,
 			path: "/webhooks/inbound/slack",
 		}),
+	receiver: createWebhookReceiver,
 	rotateKey: (endpointId, payload, options) =>
 		ctx.call({
 			body: payload ?? {},

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 
-import { nextWebhookHandler } from "#src/webhooks/next";
+import { nextWebhookHandler, nextWebhookMiddleware } from "#src/webhooks/next";
 import type { WebhookReceiver } from "#src/webhooks/receiver";
 
 const makeReceiver = (status: 200 | 400 | 401 | 500): WebhookReceiver => ({
@@ -41,5 +41,34 @@ describe("nextWebhookHandler", () => {
 			signature: undefined,
 		});
 		expect(response.status).toBe(401);
+	});
+
+	it("accepts WebhookReceiverOptions directly and handles nextWebhookMiddleware alias", async () => {
+		const verify = vi.fn().mockResolvedValue(undefined);
+		const middleware = nextWebhookMiddleware({
+			signingSecret: "test-secret",
+			verify,
+		});
+
+		const body = JSON.stringify({
+			correlationId: "corr_1",
+			eventId: "evt_1",
+			eventType: "request_captured",
+			idempotencyKey: "idem_1",
+			locale: "en-US",
+			payload: {},
+			policyVersion: "2026.1",
+			requestId: "req_1",
+		});
+
+		const request = new Request("https://example.test/webhook", {
+			body,
+			headers: { "x-dsar-signature": "valid-sig" },
+			method: "POST",
+		});
+
+		const response = await middleware(request);
+		expect(verify).toHaveBeenCalled();
+		expect(response.status).toBe(200);
 	});
 });
