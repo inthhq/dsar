@@ -195,7 +195,11 @@ const verifyUnkeyToken = async (
 	try {
 		return (await client.keys.verifyKey(verifyInput)) as UnkeyVerifyResultShape;
 	} catch (error) {
-		onVerifyError?.(error);
+		try {
+			onVerifyError?.(error);
+		} catch {
+			// Observer failures must not change the resolver's fail-closed result.
+		}
 		return undefined;
 	}
 };

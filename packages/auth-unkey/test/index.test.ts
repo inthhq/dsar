@@ -411,6 +411,27 @@ describe("makeUnkeyBearerResolver fail-closed coverage", () => {
 		expect(observedErrors).toStrictEqual([verifyError]);
 	});
 
+	it("continues failing closed when onVerifyError throws", async () => {
+		const resolver = makeUnkeyBearerResolver({
+			client: {
+				keys: {
+					verifyKey: () =>
+						Promise.reject(new Error("Unkey verification unavailable.")),
+				},
+			},
+			onVerifyError: () => {
+				throw new Error("Observability unavailable.");
+			},
+		});
+
+		await expect(
+			resolver({
+				request: new Request("https://example.test"),
+				token: "token-1",
+			})
+		).resolves.toBeUndefined();
+	});
+
 	it.each(MALFORMED_TOKEN_CASES)(
 		"delegates malformed-looking token %p to Unkey and fails closed",
 		async (token) => {
