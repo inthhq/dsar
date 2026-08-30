@@ -1,4 +1,3 @@
-import type { NonSharedBuffer } from "node:buffer";
 import {
 	createCipheriv,
 	createDecipheriv,
@@ -97,19 +96,18 @@ export interface WebhookSigningSecretCipher {
 }
 
 interface CiphertextParts {
-	readonly ciphertext: NonSharedBuffer;
-	readonly nonce: NonSharedBuffer;
-	readonly tag: NonSharedBuffer;
+	readonly ciphertext: Buffer;
+	readonly nonce: Buffer;
+	readonly tag: Buffer;
 }
 
-const asBase64 = (value: NonSharedBuffer): string => value.toString("base64");
+const asBase64 = (value: Buffer): string => value.toString("base64");
 
-const fromBase64 = (value: string): NonSharedBuffer =>
-	Buffer.from(value, "base64");
+const fromBase64 = (value: string): Buffer => Buffer.from(value, "base64");
 
 // normalizeMasterKey uses raw AES_256_KEY_BYTES keys directly; any other
 // length is SHA-256 hashed to produce a 32-byte AES key.
-const normalizeMasterKey = (key: string | Uint8Array): NonSharedBuffer => {
+const normalizeMasterKey = (key: string | Uint8Array): Buffer => {
 	const keyBytes =
 		typeof key === "string" ? Buffer.from(key, "utf8") : Buffer.from(key);
 	if (keyBytes.length === AES_256_KEY_BYTES) {
@@ -121,7 +119,7 @@ const normalizeMasterKey = (key: string | Uint8Array): NonSharedBuffer => {
 const authenticatedData = (
 	context: WebhookSigningSecretEncryptionContext,
 	keyId: string
-): NonSharedBuffer =>
+): Buffer =>
 	Buffer.from(
 		[context.tenantId, context.endpointId, context.signingKeyId, keyId].join(
 			"\0"
@@ -130,9 +128,9 @@ const authenticatedData = (
 	);
 
 const encryptBytes = (
-	key: NonSharedBuffer,
-	plaintext: NonSharedBuffer,
-	aad: NonSharedBuffer
+	key: Buffer,
+	plaintext: Buffer,
+	aad: Buffer
 ): CiphertextParts => {
 	const nonce = randomBytes(GCM_NONCE_BYTES);
 	const cipher = createCipheriv(AES_256_GCM, key, nonce);
@@ -146,10 +144,10 @@ const encryptBytes = (
 };
 
 const decryptBytes = (
-	key: NonSharedBuffer,
+	key: Buffer,
 	parts: CiphertextParts,
-	aad: NonSharedBuffer
-): NonSharedBuffer => {
+	aad: Buffer
+): Buffer => {
 	const decipher = createDecipheriv(AES_256_GCM, key, parts.nonce);
 	decipher.setAAD(aad);
 	decipher.setAuthTag(parts.tag);
