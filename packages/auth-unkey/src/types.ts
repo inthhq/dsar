@@ -57,6 +57,10 @@ export interface UnkeyBearerResolverConfig {
 	 * The resolver still fails closed (the request resolves as
 	 * unauthenticated), but this hook lets hosts log or emit metrics so
 	 * provider outages and misconfiguration stay diagnosable.
+	 *
+	 * A returned promise is awaited before the request resolves as
+	 * unauthenticated, so keep the observer fast: during an Unkey outage,
+	 * every request waits on it.
 	 */
 	readonly onVerifyError?: (error: unknown) => void | PromiseLike<void>;
 	/** Default principal kind when Unkey metadata does not provide one. */
