@@ -1,0 +1,13 @@
+diff --git a/dist/_shared/runner-BzcZ8jjZ.js b/dist/_shared/runner-BzcZ8jjZ.js
+index 52947c66bd5477182eac32ca5c4dd2e319e8421c..4a14e889a732917a3beb978bb9274fc725679364 100644
+--- a/dist/_shared/runner-BzcZ8jjZ.js
++++ b/dist/_shared/runner-BzcZ8jjZ.js
+@@ -310,7 +310,7 @@ function loadTypeScript() {
+   }
+   try {
+     cachedTypeScript = createRequire(import.meta.url)(
+-      "typescript"
++      "@typescript/typescript6"
+     );
+   } catch {
+     cachedTypeScript = null;

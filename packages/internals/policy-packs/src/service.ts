@@ -21,7 +21,7 @@ import type {
 	PolicyChecksumComputationError,
 } from "./types/errors";
 import { PolicyAudit, PolicyAuditLive } from "./upgrade/audit";
-import { PolicyUpgrade, PolicyUpgradeLive } from "./upgrade/service";
+import { PolicyUpgradeLive } from "./upgrade/service";
 
 /**
  * Base layer: registry, pinning, diff, and audit. Provides the infrastructure

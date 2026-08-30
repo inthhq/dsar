@@ -1,6 +1,6 @@
+import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as ServiceMap from "effect/ServiceMap";
 import * as SynchronizedRef from "effect/SynchronizedRef";
 
 import { buildCoreClient } from "./client";
@@ -26,7 +26,7 @@ export interface CoreClientFactoryService {
  * Effect service tag for injecting a {@link CoreClientFactoryService}
  * implementation.
  */
-export class CoreClientFactory extends ServiceMap.Service<
+export class CoreClientFactory extends Context.Service<
 	CoreClientFactory,
 	CoreClientFactoryService
 >()("CoreClientFactory") {}

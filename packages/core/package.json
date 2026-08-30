@@ -46,7 +46,7 @@
 		"format": "oxfmt --check src test package.json tsconfig.json README.md",
 		"lint": "oxlint .",
 		"test": "vitest run",
-		"typecheck": "tsgo --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@dsar/guards": "workspace:*",
@@ -54,7 +54,7 @@
 		"@dsar/node-sdk": "workspace:*",
 		"@dsar/persistence": "workspace:*",
 		"@dsar/schema": "workspace:*",
-		"chat": "^4.18.0",
+		"chat": "^4.34.0",
 		"effect": "catalog:effect"
 	},
 	"devDependencies": {
@@ -62,7 +62,6 @@
 		"@effect/language-service": "catalog:effect",
 		"@effect/vitest": "catalog:effect",
 		"@types/node": "catalog:types",
-		"@typescript/native-preview": "catalog:utils",
 		"typescript": "catalog:utils",
 		"vitest": "catalog:utils"
 	}

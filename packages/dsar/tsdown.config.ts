@@ -3,7 +3,16 @@ import { defineConfig } from "tsdown";
 export default defineConfig({
 	attw: { enabled: "ci-only", profile: "esm-only" },
 	clean: true,
-	dts: true,
+	deps: {
+		alwaysBundle: ["@dsar/cli"],
+		dts: {
+			neverBundle: [/^@dsar\//],
+		},
+		neverBundle: [/^@effect\//, "dotenv", "effect"],
+	},
+	dts: {
+		generator: "tsgo",
+	},
 	entry: {
 		"auth-unkey": "src/auth-unkey.ts",
 		backend: "src/backend.ts",
@@ -27,10 +36,11 @@ export default defineConfig({
 		"storage-vercel-blob": "src/storage-vercel-blob.ts",
 		upstash: "src/upstash.ts",
 	},
-	external: [/^@effect\//, "dotenv", "effect"],
 	failOnWarn: "ci-only",
 	fixedExtension: true,
 	format: "esm",
-	noExternal: ["@dsar/cli"],
 	publint: "ci-only",
+	suppressWarnings: [
+		"TypeScript 7.0 does not yet have a stable API and is experimental. Some options will be unavailable.",
+	],
 });

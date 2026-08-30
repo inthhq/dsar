@@ -3,27 +3,7 @@
 exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
 {
   "components": {
-    "schemas": {
-      "effect_HttpApiSchemaError": {
-        "additionalProperties": false,
-        "properties": {
-          "_tag": {
-            "enum": [
-              "HttpApiSchemaError",
-            ],
-            "type": "string",
-          },
-          "message": {
-            "type": "string",
-          },
-        },
-        "required": [
-          "_tag",
-          "message",
-        ],
-        "type": "object",
-      },
-    },
+    "schemas": {},
     "securitySchemes": {
       "BearerAuth": {
         "bearerFormat": "JWT",
@@ -222,23 +202,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "sequence": {
                                 "anyOf": [
                                   {
-                                    "type": "number",
-                                  },
-                                  {
-                                    "enum": [
-                                      "NaN",
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                      },
+                                      {
+                                        "enum": [
+                                          "NaN",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "-Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
                                     ],
-                                    "type": "string",
                                   },
                                   {
                                     "enum": [
                                       "Infinity",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
                                       "-Infinity",
+                                      "NaN",
                                     ],
                                     "type": "string",
                                   },
@@ -265,23 +257,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             "limit": {
                               "anyOf": [
                                 {
-                                  "type": "number",
-                                },
-                                {
-                                  "enum": [
-                                    "NaN",
+                                  "anyOf": [
+                                    {
+                                      "type": "number",
+                                    },
+                                    {
+                                      "enum": [
+                                        "NaN",
+                                      ],
+                                      "type": "string",
+                                    },
+                                    {
+                                      "enum": [
+                                        "Infinity",
+                                      ],
+                                      "type": "string",
+                                    },
+                                    {
+                                      "enum": [
+                                        "-Infinity",
+                                      ],
+                                      "type": "string",
+                                    },
                                   ],
-                                  "type": "string",
                                 },
                                 {
                                   "enum": [
                                     "Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
                                     "-Infinity",
+                                    "NaN",
                                   ],
                                   "type": "string",
                                 },
@@ -313,9 +317,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -340,16 +341,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
             },
             "description": "Success",
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
-          },
         },
         "security": [
           {
@@ -373,20 +364,11 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
             "schema": {
               "anyOf": [
                 {
-                  "anyOf": [
-                    {
-                      "enum": [
-                        "jsonl",
-                      ],
-                      "type": "string",
-                    },
-                    {
-                      "enum": [
-                        "csv",
-                      ],
-                      "type": "string",
-                    },
+                  "enum": [
+                    "jsonl",
+                    "csv",
                   ],
+                  "type": "string",
                 },
                 {
                   "type": "null",
@@ -431,23 +413,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "eventCount": {
                           "anyOf": [
                             {
-                              "type": "number",
-                            },
-                            {
-                              "enum": [
-                                "NaN",
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
                               ],
-                              "type": "string",
                             },
                             {
                               "enum": [
                                 "Infinity",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
                                 "-Infinity",
+                                "NaN",
                               ],
                               "type": "string",
                             },
@@ -473,9 +467,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                 "type": "string",
                               },
                               "metadata": {
-                                "additionalProperties": {
-                                  "type": "null",
-                                },
                                 "type": "object",
                               },
                               "occurredAt": {
@@ -497,23 +488,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "sequence": {
                                 "anyOf": [
                                   {
-                                    "type": "number",
-                                  },
-                                  {
-                                    "enum": [
-                                      "NaN",
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                      },
+                                      {
+                                        "enum": [
+                                          "NaN",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "-Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
                                     ],
-                                    "type": "string",
                                   },
                                   {
                                     "enum": [
                                       "Infinity",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
                                       "-Infinity",
+                                      "NaN",
                                     ],
                                     "type": "string",
                                   },
@@ -536,20 +539,11 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "type": "array",
                         },
                         "format": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "jsonl",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "csv",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "jsonl",
+                            "csv",
                           ],
+                          "type": "string",
                         },
                         "rootHash": {
                           "anyOf": [
@@ -596,9 +590,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -622,16 +613,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -671,9 +652,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -697,16 +675,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [],
@@ -767,9 +735,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -793,16 +758,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -904,9 +859,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -930,16 +882,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -1025,9 +967,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -1051,16 +990,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -1097,26 +1026,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "type": "string",
                       },
                       "releaseType": {
-                        "anyOf": [
-                          {
-                            "enum": [
-                              "major",
-                            ],
-                            "type": "string",
-                          },
-                          {
-                            "enum": [
-                              "minor",
-                            ],
-                            "type": "string",
-                          },
-                          {
-                            "enum": [
-                              "patch",
-                            ],
-                            "type": "string",
-                          },
+                        "enum": [
+                          "major",
+                          "minor",
+                          "patch",
                         ],
+                        "type": "string",
                       },
                     },
                     "required": [
@@ -1129,9 +1044,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                   "name": {
                     "type": "string",
                   },
-                  "pack": {
-                    "type": "null",
-                  },
+                  "pack": {},
                   "publishedAt": {
                     "anyOf": [
                       {
@@ -1196,9 +1109,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -1222,16 +1132,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -1263,26 +1163,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "type": "string",
                         },
                         "status": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "pending_approval",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "approved",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "applied",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "pending_approval",
+                            "approved",
+                            "applied",
                           ],
+                          "type": "string",
                         },
                       },
                       "required": [
@@ -1294,9 +1180,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -1320,16 +1203,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -1370,26 +1243,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "type": "string",
                         },
                         "status": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "pending_approval",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "approved",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "applied",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "pending_approval",
+                            "approved",
+                            "applied",
                           ],
+                          "type": "string",
                         },
                       },
                       "required": [
@@ -1401,9 +1260,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -1427,16 +1283,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -1477,26 +1323,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "type": "string",
                         },
                         "status": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "pending_approval",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "approved",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "applied",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "pending_approval",
+                            "approved",
+                            "applied",
                           ],
+                          "type": "string",
                         },
                       },
                       "required": [
@@ -1508,9 +1340,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -1534,16 +1363,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -1613,26 +1432,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
             "schema": {
               "anyOf": [
                 {
-                  "anyOf": [
-                    {
-                      "enum": [
-                        "receivedAt",
-                      ],
-                      "type": "string",
-                    },
-                    {
-                      "enum": [
-                        "dueAt",
-                      ],
-                      "type": "string",
-                    },
-                    {
-                      "enum": [
-                        "status",
-                      ],
-                      "type": "string",
-                    },
+                  "enum": [
+                    "receivedAt",
+                    "dueAt",
+                    "status",
                   ],
+                  "type": "string",
                 },
                 {
                   "type": "null",
@@ -1647,20 +1452,11 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
             "schema": {
               "anyOf": [
                 {
-                  "anyOf": [
-                    {
-                      "enum": [
-                        "asc",
-                      ],
-                      "type": "string",
-                    },
-                    {
-                      "enum": [
-                        "desc",
-                      ],
-                      "type": "string",
-                    },
+                  "enum": [
+                    "asc",
+                    "desc",
                   ],
+                  "type": "string",
                 },
                 {
                   "type": "null",
@@ -1708,32 +1504,13 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                     "type": "array",
                                   },
                                   "status": {
-                                    "anyOf": [
-                                      {
-                                        "enum": [
-                                          "not_required",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "pending",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "verified",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "rejected",
-                                        ],
-                                        "type": "string",
-                                      },
+                                    "enum": [
+                                      "not_required",
+                                      "pending",
+                                      "verified",
+                                      "rejected",
                                     ],
+                                    "type": "string",
                                   },
                                   "verifiedAt": {
                                     "anyOf": [
@@ -1833,26 +1610,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                     ],
                                   },
                                   "type": {
-                                    "anyOf": [
-                                      {
-                                        "enum": [
-                                          "subject",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "representative",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "authorised_agent",
-                                        ],
-                                        "type": "string",
-                                      },
+                                    "enum": [
+                                      "subject",
+                                      "representative",
+                                      "authorised_agent",
                                     ],
+                                    "type": "string",
                                   },
                                 },
                                 "required": [
@@ -1879,23 +1642,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "limit": {
                           "anyOf": [
                             {
-                              "type": "number",
-                            },
-                            {
-                              "enum": [
-                                "NaN",
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
                               ],
-                              "type": "string",
                             },
                             {
                               "enum": [
                                 "Infinity",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
                                 "-Infinity",
+                                "NaN",
                               ],
                               "type": "string",
                             },
@@ -1904,86 +1679,87 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "offset": {
                           "anyOf": [
                             {
-                              "type": "number",
-                            },
-                            {
-                              "enum": [
-                                "NaN",
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
                               ],
-                              "type": "string",
                             },
                             {
                               "enum": [
                                 "Infinity",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
                                 "-Infinity",
+                                "NaN",
                               ],
                               "type": "string",
                             },
                           ],
                         },
                         "sortBy": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "receivedAt",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "dueAt",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "status",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "receivedAt",
+                            "dueAt",
+                            "status",
                           ],
+                          "type": "string",
                         },
                         "sortOrder": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "asc",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "desc",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "asc",
+                            "desc",
                           ],
+                          "type": "string",
                         },
                         "total": {
                           "anyOf": [
                             {
-                              "type": "number",
-                            },
-                            {
-                              "enum": [
-                                "NaN",
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
                               ],
-                              "type": "string",
                             },
                             {
                               "enum": [
                                 "Infinity",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
                                 "-Infinity",
+                                "NaN",
                               ],
                               "type": "string",
                             },
@@ -2003,9 +1779,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -2029,16 +1802,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -2072,32 +1835,13 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             "type": "array",
                           },
                           "status": {
-                            "anyOf": [
-                              {
-                                "enum": [
-                                  "not_required",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "pending",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "verified",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "rejected",
-                                ],
-                                "type": "string",
-                              },
+                            "enum": [
+                              "not_required",
+                              "pending",
+                              "verified",
+                              "rejected",
                             ],
+                            "type": "string",
                           },
                           "verifiedAt": {
                             "anyOf": [
@@ -2143,38 +1887,14 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                 "type": "string",
                               },
                               "actorType": {
-                                "anyOf": [
-                                  {
-                                    "enum": [
-                                      "system",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "admin",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "subject",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "agent",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "webhook",
-                                    ],
-                                    "type": "string",
-                                  },
+                                "enum": [
+                                  "system",
+                                  "admin",
+                                  "subject",
+                                  "agent",
+                                  "webhook",
                                 ],
+                                "type": "string",
                               },
                             },
                             "required": [
@@ -2282,26 +2002,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             ],
                           },
                           "type": {
-                            "anyOf": [
-                              {
-                                "enum": [
-                                  "subject",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "representative",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "authorised_agent",
-                                ],
-                                "type": "string",
-                              },
+                            "enum": [
+                              "subject",
+                              "representative",
+                              "authorised_agent",
                             ],
+                            "type": "string",
                           },
                         },
                         "required": [
@@ -2355,9 +2061,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -2381,16 +2084,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -2426,32 +2119,13 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             "type": "array",
                           },
                           "status": {
-                            "anyOf": [
-                              {
-                                "enum": [
-                                  "not_required",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "pending",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "verified",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "rejected",
-                                ],
-                                "type": "string",
-                              },
+                            "enum": [
+                              "not_required",
+                              "pending",
+                              "verified",
+                              "rejected",
                             ],
+                            "type": "string",
                           },
                           "verifiedAt": {
                             "anyOf": [
@@ -2497,38 +2171,14 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                 "type": "string",
                               },
                               "actorType": {
-                                "anyOf": [
-                                  {
-                                    "enum": [
-                                      "system",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "admin",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "subject",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "agent",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "webhook",
-                                    ],
-                                    "type": "string",
-                                  },
+                                "enum": [
+                                  "system",
+                                  "admin",
+                                  "subject",
+                                  "agent",
+                                  "webhook",
                                 ],
+                                "type": "string",
                               },
                             },
                             "required": [
@@ -2636,26 +2286,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             ],
                           },
                           "type": {
-                            "anyOf": [
-                              {
-                                "enum": [
-                                  "subject",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "representative",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "authorised_agent",
-                                ],
-                                "type": "string",
-                              },
+                            "enum": [
+                              "subject",
+                              "representative",
+                              "authorised_agent",
                             ],
+                            "type": "string",
                           },
                         },
                         "required": [
@@ -2713,9 +2349,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -2739,16 +2372,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -2815,26 +2438,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "decision": {
                                 "anyOf": [
                                   {
-                                    "anyOf": [
-                                      {
-                                        "enum": [
-                                          "approve",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "deny",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "partial",
-                                        ],
-                                        "type": "string",
-                                      },
+                                    "enum": [
+                                      "approve",
+                                      "deny",
+                                      "partial",
                                     ],
+                                    "type": "string",
                                   },
                                   {
                                     "type": "null",
@@ -2893,38 +2502,14 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                 "type": "string",
                               },
                               "status": {
-                                "anyOf": [
-                                  {
-                                    "enum": [
-                                      "submitted",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "in_review",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "approved",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "denied",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "closed",
-                                    ],
-                                    "type": "string",
-                                  },
+                                "enum": [
+                                  "submitted",
+                                  "in_review",
+                                  "approved",
+                                  "denied",
+                                  "closed",
                                 ],
+                                "type": "string",
                               },
                               "submittedAt": {
                                 "anyOf": [
@@ -2962,32 +2547,13 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "type": "array",
                             },
                             "status": {
-                              "anyOf": [
-                                {
-                                  "enum": [
-                                    "not_required",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "pending",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "verified",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "rejected",
-                                  ],
-                                  "type": "string",
-                                },
+                              "enum": [
+                                "not_required",
+                                "pending",
+                                "verified",
+                                "rejected",
                               ],
+                              "type": "string",
                             },
                             "verifiedAt": {
                               "anyOf": [
@@ -3030,38 +2596,14 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                           "type": "string",
                                         },
                                         "actorType": {
-                                          "anyOf": [
-                                            {
-                                              "enum": [
-                                                "system",
-                                              ],
-                                              "type": "string",
-                                            },
-                                            {
-                                              "enum": [
-                                                "admin",
-                                              ],
-                                              "type": "string",
-                                            },
-                                            {
-                                              "enum": [
-                                                "subject",
-                                              ],
-                                              "type": "string",
-                                            },
-                                            {
-                                              "enum": [
-                                                "agent",
-                                              ],
-                                              "type": "string",
-                                            },
-                                            {
-                                              "enum": [
-                                                "webhook",
-                                              ],
-                                              "type": "string",
-                                            },
+                                          "enum": [
+                                            "system",
+                                            "admin",
+                                            "subject",
+                                            "agent",
+                                            "webhook",
                                           ],
+                                          "type": "string",
                                         },
                                       },
                                       "required": [
@@ -3160,38 +2702,14 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                           "type": "string",
                                         },
                                         "actorType": {
-                                          "anyOf": [
-                                            {
-                                              "enum": [
-                                                "system",
-                                              ],
-                                              "type": "string",
-                                            },
-                                            {
-                                              "enum": [
-                                                "admin",
-                                              ],
-                                              "type": "string",
-                                            },
-                                            {
-                                              "enum": [
-                                                "subject",
-                                              ],
-                                              "type": "string",
-                                            },
-                                            {
-                                              "enum": [
-                                                "agent",
-                                              ],
-                                              "type": "string",
-                                            },
-                                            {
-                                              "enum": [
-                                                "webhook",
-                                              ],
-                                              "type": "string",
-                                            },
+                                          "enum": [
+                                            "system",
+                                            "admin",
+                                            "subject",
+                                            "agent",
+                                            "webhook",
                                           ],
+                                          "type": "string",
                                         },
                                       },
                                       "required": [
@@ -3299,26 +2817,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               ],
                             },
                             "type": {
-                              "anyOf": [
-                                {
-                                  "enum": [
-                                    "subject",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "representative",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "authorised_agent",
-                                  ],
-                                  "type": "string",
-                                },
+                              "enum": [
+                                "subject",
+                                "representative",
+                                "authorised_agent",
                               ],
+                              "type": "string",
                             },
                           },
                           "required": [
@@ -3343,9 +2847,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -3369,16 +2870,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -3441,9 +2932,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -3467,16 +2955,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -3540,26 +3018,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "decision": {
                             "anyOf": [
                               {
-                                "anyOf": [
-                                  {
-                                    "enum": [
-                                      "approve",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "deny",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "partial",
-                                    ],
-                                    "type": "string",
-                                  },
+                                "enum": [
+                                  "approve",
+                                  "deny",
+                                  "partial",
                                 ],
+                                "type": "string",
                               },
                               {
                                 "type": "null",
@@ -3618,38 +3082,14 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             "type": "string",
                           },
                           "status": {
-                            "anyOf": [
-                              {
-                                "enum": [
-                                  "submitted",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "in_review",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "approved",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "denied",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "closed",
-                                ],
-                                "type": "string",
-                              },
+                            "enum": [
+                              "submitted",
+                              "in_review",
+                              "approved",
+                              "denied",
+                              "closed",
                             ],
+                            "type": "string",
                           },
                           "submittedAt": {
                             "anyOf": [
@@ -3680,9 +3120,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -3706,16 +3143,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -3772,26 +3199,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                   "decision": {
                     "anyOf": [
                       {
-                        "anyOf": [
-                          {
-                            "enum": [
-                              "approve",
-                            ],
-                            "type": "string",
-                          },
-                          {
-                            "enum": [
-                              "deny",
-                            ],
-                            "type": "string",
-                          },
-                          {
-                            "enum": [
-                              "partial",
-                            ],
-                            "type": "string",
-                          },
+                        "enum": [
+                          "approve",
+                          "deny",
+                          "partial",
                         ],
+                        "type": "string",
                       },
                       {
                         "type": "null",
@@ -3850,38 +3263,14 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "type": "string",
                   },
                   "status": {
-                    "anyOf": [
-                      {
-                        "enum": [
-                          "submitted",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "in_review",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "approved",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "denied",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "closed",
-                        ],
-                        "type": "string",
-                      },
+                    "enum": [
+                      "submitted",
+                      "in_review",
+                      "approved",
+                      "denied",
+                      "closed",
                     ],
+                    "type": "string",
                   },
                   "submittedAt": {
                     "anyOf": [
@@ -3941,9 +3330,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -3967,16 +3353,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -4018,26 +3394,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                 "additionalProperties": false,
                 "properties": {
                   "decision": {
-                    "anyOf": [
-                      {
-                        "enum": [
-                          "approve",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "deny",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "partial",
-                        ],
-                        "type": "string",
-                      },
+                    "enum": [
+                      "approve",
+                      "deny",
+                      "partial",
                     ],
+                    "type": "string",
                   },
                   "explanation": {
                     "anyOf": [
@@ -4073,26 +3435,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "type": "string",
                         },
                         "decision": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "approve",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "deny",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "partial",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "approve",
+                            "deny",
+                            "partial",
                           ],
+                          "type": "string",
                         },
                         "requestId": {
                           "type": "string",
@@ -4112,9 +3460,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -4138,16 +3483,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -4225,9 +3560,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -4251,16 +3583,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -4293,20 +3615,11 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
             "schema": {
               "anyOf": [
                 {
-                  "anyOf": [
-                    {
-                      "enum": [
-                        "jsonl",
-                      ],
-                      "type": "string",
-                    },
-                    {
-                      "enum": [
-                        "csv",
-                      ],
-                      "type": "string",
-                    },
+                  "enum": [
+                    "jsonl",
+                    "csv",
                   ],
+                  "type": "string",
                 },
                 {
                   "type": "null",
@@ -4343,38 +3656,14 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                         "type": "string",
                                       },
                                       "actorType": {
-                                        "anyOf": [
-                                          {
-                                            "enum": [
-                                              "system",
-                                            ],
-                                            "type": "string",
-                                          },
-                                          {
-                                            "enum": [
-                                              "admin",
-                                            ],
-                                            "type": "string",
-                                          },
-                                          {
-                                            "enum": [
-                                              "subject",
-                                            ],
-                                            "type": "string",
-                                          },
-                                          {
-                                            "enum": [
-                                              "agent",
-                                            ],
-                                            "type": "string",
-                                          },
-                                          {
-                                            "enum": [
-                                              "webhook",
-                                            ],
-                                            "type": "string",
-                                          },
+                                        "enum": [
+                                          "system",
+                                          "admin",
+                                          "subject",
+                                          "agent",
+                                          "webhook",
                                         ],
+                                        "type": "string",
                                       },
                                     },
                                     "required": [
@@ -4406,9 +3695,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "metadata": {
                                 "anyOf": [
                                   {
-                                    "additionalProperties": {
-                                      "type": "null",
-                                    },
                                     "type": "object",
                                   },
                                   {
@@ -4440,23 +3726,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "sequence": {
                                 "anyOf": [
                                   {
-                                    "type": "number",
-                                  },
-                                  {
-                                    "enum": [
-                                      "NaN",
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                      },
+                                      {
+                                        "enum": [
+                                          "NaN",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "-Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
                                     ],
-                                    "type": "string",
                                   },
                                   {
                                     "enum": [
                                       "Infinity",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
                                       "-Infinity",
+                                      "NaN",
                                     ],
                                     "type": "string",
                                   },
@@ -4477,20 +3775,11 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "type": "array",
                         },
                         "format": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "jsonl",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "csv",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "jsonl",
+                            "csv",
                           ],
+                          "type": "string",
                         },
                         "requestId": {
                           "type": "string",
@@ -4516,9 +3805,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -4542,16 +3828,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -4600,23 +3876,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                   "sequence": {
                     "anyOf": [
                       {
-                        "type": "number",
-                      },
-                      {
-                        "enum": [
-                          "NaN",
+                        "anyOf": [
+                          {
+                            "type": "number",
+                          },
+                          {
+                            "enum": [
+                              "NaN",
+                            ],
+                            "type": "string",
+                          },
+                          {
+                            "enum": [
+                              "Infinity",
+                            ],
+                            "type": "string",
+                          },
+                          {
+                            "enum": [
+                              "-Infinity",
+                            ],
+                            "type": "string",
+                          },
                         ],
-                        "type": "string",
                       },
                       {
                         "enum": [
                           "Infinity",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
                           "-Infinity",
+                          "NaN",
                         ],
                         "type": "string",
                       },
@@ -4667,20 +3955,11 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "type": "array",
                         },
                         "status": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "verified",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "failed",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "verified",
+                            "failed",
                           ],
+                          "type": "string",
                         },
                         "verified": {
                           "type": "boolean",
@@ -4696,9 +3975,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -4722,16 +3998,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -4794,9 +4060,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -4820,16 +4083,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -4892,9 +4145,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -4918,16 +4168,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -4967,32 +4207,13 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "type": "array",
                   },
                   "status": {
-                    "anyOf": [
-                      {
-                        "enum": [
-                          "not_required",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "pending",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "verified",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "rejected",
-                        ],
-                        "type": "string",
-                      },
+                    "enum": [
+                      "not_required",
+                      "pending",
+                      "verified",
+                      "rejected",
                     ],
+                    "type": "string",
                   },
                   "verifiedAt": {
                     "anyOf": [
@@ -5056,9 +4277,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -5082,16 +4300,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -5154,9 +4362,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -5180,16 +4385,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -5252,9 +4447,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -5278,16 +4470,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -5331,20 +4513,11 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "additionalProperties": false,
                           "properties": {
                             "clockMode": {
-                              "anyOf": [
-                                {
-                                  "enum": [
-                                    "receipt",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "verification_complete",
-                                  ],
-                                  "type": "string",
-                                },
+                              "enum": [
+                                "receipt",
+                                "verification_complete",
                               ],
+                              "type": "string",
                             },
                             "dueAt": {
                               "allOf": [
@@ -5412,26 +4585,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                         "type": "string",
                                       },
                                       "type": {
-                                        "anyOf": [
-                                          {
-                                            "enum": [
-                                              "acknowledgement",
-                                            ],
-                                            "type": "string",
-                                          },
-                                          {
-                                            "enum": [
-                                              "extension",
-                                            ],
-                                            "type": "string",
-                                          },
-                                          {
-                                            "enum": [
-                                              "deadline_warning",
-                                            ],
-                                            "type": "string",
-                                          },
+                                        "enum": [
+                                          "acknowledgement",
+                                          "extension",
+                                          "deadline_warning",
                                         ],
+                                        "type": "string",
                                       },
                                     },
                                     "required": [
@@ -5473,38 +4632,14 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                             "type": "string",
                                           },
                                           "actorType": {
-                                            "anyOf": [
-                                              {
-                                                "enum": [
-                                                  "system",
-                                                ],
-                                                "type": "string",
-                                              },
-                                              {
-                                                "enum": [
-                                                  "admin",
-                                                ],
-                                                "type": "string",
-                                              },
-                                              {
-                                                "enum": [
-                                                  "subject",
-                                                ],
-                                                "type": "string",
-                                              },
-                                              {
-                                                "enum": [
-                                                  "agent",
-                                                ],
-                                                "type": "string",
-                                              },
-                                              {
-                                                "enum": [
-                                                  "webhook",
-                                                ],
-                                                "type": "string",
-                                              },
+                                            "enum": [
+                                              "system",
+                                              "admin",
+                                              "subject",
+                                              "agent",
+                                              "webhook",
                                             ],
+                                            "type": "string",
                                           },
                                         },
                                         "required": [
@@ -5582,23 +4717,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "additionalDays": {
                                 "anyOf": [
                                   {
-                                    "type": "number",
-                                  },
-                                  {
-                                    "enum": [
-                                      "NaN",
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                      },
+                                      {
+                                        "enum": [
+                                          "NaN",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "-Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
                                     ],
-                                    "type": "string",
                                   },
                                   {
                                     "enum": [
                                       "Infinity",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
                                       "-Infinity",
+                                      "NaN",
                                     ],
                                     "type": "string",
                                   },
@@ -5662,38 +4809,14 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                         "type": "string",
                                       },
                                       "actorType": {
-                                        "anyOf": [
-                                          {
-                                            "enum": [
-                                              "system",
-                                            ],
-                                            "type": "string",
-                                          },
-                                          {
-                                            "enum": [
-                                              "admin",
-                                            ],
-                                            "type": "string",
-                                          },
-                                          {
-                                            "enum": [
-                                              "subject",
-                                            ],
-                                            "type": "string",
-                                          },
-                                          {
-                                            "enum": [
-                                              "agent",
-                                            ],
-                                            "type": "string",
-                                          },
-                                          {
-                                            "enum": [
-                                              "webhook",
-                                            ],
-                                            "type": "string",
-                                          },
+                                        "enum": [
+                                          "system",
+                                          "admin",
+                                          "subject",
+                                          "agent",
+                                          "webhook",
                                         ],
+                                        "type": "string",
                                       },
                                     },
                                     "required": [
@@ -5771,9 +4894,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -5797,16 +4917,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -5869,9 +4979,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -5895,16 +5002,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -6003,9 +5100,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -6029,16 +5123,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -6077,38 +5161,14 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "additionalProperties": false,
                         "properties": {
                           "event": {
-                            "anyOf": [
-                              {
-                                "enum": [
-                                  "prepare",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "address_verified",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "step_up_issued",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "step_up_completed",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "download",
-                                ],
-                                "type": "string",
-                              },
+                            "enum": [
+                              "prepare",
+                              "address_verified",
+                              "step_up_issued",
+                              "step_up_completed",
+                              "download",
                             ],
+                            "type": "string",
                           },
                           "id": {
                             "type": "string",
@@ -6138,9 +5198,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -6164,16 +5221,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -6223,51 +5270,23 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "type": "array",
                   },
                   "channel": {
-                    "anyOf": [
-                      {
-                        "enum": [
-                          "portal",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "email",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "secure_remote_access",
-                        ],
-                        "type": "string",
-                      },
+                    "enum": [
+                      "portal",
+                      "email",
+                      "secure_remote_access",
                     ],
+                    "type": "string",
                   },
                   "requestId": {
                     "type": "string",
                   },
                   "securityLevel": {
-                    "anyOf": [
-                      {
-                        "enum": [
-                          "standard",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "token",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "step_up",
-                        ],
-                        "type": "string",
-                      },
+                    "enum": [
+                      "standard",
+                      "token",
+                      "step_up",
                     ],
+                    "type": "string",
                   },
                   "stepUpRequired": {
                     "anyOf": [
@@ -6284,23 +5303,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                       {
                         "anyOf": [
                           {
-                            "type": "number",
-                          },
-                          {
-                            "enum": [
-                              "NaN",
+                            "anyOf": [
+                              {
+                                "type": "number",
+                              },
+                              {
+                                "enum": [
+                                  "NaN",
+                                ],
+                                "type": "string",
+                              },
+                              {
+                                "enum": [
+                                  "Infinity",
+                                ],
+                                "type": "string",
+                              },
+                              {
+                                "enum": [
+                                  "-Infinity",
+                                ],
+                                "type": "string",
+                              },
                             ],
-                            "type": "string",
                           },
                           {
                             "enum": [
                               "Infinity",
-                            ],
-                            "type": "string",
-                          },
-                          {
-                            "enum": [
                               "-Infinity",
+                              "NaN",
                             ],
                             "type": "string",
                           },
@@ -6360,9 +5391,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -6386,16 +5414,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -6432,26 +5450,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "type": "string",
                   },
                   "channel": {
-                    "anyOf": [
-                      {
-                        "enum": [
-                          "email",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "sms",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "auth_app",
-                        ],
-                        "type": "string",
-                      },
+                    "enum": [
+                      "email",
+                      "sms",
+                      "auth_app",
                     ],
+                    "type": "string",
                   },
                   "issuedAt": {
                     "allOf": [
@@ -6513,9 +5517,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -6539,16 +5540,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -6643,9 +5634,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -6669,16 +5657,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -6741,9 +5719,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -6767,16 +5742,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -6839,9 +5804,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -6865,16 +5827,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -6936,23 +5888,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             "sizeBytes": {
                               "anyOf": [
                                 {
-                                  "type": "number",
-                                },
-                                {
-                                  "enum": [
-                                    "NaN",
+                                  "anyOf": [
+                                    {
+                                      "type": "number",
+                                    },
+                                    {
+                                      "enum": [
+                                        "NaN",
+                                      ],
+                                      "type": "string",
+                                    },
+                                    {
+                                      "enum": [
+                                        "Infinity",
+                                      ],
+                                      "type": "string",
+                                    },
+                                    {
+                                      "enum": [
+                                        "-Infinity",
+                                      ],
+                                      "type": "string",
+                                    },
                                   ],
-                                  "type": "string",
                                 },
                                 {
                                   "enum": [
                                     "Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
                                     "-Infinity",
+                                    "NaN",
                                   ],
                                   "type": "string",
                                 },
@@ -6965,38 +5929,14 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "type": "string",
                             },
                             "type": {
-                              "anyOf": [
-                                {
-                                  "enum": [
-                                    "profile_data",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "account_data",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "support_tickets",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "audit_logs",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "other",
-                                  ],
-                                  "type": "string",
-                                },
+                              "enum": [
+                                "profile_data",
+                                "account_data",
+                                "support_tickets",
+                                "audit_logs",
+                                "other",
                               ],
+                              "type": "string",
                             },
                           },
                           "required": [
@@ -7084,9 +6024,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -7110,16 +6047,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -7182,23 +6109,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "sizeBytes": {
                                 "anyOf": [
                                   {
-                                    "type": "number",
-                                  },
-                                  {
-                                    "enum": [
-                                      "NaN",
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                      },
+                                      {
+                                        "enum": [
+                                          "NaN",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "-Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
                                     ],
-                                    "type": "string",
                                   },
                                   {
                                     "enum": [
                                       "Infinity",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
                                       "-Infinity",
+                                      "NaN",
                                     ],
                                     "type": "string",
                                   },
@@ -7211,38 +6150,14 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                 "type": "string",
                               },
                               "type": {
-                                "anyOf": [
-                                  {
-                                    "enum": [
-                                      "profile_data",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "account_data",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "support_tickets",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "audit_logs",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "other",
-                                    ],
-                                    "type": "string",
-                                  },
+                                "enum": [
+                                  "profile_data",
+                                  "account_data",
+                                  "support_tickets",
+                                  "audit_logs",
+                                  "other",
                                 ],
+                                "type": "string",
                               },
                             },
                             "required": [
@@ -7288,9 +6203,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -7314,16 +6226,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -7369,16 +6271,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -7506,9 +6398,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -7532,16 +6421,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -7651,9 +6530,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -7677,16 +6553,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -7745,23 +6611,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "sizeBytes": {
                           "anyOf": [
                             {
-                              "type": "number",
-                            },
-                            {
-                              "enum": [
-                                "NaN",
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
                               ],
-                              "type": "string",
                             },
                             {
                               "enum": [
                                 "Infinity",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
                                 "-Infinity",
+                                "NaN",
                               ],
                               "type": "string",
                             },
@@ -7774,38 +6652,14 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "type": "string",
                         },
                         "type": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "profile_data",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "account_data",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "support_tickets",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "audit_logs",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "other",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "profile_data",
+                            "account_data",
+                            "support_tickets",
+                            "audit_logs",
+                            "other",
                           ],
+                          "type": "string",
                         },
                       },
                       "required": [
@@ -7888,9 +6742,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -7914,16 +6765,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -7971,23 +6812,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                     "attempt": {
                                       "anyOf": [
                                         {
-                                          "type": "number",
-                                        },
-                                        {
-                                          "enum": [
-                                            "NaN",
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                            },
+                                            {
+                                              "enum": [
+                                                "NaN",
+                                              ],
+                                              "type": "string",
+                                            },
+                                            {
+                                              "enum": [
+                                                "Infinity",
+                                              ],
+                                              "type": "string",
+                                            },
+                                            {
+                                              "enum": [
+                                                "-Infinity",
+                                              ],
+                                              "type": "string",
+                                            },
                                           ],
-                                          "type": "string",
                                         },
                                         {
                                           "enum": [
                                             "Infinity",
-                                          ],
-                                          "type": "string",
-                                        },
-                                        {
-                                          "enum": [
                                             "-Infinity",
+                                            "NaN",
                                           ],
                                           "type": "string",
                                         },
@@ -8017,23 +6870,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                         {
                                           "anyOf": [
                                             {
-                                              "type": "number",
-                                            },
-                                            {
-                                              "enum": [
-                                                "NaN",
+                                              "anyOf": [
+                                                {
+                                                  "type": "number",
+                                                },
+                                                {
+                                                  "enum": [
+                                                    "NaN",
+                                                  ],
+                                                  "type": "string",
+                                                },
+                                                {
+                                                  "enum": [
+                                                    "Infinity",
+                                                  ],
+                                                  "type": "string",
+                                                },
+                                                {
+                                                  "enum": [
+                                                    "-Infinity",
+                                                  ],
+                                                  "type": "string",
+                                                },
                                               ],
-                                              "type": "string",
                                             },
                                             {
                                               "enum": [
                                                 "Infinity",
-                                              ],
-                                              "type": "string",
-                                            },
-                                            {
-                                              "enum": [
                                                 "-Infinity",
+                                                "NaN",
                                               ],
                                               "type": "string",
                                             },
@@ -8045,32 +6910,13 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                       ],
                                     },
                                     "status": {
-                                      "anyOf": [
-                                        {
-                                          "enum": [
-                                            "pending",
-                                          ],
-                                          "type": "string",
-                                        },
-                                        {
-                                          "enum": [
-                                            "delivered",
-                                          ],
-                                          "type": "string",
-                                        },
-                                        {
-                                          "enum": [
-                                            "failed",
-                                          ],
-                                          "type": "string",
-                                        },
-                                        {
-                                          "enum": [
-                                            "skipped",
-                                          ],
-                                          "type": "string",
-                                        },
+                                      "enum": [
+                                        "pending",
+                                        "delivered",
+                                        "failed",
+                                        "skipped",
                                       ],
+                                      "type": "string",
                                     },
                                   },
                                   "required": [
@@ -8094,32 +6940,13 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                 "type": "string",
                               },
                               "status": {
-                                "anyOf": [
-                                  {
-                                    "enum": [
-                                      "generated",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "delivered",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "failed",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "skipped",
-                                    ],
-                                    "type": "string",
-                                  },
+                                "enum": [
+                                  "generated",
+                                  "delivered",
+                                  "failed",
+                                  "skipped",
                                 ],
+                                "type": "string",
                               },
                             },
                             "required": [
@@ -8146,9 +6973,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -8172,16 +6996,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -8245,9 +7059,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -8271,16 +7082,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -8386,9 +7187,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -8412,16 +7210,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -8485,26 +7273,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     ],
                   },
                   "type": {
-                    "anyOf": [
-                      {
-                        "enum": [
-                          "subject",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "representative",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "authorised_agent",
-                        ],
-                        "type": "string",
-                      },
+                    "enum": [
+                      "subject",
+                      "representative",
+                      "authorised_agent",
                     ],
+                    "type": "string",
                   },
                 },
                 "required": [
@@ -8552,9 +7326,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -8578,16 +7349,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -8637,9 +7398,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "id": {
                                 "type": "string",
                               },
-                              "payload": {
-                                "type": "null",
-                              },
+                              "payload": {},
                             },
                             "required": [
                               "createdAt",
@@ -8664,9 +7423,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -8690,16 +7446,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -8755,26 +7501,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "level": {
                           "anyOf": [
                             {
-                              "anyOf": [
-                                {
-                                  "enum": [
-                                    "none",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "reasonable",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "reasonably_high",
-                                  ],
-                                  "type": "string",
-                                },
+                              "enum": [
+                                "none",
+                                "reasonable",
+                                "reasonably_high",
                               ],
+                              "type": "string",
                             },
                             {
                               "type": "null",
@@ -8782,51 +7514,23 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           ],
                         },
                         "method": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "existing_auth",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "email_link",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "manual",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "existing_auth",
+                            "email_link",
+                            "manual",
                           ],
+                          "type": "string",
                         },
                         "methodsAllowed": {
                           "anyOf": [
                             {
                               "items": {
-                                "anyOf": [
-                                  {
-                                    "enum": [
-                                      "existing_auth",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "email_link",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "manual",
-                                    ],
-                                    "type": "string",
-                                  },
+                                "enum": [
+                                  "existing_auth",
+                                  "email_link",
+                                  "manual",
                                 ],
+                                "type": "string",
                               },
                               "type": "array",
                             },
@@ -8887,26 +7591,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           ],
                         },
                         "status": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "pending",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "approved",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "rejected",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "pending",
+                            "approved",
+                            "rejected",
                           ],
+                          "type": "string",
                         },
                       },
                       "required": [
@@ -8921,9 +7611,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -8947,16 +7634,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -9019,9 +7696,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -9045,16 +7719,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -9106,26 +7770,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                   "level": {
                     "anyOf": [
                       {
-                        "anyOf": [
-                          {
-                            "enum": [
-                              "none",
-                            ],
-                            "type": "string",
-                          },
-                          {
-                            "enum": [
-                              "reasonable",
-                            ],
-                            "type": "string",
-                          },
-                          {
-                            "enum": [
-                              "reasonably_high",
-                            ],
-                            "type": "string",
-                          },
+                        "enum": [
+                          "none",
+                          "reasonable",
+                          "reasonably_high",
                         ],
+                        "type": "string",
                       },
                       {
                         "type": "null",
@@ -9133,51 +7783,23 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     ],
                   },
                   "method": {
-                    "anyOf": [
-                      {
-                        "enum": [
-                          "existing_auth",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "email_link",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "manual",
-                        ],
-                        "type": "string",
-                      },
+                    "enum": [
+                      "existing_auth",
+                      "email_link",
+                      "manual",
                     ],
+                    "type": "string",
                   },
                   "methodsAllowed": {
                     "anyOf": [
                       {
                         "items": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "existing_auth",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "email_link",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "manual",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "existing_auth",
+                            "email_link",
+                            "manual",
                           ],
+                          "type": "string",
                         },
                         "type": "array",
                       },
@@ -9238,26 +7860,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     ],
                   },
                   "status": {
-                    "anyOf": [
-                      {
-                        "enum": [
-                          "pending",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "approved",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "rejected",
-                        ],
-                        "type": "string",
-                      },
+                    "enum": [
+                      "pending",
+                      "approved",
+                      "rejected",
                     ],
+                    "type": "string",
                   },
                 },
                 "required": [
@@ -9309,9 +7917,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -9335,16 +7940,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -9461,9 +8056,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -9487,16 +8079,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -9559,9 +8141,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -9585,16 +8164,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -9700,9 +8269,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -9726,16 +8292,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -9779,9 +8335,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -9805,16 +8358,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [],
@@ -10171,23 +8714,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             "limit": {
                               "anyOf": [
                                 {
-                                  "type": "number",
-                                },
-                                {
-                                  "enum": [
-                                    "NaN",
+                                  "anyOf": [
+                                    {
+                                      "type": "number",
+                                    },
+                                    {
+                                      "enum": [
+                                        "NaN",
+                                      ],
+                                      "type": "string",
+                                    },
+                                    {
+                                      "enum": [
+                                        "Infinity",
+                                      ],
+                                      "type": "string",
+                                    },
+                                    {
+                                      "enum": [
+                                        "-Infinity",
+                                      ],
+                                      "type": "string",
+                                    },
                                   ],
-                                  "type": "string",
                                 },
                                 {
                                   "enum": [
                                     "Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
                                     "-Infinity",
+                                    "NaN",
                                   ],
                                   "type": "string",
                                 },
@@ -10252,9 +8807,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -10278,16 +8830,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -10326,44 +8868,15 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "additionalProperties": false,
                         "properties": {
                           "class": {
-                            "anyOf": [
-                              {
-                                "enum": [
-                                  "request_record",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "audit_event",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "verification_evidence",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "fulfilment_artifact",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "delivery_log",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "notification_log",
-                                ],
-                                "type": "string",
-                              },
+                            "enum": [
+                              "request_record",
+                              "audit_event",
+                              "verification_evidence",
+                              "fulfilment_artifact",
+                              "delivery_log",
+                              "notification_log",
                             ],
+                            "type": "string",
                           },
                           "legalHoldEnabled": {
                             "type": "boolean",
@@ -10408,9 +8921,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -10434,16 +8944,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -10475,44 +8975,15 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                 "additionalProperties": false,
                 "properties": {
                   "class": {
-                    "anyOf": [
-                      {
-                        "enum": [
-                          "request_record",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "audit_event",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "verification_evidence",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "fulfilment_artifact",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "delivery_log",
-                        ],
-                        "type": "string",
-                      },
-                      {
-                        "enum": [
-                          "notification_log",
-                        ],
-                        "type": "string",
-                      },
+                    "enum": [
+                      "request_record",
+                      "audit_event",
+                      "verification_evidence",
+                      "fulfilment_artifact",
+                      "delivery_log",
+                      "notification_log",
                     ],
+                    "type": "string",
                   },
                   "legalHoldEnabled": {
                     "type": "boolean",
@@ -10567,44 +9038,15 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                       "additionalProperties": false,
                       "properties": {
                         "class": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "request_record",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "audit_event",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "verification_evidence",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "fulfilment_artifact",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "delivery_log",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "notification_log",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "request_record",
+                            "audit_event",
+                            "verification_evidence",
+                            "fulfilment_artifact",
+                            "delivery_log",
+                            "notification_log",
                           ],
+                          "type": "string",
                         },
                         "legalHoldEnabled": {
                           "type": "boolean",
@@ -10647,9 +9089,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -10673,16 +9112,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -10794,9 +9223,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -10820,16 +9246,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -10856,9 +9272,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                   "created_at": {
                     "type": "string",
                   },
-                  "data": {
-                    "type": "null",
-                  },
+                  "data": {},
                   "type": {
                     "type": "string",
                   },
@@ -10918,20 +9332,11 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "type": "string",
                         },
                         "status": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "captured",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "ignored_non_dsar",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "captured",
+                            "ignored_non_dsar",
                           ],
+                          "type": "string",
                         },
                         "tenantId": {
                           "anyOf": [
@@ -10963,9 +9368,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -10990,16 +9392,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
             },
             "description": "Success",
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
-          },
         },
         "security": [],
         "summary": "Receive Resend inbound webhook",
@@ -11015,9 +9407,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": {
-                "type": "null",
-              },
+              "schema": {},
             },
           },
           "required": true,
@@ -11115,20 +9505,11 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "type": "string",
                         },
                         "status": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "captured",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "ignored_non_dsar",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "captured",
+                            "ignored_non_dsar",
                           ],
+                          "type": "string",
                         },
                         "surface": {
                           "anyOf": [
@@ -11180,9 +9561,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -11206,16 +9584,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [],

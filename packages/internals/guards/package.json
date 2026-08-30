@@ -19,7 +19,7 @@
 		"format": "oxfmt --check src package.json tsconfig.json tsdown.config.ts README.md",
 		"lint": "oxlint .",
 		"test": "vitest run --passWithNoTests",
-		"typecheck": "tsgo --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@dsar/internals-error-codes": "workspace:*",
@@ -29,7 +29,6 @@
 		"@dsar/typescript-config": "workspace:*",
 		"@effect/language-service": "catalog:effect",
 		"@effect/vitest": "catalog:effect",
-		"@typescript/native-preview": "catalog:utils",
 		"tsdown": "catalog:utils",
 		"typescript": "catalog:utils",
 		"vitest": "catalog:utils"

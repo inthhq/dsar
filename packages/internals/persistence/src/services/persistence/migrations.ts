@@ -13,6 +13,12 @@ import {
 	migrationName as migration0002Name,
 	revertMigration0002,
 } from "../../migrations/0002-webhook-endpoints";
+import {
+	applyMigration0003,
+	migrationId as migration0003Id,
+	migrationName as migration0003Name,
+	revertMigration0003,
+} from "../../migrations/0003-chat-runtime-lists-and-queues";
 import type { Sql } from "./shared";
 
 /**
@@ -75,6 +81,12 @@ const migrations = [
 		name: migration0002Name,
 		up: applyMigration0002,
 	},
+	{
+		down: revertMigration0003,
+		id: migration0003Id,
+		name: migration0003Name,
+		up: applyMigration0003,
+	},
 ] as const satisfies readonly PersistenceMigration[];
 
 const migrationById: ReadonlyMap<number, PersistenceMigration> = new Map(
@@ -91,9 +103,16 @@ const ensureMigrationMetadataTable = (sql: Sql) =>
 const readAppliedMigrations = (
 	sql: Sql
 ): Effect.Effect<readonly AppliedMigrationRow[], SqlError> =>
-	sql<AppliedMigrationRow>`SELECT id, name
-		FROM dsar_schema_migrations
-		ORDER BY id`;
+	Effect.map(
+		sql<AppliedMigrationRow>`SELECT id, name
+			FROM dsar_schema_migrations
+			ORDER BY id`,
+		(rows) =>
+			rows.map((row) => ({
+				id: Number(row.id),
+				name: String(row.name),
+			}))
+	);
 
 const toMigrationInfo = (
 	migration: Pick<PersistenceMigrationInfo, "id" | "name">

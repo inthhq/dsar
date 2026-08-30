@@ -4,6 +4,7 @@ import {
 	VerificationLevelSchema,
 	VerificationMethodSchema,
 } from "@dsar/schema";
+import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
 export { WebhookRotateKeyPayloadSchema as WebhookRotateKeyBodySchema } from "../webhook-schemas";
@@ -18,7 +19,9 @@ const NonEmptyString = Schema.String.pipe(
 
 /** POST /requests/:id/extensions */
 export const ExtensionBodySchema = Schema.Struct({
-	additionalDays: Schema.Number.pipe(Schema.withDecodingDefaultKey(() => 0)),
+	additionalDays: Schema.Number.pipe(
+		Schema.withDecodingDefaultKey(Effect.succeed(0))
+	),
 	rationale: NonEmptyString,
 });
 
@@ -54,30 +57,34 @@ export const RequestorUpdateBodySchema = Schema.Record(
 /** PUT /requests/:id/authority – submit authority evidence */
 export const AuthorityEvidenceBodySchema = Schema.Struct({
 	evidenceArtifacts: Schema.Array(Schema.String).pipe(
-		Schema.withDecodingDefaultKey(() => [])
+		Schema.withDecodingDefaultKey(Effect.succeed([]))
 	),
 });
 
 /** POST /requests/:id/verification/evidence */
 export const VerificationEvidenceBodySchema = Schema.Struct({
 	evidenceArtifacts: Schema.Array(Schema.Unknown).pipe(
-		Schema.withDecodingDefaultKey(() => [])
+		Schema.withDecodingDefaultKey(Effect.succeed([]))
 	),
 	level: VerificationLevelSchema.pipe(
-		Schema.withDecodingDefaultKey(() => "reasonable" as const)
+		Schema.withDecodingDefaultKey(Effect.succeed("reasonable" as const))
 	),
 	methodsAllowed: Schema.Array(VerificationMethodSchema).pipe(
-		Schema.withDecodingDefaultKey(() => ["manual" as const])
+		Schema.withDecodingDefaultKey(Effect.succeed(["manual" as const]))
 	),
-	reasonForDoubt: Schema.String.pipe(Schema.withDecodingDefaultKey(() => "")),
+	reasonForDoubt: Schema.String.pipe(
+		Schema.withDecodingDefaultKey(Effect.succeed(""))
+	),
 	retentionExpiresAt: Schema.optional(Schema.String),
 });
 
 /** POST /requests/:id/delivery/prepare */
 export const DeliveryPrepareBodySchema = Schema.Struct({
-	channel: Schema.String.pipe(Schema.withDecodingDefaultKey(() => "portal")),
+	channel: Schema.String.pipe(
+		Schema.withDecodingDefaultKey(Effect.succeed("portal"))
+	),
 	securityLevel: Schema.String.pipe(
-		Schema.withDecodingDefaultKey(() => "standard")
+		Schema.withDecodingDefaultKey(Effect.succeed("standard"))
 	),
 });
 
@@ -94,14 +101,14 @@ export const StepUpCompleteBodySchema = Schema.Struct({
 /** POST /requests/:id/fulfillment */
 export const FulfilmentCallbackBodySchema = Schema.Struct({
 	dataCategories: Schema.Array(Schema.String).pipe(
-		Schema.withDecodingDefaultKey(() => [])
+		Schema.withDecodingDefaultKey(Effect.succeed([]))
 	),
 	manifest: ArtifactManifestSchema,
 	redactionsApplied: Schema.Array(Schema.String).pipe(
-		Schema.withDecodingDefaultKey(() => [])
+		Schema.withDecodingDefaultKey(Effect.succeed([]))
 	),
 	thirdPartyExclusions: Schema.Array(Schema.String).pipe(
-		Schema.withDecodingDefaultKey(() => [])
+		Schema.withDecodingDefaultKey(Effect.succeed([]))
 	),
 });
 
@@ -127,11 +134,17 @@ export const RetentionUpdateBodySchema = Schema.Struct({
 	class: RetentionClassSchema,
 	id: Schema.optional(Schema.String),
 	legalHoldEnabled: Schema.Boolean.pipe(
-		Schema.withDecodingDefaultKey(() => false)
+		Schema.withDecodingDefaultKey(Effect.succeed(false))
 	),
-	maxDays: Schema.Number.pipe(Schema.withDecodingDefaultKey(() => 365)),
-	minDays: Schema.Number.pipe(Schema.withDecodingDefaultKey(() => 30)),
-	purgeEnabled: Schema.Boolean.pipe(Schema.withDecodingDefaultKey(() => false)),
+	maxDays: Schema.Number.pipe(
+		Schema.withDecodingDefaultKey(Effect.succeed(365))
+	),
+	minDays: Schema.Number.pipe(
+		Schema.withDecodingDefaultKey(Effect.succeed(30))
+	),
+	purgeEnabled: Schema.Boolean.pipe(
+		Schema.withDecodingDefaultKey(Effect.succeed(false))
+	),
 }).pipe(
 	Schema.check(
 		Schema.makeFilter((body) =>

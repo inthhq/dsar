@@ -1,6 +1,11 @@
-import type * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
 import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
 import * as OpenApi from "effect/unstable/httpapi/OpenApi";
+
+interface AnnotatableEndpoint<Self> {
+	readonly annotateMerge: (
+		annotations: ReturnType<typeof OpenApi.annotations>
+	) => Self;
+}
 
 /**
  * Marks an endpoint as publicly accessible in generated OpenAPI metadata.
@@ -10,7 +15,7 @@ import * as OpenApi from "effect/unstable/httpapi/OpenApi";
  * @typeParam A - Concrete endpoint type being annotated.
  * @returns The annotated endpoint operation.
  */
-export const publicOperation = <A extends HttpApiEndpoint.AnyWithProps>(
+export const publicOperation = <A extends AnnotatableEndpoint<A>>(
 	operation: A,
 	summary: string
 ): A =>
@@ -28,7 +33,7 @@ export const publicOperation = <A extends HttpApiEndpoint.AnyWithProps>(
  * @typeParam A - Concrete endpoint type being annotated.
  * @returns The annotated endpoint operation.
  */
-export const protectedOperation = <A extends HttpApiEndpoint.AnyWithProps>(
+export const protectedOperation = <A extends AnnotatableEndpoint<A>>(
 	operation: A,
 	summary: string
 ): A =>
