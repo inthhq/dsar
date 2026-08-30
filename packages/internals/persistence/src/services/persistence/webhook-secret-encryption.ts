@@ -1,3 +1,4 @@
+import type { NonSharedBuffer } from "node:buffer";
 import {
 	createCipheriv,
 	createDecipheriv,
@@ -96,32 +97,31 @@ export interface WebhookSigningSecretCipher {
 }
 
 interface CiphertextParts {
-	readonly ciphertext: Buffer;
-	readonly nonce: Buffer;
-	readonly tag: Buffer;
+	readonly ciphertext: NonSharedBuffer;
+	readonly nonce: NonSharedBuffer;
+	readonly tag: NonSharedBuffer;
 }
 
-const asBase64 = (value: Buffer): string => value.toString("base64");
+const asBase64 = (value: NonSharedBuffer): string => value.toString("base64");
 
-const fromBase64 = (value: string): Buffer => Buffer.from(value, "base64");
+const fromBase64 = (value: string): NonSharedBuffer =>
+	Buffer.from(value, "base64");
 
 // normalizeMasterKey uses raw AES_256_KEY_BYTES keys directly; any other
 // length is SHA-256 hashed to produce a 32-byte AES key.
-const normalizeMasterKey = (key: string | Uint8Array): Buffer => {
+const normalizeMasterKey = (key: string | Uint8Array): NonSharedBuffer => {
 	const keyBytes =
 		typeof key === "string" ? Buffer.from(key, "utf8") : Buffer.from(key);
 	if (keyBytes.length === AES_256_KEY_BYTES) {
 		return keyBytes;
 	}
-	return createHash("sha256")
-		.update(keyBytes as Uint8Array)
-		.digest();
+	return createHash("sha256").update(keyBytes).digest();
 };
 
 const authenticatedData = (
 	context: WebhookSigningSecretEncryptionContext,
 	keyId: string
-): Buffer =>
+): NonSharedBuffer =>
 	Buffer.from(
 		[context.tenantId, context.endpointId, context.signingKeyId, keyId].join(
 			"\0"
@@ -130,21 +130,14 @@ const authenticatedData = (
 	);
 
 const encryptBytes = (
-	key: Buffer,
-	plaintext: Buffer,
-	aad: Buffer
+	key: NonSharedBuffer,
+	plaintext: NonSharedBuffer,
+	aad: NonSharedBuffer
 ): CiphertextParts => {
 	const nonce = randomBytes(GCM_NONCE_BYTES);
-	const cipher = createCipheriv(
-		AES_256_GCM,
-		key as Uint8Array,
-		nonce as Uint8Array
-	);
-	cipher.setAAD(aad as Uint8Array);
-	const ciphertext = Buffer.concat([
-		cipher.update(plaintext as Uint8Array) as Uint8Array,
-		cipher.final() as Uint8Array,
-	]);
+	const cipher = createCipheriv(AES_256_GCM, key, nonce);
+	cipher.setAAD(aad);
+	const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
 	return {
 		ciphertext,
 		nonce,
@@ -153,21 +146,14 @@ const encryptBytes = (
 };
 
 const decryptBytes = (
-	key: Buffer,
+	key: NonSharedBuffer,
 	parts: CiphertextParts,
-	aad: Buffer
-): Buffer => {
-	const decipher = createDecipheriv(
-		AES_256_GCM,
-		key as Uint8Array,
-		parts.nonce as Uint8Array
-	);
-	decipher.setAAD(aad as Uint8Array);
-	decipher.setAuthTag(parts.tag as Uint8Array);
-	return Buffer.concat([
-		decipher.update(parts.ciphertext as Uint8Array) as Uint8Array,
-		decipher.final() as Uint8Array,
-	]);
+	aad: NonSharedBuffer
+): NonSharedBuffer => {
+	const decipher = createDecipheriv(AES_256_GCM, key, parts.nonce);
+	decipher.setAAD(aad);
+	decipher.setAuthTag(parts.tag);
+	return Buffer.concat([decipher.update(parts.ciphertext), decipher.final()]);
 };
 
 const encryptionFailure = (

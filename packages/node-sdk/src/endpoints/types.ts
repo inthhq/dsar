@@ -241,6 +241,43 @@ export interface StatusResponse {
 	readonly status: string;
 }
 
+/** Schema migration metadata returned by runtime diagnostics. */
+export interface PersistenceMigrationInfo {
+	/** Monotonic migration identifier. */
+	readonly id: number;
+	/** Human-readable migration name. */
+	readonly name: string;
+}
+
+/** Health report for one adapter registered with the runtime. */
+export interface StatusDiagnosticsAdapter {
+	/** Adapter capability category, such as storage or notifications. */
+	readonly capability: string;
+	/** Optional adapter-owned diagnostic and health details. */
+	readonly details?: Readonly<Record<string, unknown>>;
+	/** Stable adapter registration key. */
+	readonly key: string;
+	/** Current adapter health classification. */
+	readonly status: string;
+}
+
+/** Operator diagnostics payload returned by `GET /status/diagnostics`. */
+export interface StatusDiagnosticsResponse {
+	/** Health reports for every adapter registered with the runtime. */
+	readonly adapters: readonly StatusDiagnosticsAdapter[];
+	/** Applied and expected persistence migration metadata. */
+	readonly migrations: {
+		readonly applied: readonly PersistenceMigrationInfo[];
+		readonly current: boolean;
+		readonly expected: readonly PersistenceMigrationInfo[];
+	};
+	/** Persistence connectivity state and an optional failure message. */
+	readonly persistence: {
+		readonly error?: string;
+		readonly reachable: boolean;
+	};
+}
+
 /**
  * Audit export payload for a request.
  */

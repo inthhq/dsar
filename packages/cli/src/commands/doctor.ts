@@ -490,7 +490,7 @@ const isDoctorReport = (result: unknown): result is DoctorReport =>
 	typeof result === "object" &&
 	result !== null &&
 	"ok" in result &&
-	typeof (result as { readonly ok?: unknown }).ok === "boolean";
+	typeof result.ok === "boolean";
 
 const formatDoctorReport = (result: unknown): string => {
 	if (!isDoctorReport(result)) {

@@ -8391,9 +8391,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "details": {
                                 "anyOf": [
                                   {
-                                    "additionalProperties": {
-                                      "type": "null",
-                                    },
                                     "type": "object",
                                   },
                                   {
@@ -8427,23 +8424,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                   "id": {
                                     "anyOf": [
                                       {
-                                        "type": "number",
-                                      },
-                                      {
-                                        "enum": [
-                                          "NaN",
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                          },
+                                          {
+                                            "enum": [
+                                              "NaN",
+                                            ],
+                                            "type": "string",
+                                          },
+                                          {
+                                            "enum": [
+                                              "Infinity",
+                                            ],
+                                            "type": "string",
+                                          },
+                                          {
+                                            "enum": [
+                                              "-Infinity",
+                                            ],
+                                            "type": "string",
+                                          },
                                         ],
-                                        "type": "string",
                                       },
                                       {
                                         "enum": [
                                           "Infinity",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
                                           "-Infinity",
+                                          "NaN",
                                         ],
                                         "type": "string",
                                       },
@@ -8471,23 +8480,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                   "id": {
                                     "anyOf": [
                                       {
-                                        "type": "number",
-                                      },
-                                      {
-                                        "enum": [
-                                          "NaN",
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                          },
+                                          {
+                                            "enum": [
+                                              "NaN",
+                                            ],
+                                            "type": "string",
+                                          },
+                                          {
+                                            "enum": [
+                                              "Infinity",
+                                            ],
+                                            "type": "string",
+                                          },
+                                          {
+                                            "enum": [
+                                              "-Infinity",
+                                            ],
+                                            "type": "string",
+                                          },
                                         ],
-                                        "type": "string",
                                       },
                                       {
                                         "enum": [
                                           "Infinity",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
                                           "-Infinity",
+                                          "NaN",
                                         ],
                                         "type": "string",
                                       },
@@ -8546,9 +8567,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -8572,16 +8590,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
