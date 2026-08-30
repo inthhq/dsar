@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 
-import type { WebhookReceiver } from "./receiver";
+import { resolveReceiver } from "./receiver";
+import type { WebhookReceiver, WebhookReceiverOptions } from "./receiver";
 
 /**
  * Express request shape expected by the DSAR webhook adapter.
@@ -27,12 +28,17 @@ const rawBodyFromRequest = (request: ExpressWebhookRequest): string => {
 /**
  * Creates an Express-compatible DSAR webhook request handler.
  *
- * @param receiver - Framework-neutral receiver used to verify and dispatch events.
+ * @param receiverOrOptions - Webhook receiver instance or configuration options.
  * @returns Express handler that writes the receiver result as JSON.
  */
-export const expressWebhookHandler =
-	(receiver: WebhookReceiver) =>
-	async (request: ExpressWebhookRequest, response: Response): Promise<void> => {
+export const expressWebhookHandler = (
+	receiverOrOptions: WebhookReceiver | WebhookReceiverOptions
+) => {
+	const receiver = resolveReceiver(receiverOrOptions);
+	return async (
+		request: ExpressWebhookRequest,
+		response: Response
+	): Promise<void> => {
 		const result = await receiver.handle({
 			rawBody: rawBodyFromRequest(request),
 			signature: headerValue(request.headers["x-dsar-signature"]),
@@ -40,3 +46,7 @@ export const expressWebhookHandler =
 
 		response.status(result.status).json(result.body);
 	};
+};
+
+/** Alias for {@link expressWebhookHandler}. */
+export const expressWebhookMiddleware = expressWebhookHandler;
