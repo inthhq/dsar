@@ -22,21 +22,19 @@
 		"format": "oxfmt --check src test package.json tsconfig.json README.md",
 		"lint": "oxlint .",
 		"test": "vitest run",
-		"typecheck": "tsgo --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@aws-sdk/client-s3": "3.997.0",
+		"@aws-sdk/client-s3": "3.1093.0",
 		"@dsar/backend": "workspace:*",
 		"@dsar/guards": "workspace:*",
 		"@dsar/internals-error-codes": "workspace:*",
-		"@effect-ak/aws-sdk": "1.0.0",
 		"effect": "catalog:effect"
 	},
 	"devDependencies": {
 		"@dsar/typescript-config": "workspace:*",
 		"@effect/language-service": "catalog:effect",
 		"@effect/vitest": "catalog:effect",
-		"@typescript/native-preview": "catalog:utils",
 		"typescript": "catalog:utils",
 		"vitest": "catalog:utils"
 	}

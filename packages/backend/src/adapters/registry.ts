@@ -1,6 +1,6 @@
+import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as ServiceMap from "effect/ServiceMap";
 
 import type {
 	AdapterCapability,
@@ -49,7 +49,7 @@ export interface AdapterRegistryService {
 /**
  * Effect context tag used to access the adapter registry in services/routes.
  */
-export class AdapterRegistryTag extends ServiceMap.Service<
+export class AdapterRegistryTag extends Context.Service<
 	AdapterRegistryTag,
 	AdapterRegistryService
 >()("AdapterRegistry") {}

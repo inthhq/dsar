@@ -1,8 +1,8 @@
+import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import { pipe } from "effect/Function";
 import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
-import * as ServiceMap from "effect/ServiceMap";
 import * as SqlClient from "effect/unstable/sql/SqlClient";
 import { SqlError } from "effect/unstable/sql/SqlError";
 import type {
@@ -57,6 +57,7 @@ import {
 	BOOTSTRAP_TENANT_ID,
 	extractRequestLookupFields,
 	findRequired,
+	jsonDecode,
 	jsonEncode,
 	limitWithFallback,
 	normalizeSubjectLookupIdentifier,
@@ -152,7 +153,7 @@ export interface PersistenceService {
 /**
  * Effect tag for the tenant-safe persistence service.
  */
-export class Persistence extends ServiceMap.Service<
+export class Persistence extends Context.Service<
 	Persistence,
 	PersistenceService
 >()("Persistence") {}
@@ -1360,12 +1361,128 @@ const makePersistence = (
 					RETURNING *`;
 					return rows[0] ? mapChatThreadLockRecord(rows[0]) : null;
 				}),
+			appendToList: (input) =>
+				sql.withTransaction(
+					Effect.gen(function* appendChatRuntimeListValue() {
+						const tenantId = yield* requireTenantId;
+						yield* sql`DELETE FROM chat_state_lists
+						WHERE tenant_id = ${tenantId}
+							AND list_key = ${input.key}
+							AND EXISTS (
+								SELECT 1 FROM chat_state_list_keys
+								WHERE tenant_id = ${tenantId}
+									AND list_key = ${input.key}
+									AND expires_at IS NOT NULL
+									AND expires_at <= ${dbCurrentTimestamp}
+							)`;
+						yield* sql`DELETE FROM chat_state_list_keys
+						WHERE tenant_id = ${tenantId}
+							AND list_key = ${input.key}
+							AND expires_at IS NOT NULL
+							AND expires_at <= ${dbCurrentTimestamp}`;
+						yield* sql`INSERT INTO chat_state_list_keys (
+							expires_at,
+							list_key,
+							tenant_id
+						) VALUES (
+							${input.expiresAt ?? null},
+							${input.key},
+							${tenantId}
+						)
+						ON CONFLICT(tenant_id, list_key) DO UPDATE SET
+							expires_at = COALESCE(
+								excluded.expires_at,
+								chat_state_list_keys.expires_at
+							)`;
+						yield* sql`INSERT INTO chat_state_lists ${sql.insert({
+							list_key: input.key,
+							tenant_id: tenantId,
+							value_json: jsonEncode(input.value),
+						})}`;
+						if (input.maxLength !== undefined && input.maxLength > 0) {
+							yield* sql`DELETE FROM chat_state_lists
+							WHERE tenant_id = ${tenantId}
+								AND list_key = ${input.key}
+								AND seq NOT IN (
+									SELECT seq FROM chat_state_lists
+									WHERE tenant_id = ${tenantId}
+										AND list_key = ${input.key}
+									ORDER BY seq DESC
+									LIMIT ${input.maxLength}
+								)`;
+						}
+					})
+				),
 			delete: (key) =>
-				Effect.gen(function* deleteChatRuntimeState() {
+				sql.withTransaction(
+					Effect.gen(function* deleteChatRuntimeState() {
+						const tenantId = yield* requireTenantId;
+						yield* sql`DELETE FROM chat_state_entries
+						WHERE tenant_id = ${tenantId} AND cache_key = ${key}`;
+						yield* sql`DELETE FROM chat_state_lists
+						WHERE tenant_id = ${tenantId} AND list_key = ${key}`;
+						yield* sql`DELETE FROM chat_state_list_keys
+						WHERE tenant_id = ${tenantId} AND list_key = ${key}`;
+					})
+				),
+			dequeue: (threadId) =>
+				Effect.gen(function* dequeueChatRuntimeValue() {
 					const tenantId = yield* requireTenantId;
-					yield* sql`DELETE FROM chat_state_entries
-					WHERE tenant_id = ${tenantId} AND cache_key = ${key}`;
+					yield* sql`DELETE FROM chat_state_queues
+					WHERE tenant_id = ${tenantId}
+						AND thread_id = ${threadId}
+						AND expires_at <= ${dbCurrentTimestamp}`;
+					const rows = yield* sql<{
+						readonly value_json: string;
+					}>`DELETE FROM chat_state_queues
+					WHERE tenant_id = ${tenantId}
+						AND thread_id = ${threadId}
+						AND seq = (
+							SELECT seq FROM chat_state_queues
+							WHERE tenant_id = ${tenantId}
+								AND thread_id = ${threadId}
+								AND expires_at > ${dbCurrentTimestamp}
+							ORDER BY seq ASC
+							LIMIT 1
+						)
+					RETURNING value_json`;
+					return rows[0] ? jsonDecode(rows[0].value_json) : null;
 				}),
+			enqueue: (input) =>
+				sql.withTransaction(
+					Effect.gen(function* enqueueChatRuntimeValue() {
+						const tenantId = yield* requireTenantId;
+						yield* sql`DELETE FROM chat_state_queues
+						WHERE tenant_id = ${tenantId}
+							AND thread_id = ${input.threadId}
+							AND expires_at <= ${dbCurrentTimestamp}`;
+						yield* sql`INSERT INTO chat_state_queues ${sql.insert({
+							expires_at: input.expiresAt,
+							tenant_id: tenantId,
+							thread_id: input.threadId,
+							value_json: jsonEncode(input.value),
+						})}`;
+						if (input.maxSize > 0) {
+							yield* sql`DELETE FROM chat_state_queues
+							WHERE tenant_id = ${tenantId}
+								AND thread_id = ${input.threadId}
+								AND seq NOT IN (
+									SELECT seq FROM chat_state_queues
+									WHERE tenant_id = ${tenantId}
+										AND thread_id = ${input.threadId}
+									ORDER BY seq DESC
+									LIMIT ${input.maxSize}
+								)`;
+						}
+						const rows = yield* sql<{
+							readonly depth: number | string;
+						}>`SELECT COUNT(*) AS depth FROM chat_state_queues
+						WHERE tenant_id = ${tenantId}
+							AND thread_id = ${input.threadId}
+							AND expires_at > ${dbCurrentTimestamp}`;
+						return Number(rows[0]?.depth ?? 0);
+					})
+				),
 			extendLock: (input) =>
 				Effect.gen(function* extendChatRuntimeLock() {
 					const tenantId = yield* requireTenantId;
@@ -1379,6 +1496,13 @@ const makePersistence = (
 						AND expires_at > ${dbCurrentTimestamp}
 					RETURNING thread_id`;
 					return rows.length > 0;
+				}),
+			forceReleaseLock: (threadId) =>
+				Effect.gen(function* forceReleaseChatRuntimeLock() {
+					const tenantId = yield* requireTenantId;
+					yield* sql`DELETE FROM chat_thread_locks
+					WHERE tenant_id = ${tenantId}
+						AND thread_id = ${threadId}`;
 				}),
 			get: (key) =>
 				Effect.gen(function* getChatRuntimeState() {
@@ -1400,6 +1524,34 @@ const makePersistence = (
 					LIMIT 1`;
 					return rows[0] ? mapChatStateRecord(rows[0]) : null;
 				}),
+			getList: (key) =>
+				sql.withTransaction(
+					Effect.gen(function* getChatRuntimeList() {
+						const tenantId = yield* requireTenantId;
+						yield* sql`DELETE FROM chat_state_lists
+						WHERE tenant_id = ${tenantId}
+							AND list_key = ${key}
+							AND EXISTS (
+								SELECT 1 FROM chat_state_list_keys
+								WHERE tenant_id = ${tenantId}
+									AND list_key = ${key}
+									AND expires_at IS NOT NULL
+									AND expires_at <= ${dbCurrentTimestamp}
+							)`;
+						yield* sql`DELETE FROM chat_state_list_keys
+						WHERE tenant_id = ${tenantId}
+							AND list_key = ${key}
+							AND expires_at IS NOT NULL
+							AND expires_at <= ${dbCurrentTimestamp}`;
+						const rows = yield* sql<{
+							readonly value_json: string;
+						}>`SELECT value_json FROM chat_state_lists
+						WHERE tenant_id = ${tenantId}
+							AND list_key = ${key}
+						ORDER BY seq ASC`;
+						return rows.map((row) => jsonDecode(row.value_json));
+					})
+				),
 			isSubscribed: (threadId) =>
 				Effect.gen(function* isChatThreadSubscribed() {
 					const tenantId = yield* requireTenantId;
@@ -1409,6 +1561,20 @@ const makePersistence = (
 					WHERE tenant_id = ${tenantId} AND thread_id = ${threadId}
 					LIMIT 1`;
 					return rows.length > 0;
+				}),
+			queueDepth: (threadId) =>
+				Effect.gen(function* getChatRuntimeQueueDepth() {
+					const tenantId = yield* requireTenantId;
+					yield* sql`DELETE FROM chat_state_queues
+					WHERE tenant_id = ${tenantId}
+						AND thread_id = ${threadId}
+						AND expires_at <= ${dbCurrentTimestamp}`;
+					const rows = yield* sql<{
+						readonly depth: number | string;
+					}>`SELECT COUNT(*) AS depth FROM chat_state_queues
+					WHERE tenant_id = ${tenantId}
+						AND thread_id = ${threadId}`;
+					return Number(rows[0]?.depth ?? 0);
 				}),
 			releaseLock: (input) =>
 				Effect.gen(function* releaseChatRuntimeLock() {

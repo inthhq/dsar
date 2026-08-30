@@ -121,6 +121,8 @@ const makePersistenceService = (
 	clock: { readonly now: () => number } = DEFAULT_CLOCK
 ): PersistenceService => {
 	const state = new Map<string, ChatStateRecord>();
+	const lists = new Map<string, JsonValue[]>();
+	const queues = new Map<string, JsonValue[]>();
 	const subscriptions = new Set<string>();
 	const locks = new Map<
 		string,
@@ -155,11 +157,44 @@ const makePersistenceService = (
 					});
 					return { ...input, tenantId };
 				}),
+			appendToList: (input) =>
+				Effect.gen(function* appendToList() {
+					const { tenantId } = yield* Effect.service(TenantContext);
+					const scopedKey = toScopedKey(tenantId, input.key);
+					const values = [...(lists.get(scopedKey) ?? []), input.value];
+					lists.set(
+						scopedKey,
+						input.maxLength && input.maxLength > 0
+							? values.slice(-input.maxLength)
+							: values
+					);
+				}),
 			delete: (key) =>
 				Effect.gen(function* deleteState() {
 					const { tenantId } = yield* Effect.service(TenantContext);
 					hooks?.onDelete?.(key);
-					state.delete(toScopedKey(tenantId, key));
+					const scopedKey = toScopedKey(tenantId, key);
+					state.delete(scopedKey);
+					lists.delete(scopedKey);
+				}),
+			dequeue: (threadId) =>
+				Effect.gen(function* dequeue() {
+					const { tenantId } = yield* Effect.service(TenantContext);
+					const scopedThreadId = toScopedKey(tenantId, threadId);
+					const queue = [...(queues.get(scopedThreadId) ?? [])];
+					const value = queue.shift() ?? null;
+					queues.set(scopedThreadId, queue);
+					return value;
+				}),
+			enqueue: (input) =>
+				Effect.gen(function* enqueue() {
+					const { tenantId } = yield* Effect.service(TenantContext);
+					const scopedThreadId = toScopedKey(tenantId, input.threadId);
+					const queue = [...(queues.get(scopedThreadId) ?? []), input.value];
+					const boundedQueue =
+						input.maxSize > 0 ? queue.slice(-input.maxSize) : queue;
+					queues.set(scopedThreadId, boundedQueue);
+					return boundedQueue.length;
 				}),
 			extendLock: (input) =>
 				Effect.gen(function* extendLock() {
@@ -181,17 +216,32 @@ const makePersistenceService = (
 					});
 					return true;
 				}),
+			forceReleaseLock: (threadId) =>
+				Effect.gen(function* forceReleaseLock() {
+					const { tenantId } = yield* Effect.service(TenantContext);
+					locks.delete(toScopedKey(tenantId, threadId));
+				}),
 			get: (key) =>
 				Effect.gen(function* getState() {
 					const { tenantId } = yield* Effect.service(TenantContext);
 					hooks?.onGet?.(key);
 					return state.get(toScopedKey(tenantId, key)) ?? null;
 				}),
+			getList: (key) =>
+				Effect.gen(function* getList() {
+					const { tenantId } = yield* Effect.service(TenantContext);
+					return [...(lists.get(toScopedKey(tenantId, key)) ?? [])];
+				}),
 			isSubscribed: (threadId) =>
 				Effect.gen(function* isSubscribed() {
 					const { tenantId } = yield* Effect.service(TenantContext);
 					hooks?.onIsSubscribed?.(threadId);
 					return subscriptions.has(toScopedKey(tenantId, threadId));
+				}),
+			queueDepth: (threadId) =>
+				Effect.gen(function* queueDepth() {
+					const { tenantId } = yield* Effect.service(TenantContext);
+					return queues.get(toScopedKey(tenantId, threadId))?.length ?? 0;
 				}),
 			releaseLock: (input) =>
 				Effect.gen(function* releaseLock() {
@@ -267,6 +317,7 @@ const makePersistenceService = (
 		retentionPolicies: {} as never,
 		timeline: {} as never,
 		verificationEvidence: {} as never,
+		webhookEndpoints: {} as never,
 	};
 };
 
@@ -549,5 +600,44 @@ describe("core chat state adapter", () => {
 				updatedAt: "2026-02-20T12:05:00.000Z",
 			},
 		]);
+	});
+
+	it("supports bounded lists and force-releasing thread locks", async () => {
+		const adapter = makePersistenceStateAdapter({
+			persistence: makePersistenceService(),
+			resolveTenantId: () => "tenant-1",
+			tokenFactory: () => "lock-fixed",
+		});
+
+		await adapter.appendToList(
+			"transcript:user-1",
+			{ message: "first" },
+			{
+				maxLength: 2,
+			}
+		);
+		await adapter.appendToList(
+			"transcript:user-1",
+			{ message: "second" },
+			{
+				maxLength: 2,
+			}
+		);
+		await adapter.appendToList(
+			"transcript:user-1",
+			{ message: "third" },
+			{
+				maxLength: 2,
+			}
+		);
+		expect(await adapter.getList("transcript:user-1")).toStrictEqual([
+			{ message: "second" },
+			{ message: "third" },
+		]);
+
+		expect(await adapter.acquireLock("thread-1", 5000)).not.toBeNull();
+		expect(await adapter.acquireLock("thread-1", 5000)).toBeNull();
+		await adapter.forceReleaseLock("thread-1");
+		expect(await adapter.acquireLock("thread-1", 5000)).not.toBeNull();
 	});
 });

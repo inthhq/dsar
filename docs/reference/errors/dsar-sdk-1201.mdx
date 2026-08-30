@@ -28,5 +28,6 @@ Yes for 5xx. No for 4xx unless request is corrected.
 ## Minimal Trigger Example
 
 ```ts
+// @noErrors
 await client.requests.capture({ ... }); // Server returns 400 or 500
 ```

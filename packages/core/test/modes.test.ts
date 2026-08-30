@@ -1,6 +1,7 @@
 import { describe, expect, it } from "@effect/vitest";
 
 import { buildCoreClient } from "#src/client";
+
 const okStatusFetch = (() =>
 	Response.json({
 		data: { service: "@dsar/backend", status: "ok" },

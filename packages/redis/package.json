@@ -22,7 +22,7 @@
 		"format": "oxfmt --check src test package.json tsconfig.json README.md",
 		"lint": "oxlint .",
 		"test": "vitest run",
-		"typecheck": "tsgo --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@dsar/backend": "workspace:*"
@@ -30,11 +30,11 @@
 	"devDependencies": {
 		"@dsar/typescript-config": "workspace:*",
 		"@effect/vitest": "catalog:effect",
-		"@typescript/native-preview": "catalog:utils",
+		"ioredis": "5.11.1",
 		"typescript": "catalog:utils",
 		"vitest": "catalog:utils"
 	},
 	"peerDependencies": {
-		"ioredis": "^5.7.0"
+		"ioredis": "^5.11.1"
 	}
 }

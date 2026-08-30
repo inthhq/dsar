@@ -3,7 +3,7 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
-import * as ts from "typescript";
+import * as ts from "@typescript/typescript6";
 
 interface Failure {
 	filePath: string;
@@ -336,7 +336,7 @@ const readPackageDirs = async (rootDirectory: string): Promise<string[]> => {
 		const srcDirectory = path.join(packageDirectory, "src");
 		const packageJson = path.join(packageDirectory, "package.json");
 		try {
-			await readFile(packageJson, "utf8");
+			await readFile(packageJson, "utf-8");
 			await readdir(srcDirectory);
 			packageDirs.push(packageDirectory);
 		} catch {
@@ -463,7 +463,7 @@ const checkFunctionLikeDocs = (
 };
 
 const checkFile = async (absoluteFilePath: string): Promise<void> => {
-	const content = await readFile(absoluteFilePath, "utf8");
+	const content = await readFile(absoluteFilePath, "utf-8");
 	const scriptKind = absoluteFilePath.endsWith(".tsx")
 		? ts.ScriptKind.TSX
 		: ts.ScriptKind.TS;

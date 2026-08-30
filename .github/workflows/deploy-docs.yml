@@ -29,14 +29,12 @@ jobs:
   trigger-preview:
     name: Trigger Preview
     if: >-
-      github.event_name == 'pull_request_target' &&
-      github.event.action != 'closed' &&
-      github.event.pull_request.head.repo.full_name == github.repository
+      github.event_name == 'pull_request_target' && github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Trigger docs preview
         id: trigger_preview
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
         continue-on-error: true
         with:
           token: ${{ secrets.DOCS_DEPLOY_TOKEN }}
@@ -66,13 +64,11 @@ jobs:
   notify-close:
     name: Notify PR Closed
     if: >-
-      github.event_name == 'pull_request_target' &&
-      github.event.action == 'closed' &&
-      github.event.pull_request.head.repo.full_name == github.repository
+      github.event_name == 'pull_request_target' && github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Notify docs repo of PR close
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
         with:
           token: ${{ secrets.DOCS_DEPLOY_TOKEN }}
           repository: ${{ secrets.DOCS_REPO }}
@@ -98,7 +94,7 @@ jobs:
     steps:
       - name: Get PR information
         id: pr-info
-        uses: actions/github-script@v7
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const prNumber = '${{ github.event.inputs.pr_number }}';
@@ -120,7 +116,7 @@ jobs:
             core.setOutput('action', 'opened');
 
       - name: Trigger docs preview
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
         with:
           token: ${{ secrets.DOCS_DEPLOY_TOKEN }}
           repository: ${{ secrets.DOCS_REPO }}
@@ -154,7 +150,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger production deploy
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
         with:
           token: ${{ secrets.DOCS_DEPLOY_TOKEN }}
           repository: ${{ secrets.DOCS_REPO }}
@@ -183,7 +179,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger staging deploy
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
         with:
           token: ${{ secrets.DOCS_DEPLOY_TOKEN }}
           repository: ${{ secrets.DOCS_REPO }}

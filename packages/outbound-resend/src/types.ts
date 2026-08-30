@@ -1,7 +1,4 @@
-import type {
-	NotificationAdapterContract,
-	NotificationDispatchInput,
-} from "@dsar/backend";
+import type { NotificationAdapterContract } from "@dsar/backend";
 
 /**
  * Runtime configuration for the Resend-backed outbound adapter.

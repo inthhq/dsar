@@ -1,126 +1,268 @@
-# Ultracite Code Standards
+# DSAR repository guide
 
-This project uses **Ultracite**, a zero-config preset that enforces strict code quality standards through automated formatting and linting.
+This file is the source of truth for coding agents working in this repository.
+Keep it focused on repository-specific decisions, commands, and invariants.
 
-## Quick Reference
+## Repository contract
 
-- **Format code**: `bun x ultracite fix`
-- **Check for issues**: `bun x ultracite check`
-- **Diagnose setup**: `bun x ultracite doctor`
+- This is a Bun-managed, ESM-only TypeScript monorepo orchestrated by
+  Turborepo.
+- Use Node.js 24 (`.node-version`) and the Bun version declared in
+  `package.json`.
+- Application code compiles with TypeScript 7. The
+  `@typescript/typescript6` alias exists only for tools that still require the
+  JavaScript compiler API; do not use it to compile product code.
+- Runtime code uses Effect 4. Keep `effect`, `@effect/platform-*`,
+  `@effect/sql-*`, and `@effect/vitest` on one matching release line.
+- Public behavior is defined jointly by package exports, schemas, HTTP routes,
+  the Node SDK, the CLI, generated OpenAPI, and docs. A change is incomplete if
+  these surfaces disagree.
+- Preserve unrelated worktree changes. Do not reset, rewrite, or delete work
+  you did not create.
 
-Oxlint + Oxfmt (the underlying engine) provides robust linting and formatting. Most issues are automatically fixable.
+## Start here
 
----
+```sh
+node --version
+bun --version
+bun install --frozen-lockfile
+bun run typecheck
+```
 
-## Core Principles
+The dependency age gate lives in `bunfig.toml` and rejects packages published
+less than 24 hours ago.
 
-Write code that is **accessible, performant, type-safe, and maintainable**. Focus on clarity and explicit intent over brevity.
+Read the relevant project skill before changing its area:
 
-### Type Safety & Explicitness
+- `.agents/skills/effect-ts/SKILL.md` for Effect code
+- `.agents/skills/leadtype/SKILL.md` for documentation components, conversion,
+  bundles, and linting
+- `.agents/skills/turborepo/SKILL.md` for task graph or cache changes
+- `.agents/skills/tsdown/SKILL.md` for package build changes
+- `.agents/skills/ultracite/SKILL.md` for lint or format configuration
+- `.agents/skills/find-skills/SKILL.md` when a missing capability may already
+  exist as an installable skill
 
-- Use explicit types for function parameters and return values when they enhance clarity
-- Prefer `unknown` over `any` when the type is genuinely unknown
-- Use const assertions (`as const`) for immutable values and literal types
-- Leverage TypeScript's type narrowing instead of type assertions
-- Use meaningful variable names instead of magic numbers - extract constants with descriptive names
+Claude-compatible links in `.claude/skills` point at these same files. Update
+project skills with `bunx skills update --project --yes`; commit the skill files,
+links, and `skills-lock.json` together. After an update, verify that the Effect
+skill still targets `Effect-TS/effect` on `main` and uses `.repos/effect`; the
+upstream skill has previously referenced an obsolete repository and checkout
+path.
 
-### Modern JavaScript/TypeScript
+For Effect work, prepare the ignored reference checkout:
 
-- Use arrow functions for callbacks and short functions
-- Prefer `for...of` loops over `.forEach()` and indexed `for` loops
-- Use optional chaining (`?.`) and nullish coalescing (`??`) for safer property access
-- Prefer template literals over string concatenation
-- Use destructuring for object and array assignments
-- Use `const` by default, `let` only when reassignment is needed, never `var`
+```sh
+bun run prepare:effect
+```
 
-### Async & Promises
+This clones or updates `Effect-TS/effect` on `main` into `.repos/effect`. Use
+that checkout as the API and migration source of truth when installed package
+types are not enough. At the July 2026 refresh, Effect 4 is still published as
+`4.0.0-beta.101`, not a GA `4.0.0`; verify npm metadata and upstream `main`
+before changing that statement or the catalog.
 
-- Always `await` promises in async functions - don't forget to use the return value
-- Use `async/await` syntax instead of promise chains for better readability
-- Handle errors appropriately in async code with try-catch blocks
-- Don't use async functions as Promise executors
+## Workspace map
 
-### React & JSX
+- `packages/dsar`: public umbrella package and subpath exports; built with
+  tsdown.
+- `packages/backend`: Effect HTTP API, lifecycle orchestration, auth,
+  middleware, OpenAPI, and runtime assembly.
+- `packages/core`: application-facing client modes and the Chat SDK state
+  adapter.
+- `packages/node-sdk`: typed HTTP client and framework-neutral webhook receiver.
+- `packages/cli`: command definitions, interactive flows, and API parity tests.
+- `packages/internals/schema`: canonical domain schemas and shared runtime
+  contracts.
+- `packages/internals/persistence`: tenant-scoped repository contracts, SQL
+  implementation, and ordered migrations.
+- `packages/internals/policy-engine`: deterministic policy evaluation and
+  explainability.
+- `packages/internals/policy-packs`: registry, pinning, diff, audit, and upgrade
+  workflows.
+- `packages/internals/error-codes`: shared error catalog.
+- `packages/internals/guards`: shared runtime parsers and guards.
+- `packages/persistence-pg` and `packages/persistence-sqlite`: database-specific
+  layers and migration conformance.
+- `packages/auth-unkey`, `packages/inbound-*`, `packages/outbound-*`,
+  `packages/redis`, `packages/upstash`, and `packages/storage-*`: optional
+  adapters.
+- `examples/kitchen-sink`: runnable integration example and smoke client.
+- `docs`: Leadtype-authored MDX documentation and navigation metadata.
 
-- Use function components over class components
-- Call hooks at the top level only, never conditionally
-- Specify all dependencies in hook dependency arrays correctly
-- Use the `key` prop for elements in iterables (prefer unique IDs over array indices)
-- Nest children between opening and closing tags instead of passing as props
-- Don't define components inside other components
-- Use semantic HTML and ARIA attributes for accessibility:
-  - Provide meaningful alt text for images
-  - Use proper heading hierarchy
-  - Add labels for form inputs
-  - Include keyboard event handlers alongside mouse events
-  - Use semantic elements (`<button>`, `<nav>`, etc.) instead of divs with roles
+## Non-negotiable invariants
 
-### Error Handling & Debugging
+### Tenant and authorization safety
 
-- Remove `console.log`, `debugger`, and `alert` statements from production code
-- Throw `Error` objects with descriptive messages, not strings or other values
-- Use `try-catch` blocks meaningfully - don't catch errors just to rethrow them
-- Prefer early returns over nested conditionals for error cases
+- Every persistence operation that reads or writes tenant data must require
+  `TenantContext` and run through `withTenant`.
+- Tenant identifiers come from verified runtime context, not request payloads
+  or untrusted adapter metadata.
+- Never loosen the split between machine bearer-token access and trusted-host
+  identity projection without updating auth tests and the auth model docs.
+- New routes must declare their auth lane and authorization requirements
+  explicitly.
 
-### Code Organization
+### Domain and lifecycle correctness
 
-- Keep functions focused and under reasonable cognitive complexity limits
-- Extract complex conditions into well-named boolean variables
-- Use early returns to reduce nesting
-- Prefer simple conditionals over nested ternary operators
-- Group related code together and separate concerns
+- Decode `unknown` at system boundaries with Effect Schema or a focused guard.
+  Do not cast request bodies, persisted JSON, or adapter payloads into domain
+  types.
+- Keep policy evaluation deterministic. New inputs must be represented in the
+  explainability trace and covered by golden or matrix tests.
+- Lifecycle mutations must preserve auditability, typed failures, and legal
+  clock behavior.
+- Adapter failures must not silently corrupt request state or bypass lifecycle
+  rules.
 
-### Security
+### Public contracts
 
-- Add `rel="noopener"` when using `target="_blank"` on links
-- Avoid `dangerouslySetInnerHTML` unless absolutely necessary
-- Don't use `eval()` or assign directly to `document.cookie`
-- Validate and sanitize user input
+- Public exports are explicit package entrypoints. Avoid new convenience barrel
+  files, but preserve intentional package entrypoints and the `dsar` umbrella
+  exports.
+- Public failures use the established typed error classes, catalog codes, and
+  response envelopes. Add or update the matching file under
+  `docs/reference/errors` when the catalog changes.
+- Keep runtime behavior, schemas, SDK types, CLI commands, OpenAPI, and docs in
+  sync.
 
-### Performance
+## Effect conventions
 
-- Avoid spread syntax in accumulators within loops
-- Use top-level regex literals instead of creating them in loops
-- Prefer specific imports over namespace imports
-- Avoid barrel files (index files that re-export everything)
-- Use proper image components (e.g., Next.js `<Image>`) over `<img>` tags
+- Import focused Effect modules, for example
+  `import * as Effect from "effect/Effect"` and
+  `import * as Schema from "effect/Schema"`. The root `effect` import is
+  lint-restricted except for type-only imports.
+- Define services with `Context.Service` and provide implementations through
+  Layers. Keep requirements visible in the effect environment.
+- Prefer `Effect.gen`, `Effect.fn`, and typed combinators over nested promises.
+  Use `Effect.runPromise` only at an actual runtime, adapter, or test boundary.
+- Model expected failures in the error channel with descriptive tagged error
+  types. Do not use defects for routine validation or integration failures.
+- Use Schema transformations and decoding defaults according to current Effect
+  4 signatures. Confirm unfamiliar APIs in `.repos/effect`.
+- Use `@effect/vitest` for effectful tests and provide Layers explicitly.
+- When upgrading Effect, update the entire Effect catalog together, then search
+  for removed module names and regenerate the OpenAPI snapshot after reviewing
+  the semantic diff.
 
-### Framework-Specific Guidance
+## Change-impact checklist
 
-**Next.js:**
+| If you change... | Also inspect... |
+| --- | --- |
+| HTTP route or payload | backend schema/handler tests, `@dsar/node-sdk`, CLI parity, OpenAPI snapshot, API docs |
+| Domain schema | persistence mappings, policy engine, backend codecs, SDK types, fixtures |
+| Persistence contract | SQL implementation, both driver layers, migrations, migration conformance, test fakes |
+| Migration registry | a new monotonic migration file, up/down coverage, clean install, previous-version upgrade, concurrency metadata tests |
+| Adapter contract | adapter registry, conformance tests, package peer dependencies, integration docs |
+| Error catalog | exported IDs, response mapping, contract tests, matching error MDX |
+| Public export | source entrypoint, `packages/dsar` subpath export, tsdown output, publint/ATTW |
+| CLI command | command schema, runtime handler, help/interactive flow, SDK parity and E2E matrix |
+| Docs navigation | `docs/docs.config.ts`, the relevant `meta.json`, internal links, Leadtype lint |
 
-- Use Next.js `<Image>` component for images
-- Use `next/head` or App Router metadata API for head elements
-- Use Server Components for async data fetching instead of async Client Components
+Treat `packages/backend/test/__snapshots__/openapi.test.ts.snap` as a reviewed
+contract, not a file to update blindly. Effect upgrades can legitimately alter
+JSON Schema shape and automatic responses; inspect those changes before
+accepting the snapshot.
 
-**React 19+:**
+## Dependencies and tooling
 
-- Use ref as a prop instead of `React.forwardRef`
+- Use Bun only. `bun.lock` is canonical; do not create npm, pnpm, or Yarn lock
+  files.
+- Prefer root catalogs for versions shared across workspaces. Keep peer ranges
+  compatible with the exact development dependency used in that adapter.
+- Check candidates with `bun outdated --recursive`. An asterisk means Bun held
+  a newer release back because of `minimumReleaseAge`.
+- Keep `@types/node` on the Node 24 line even when a newer Node major exists.
+- Latest Leadtype currently needs the committed
+  `patches/leadtype@0.4.2.patch` so its snippet parser uses the TypeScript 6 API
+  alias. Re-evaluate and remove the patch when upstream supports the TypeScript
+  7 API surface.
+- Ultracite 7 is configured through `oxlint.config.ts` and
+  `oxfmt.config.ts`. Package-local legacy `.oxlintrc.json` files should not be
+  reintroduced.
+- GitHub Actions are pinned to full commit SHAs with a version comment. Do not
+  edit `.github/workflows/pullfrog.yml`; it is externally managed.
 
-**Solid/Svelte/Vue/Qwik:**
+## Testing and validation
 
-- Use `class` and `for` attributes (not `className` or `htmlFor`)
+Optimize for confidence in observable behavior, not test count or a fixed
+unit/integration/E2E ratio.
 
----
+- For a defect, add a regression test at the highest stable boundary that
+  could reasonably have caught it before implementing the fix.
+- For user-visible behavior, prefer an acceptance path through a public API,
+  CLI, SDK, or adapter contract. Assert responses and durable side effects,
+  not internal calls.
+- Prefer real implementations for code owned by this repository. Replace
+  external providers or deliberately controlled effects such as time and
+  randomness; do not mock internal layers merely to make a test easy.
+- Use focused unit or property tests for pure algorithms, schemas,
+  state-machine invariants, combinatorial edge cases, and failures that are
+  impractical to reproduce through a wider boundary.
+- Do not repeat the same behavior at every layer. Add a narrower test only
+  when it protects a distinct contract or makes an important failure easier to
+  diagnose.
+- Use `@effect/vitest` for Effect programs. Prefer `it.effect`, shared
+  `layer(...)` setup, and `TestClock` over manual runtimes, repeated local
+  provisioning, or real-time sleeps.
+- Call a test E2E only when it crosses the real process, transport, runtime,
+  and storage boundaries. A test using injected `fetch`, an in-memory
+  repository, or direct function invocation is an integration or component
+  test even if it covers a complete business flow.
+- Keep E2E coverage small, deterministic, and centered on critical journeys.
+  The strongest path exercises the built CLI or SDK against a real HTTP server
+  and real SQLite or Postgres persistence.
 
-## Testing
+Use the smallest relevant loop while developing:
 
-- Write assertions inside `it()` or `test()` blocks
-- Avoid done callbacks in async tests - use async/await instead
-- Don't use `.only` or `.skip` in committed code
-- Keep test suites reasonably flat - avoid excessive `describe` nesting
+```sh
+bun run --cwd packages/backend test
+bun run --cwd packages/internals/persistence test
+bunx turbo run typecheck --filter=@dsar/backend
+bun x ultracite check
+```
 
-## When Oxlint + Oxfmt Can't Help
+Before handing off a code, dependency, schema, or tooling change, run:
 
-Oxlint + Oxfmt's linter will catch most issues automatically. Focus your attention on:
+```sh
+bun install --frozen-lockfile
+bun run check
+bun run typecheck
+bun run test
+bun run build
+```
 
-1. **Business logic correctness** - Oxlint + Oxfmt can't validate your algorithms
-2. **Meaningful naming** - Use descriptive names for functions, variables, and types
-3. **Architecture decisions** - Component structure, data flow, and API design
-4. **Edge cases** - Handle boundary conditions and error states
-5. **User experience** - Accessibility, performance, and usability considerations
-6. **Documentation** - Add comments for complex logic, but prefer self-documenting code
+`bun run check` covers Ultracite, docs warnings, Leadtype links/snippets, error
+docs, and exported TSDoc. It does not replace typechecks or tests.
 
----
+Postgres integration tests skip without their test database configuration. The
+kitchen-sink smoke test also requires a running DSAR server plus one of
+`DSAR_ADMIN_API_TOKEN`, `DSAR_API_TOKEN`, or `DSAR_TEST_API_TOKEN`; a missing
+token is an environment prerequisite failure, not a passing smoke result.
 
-Most formatting and common issues are automatically fixed by Oxlint + Oxfmt. Run `bun x ultracite fix` before committing to ensure compliance.
+When a snapshot changes, run the focused test first, inspect the diff, then run
+the full suite. Never commit `.only`, `.skip`, debug logging, or an unexplained
+snapshot rewrite.
+
+## Generated and release-sensitive files
+
+- `packages/backend/test/__snapshots__/openapi.test.ts.snap` is generated by the
+  backend OpenAPI test but reviewed as a public contract.
+- `packages/storage-s3/src/generated/s3.ts` is checked-in generated integration
+  code; keep edits mechanical and test the storage adapter.
+- Build output, coverage, `.turbo`, `.repos/effect`, and release-generated
+  `packages/dsar/docs`, `packages/dsar/AGENTS.md`, and
+  `packages/dsar/SKILL.md` are not source changes.
+- Add a Changeset for user-visible package behavior, public API, runtime
+  requirement, or dependency compatibility changes. Keep unrelated package
+  changes out of the same Changeset.
+
+## Git hygiene
+
+- Keep commits focused by task and use product-relevant messages.
+- Never add AI, model, Codex, or Claude provenance labels to branch names,
+  commits, PR titles, or PR bodies.
+- Do not amend, force-push, publish, or open a PR unless the user explicitly
+  asks.
+- Before committing, inspect `git diff --check`, the staged file list, and any
+  generated or lockfile changes.

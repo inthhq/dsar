@@ -1,6 +1,6 @@
 import type { Effect } from "effect";
+import * as Context from "effect/Context";
 import * as Layer from "effect/Layer";
-import * as ServiceMap from "effect/ServiceMap";
 
 import type { PolicyEvaluatorError } from "../types/errors";
 import type { EvaluatorInput, EvaluatorOutput } from "../types/evaluator";
@@ -29,7 +29,7 @@ export interface PolicyEvaluatorService {
  * against DSAR request contexts and returning compliance decisions —
  * available to downstream effects.
  */
-export class PolicyEvaluator extends ServiceMap.Service<
+export class PolicyEvaluator extends Context.Service<
 	PolicyEvaluator,
 	PolicyEvaluatorService
 >()("@dsar/policy-engine/PolicyEvaluator") {}

@@ -27,23 +27,22 @@
 		"format": "oxfmt --check src test package.json tsconfig.json README.md",
 		"lint": "oxlint .",
 		"test": "vitest run",
-		"typecheck": "tsgo --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@dsar/backend": "workspace:*",
 		"@dsar/core": "workspace:*",
 		"@dsar/guards": "workspace:*",
 		"@dsar/internals-error-codes": "workspace:*",
-		"@resend/chat-sdk-adapter": "^0.1.0",
-		"chat": "^4.18.0",
+		"@resend/chat-sdk-adapter": "^0.2.2",
+		"chat": "^4.34.0",
 		"effect": "catalog:effect",
-		"resend": "6.9.2"
+		"resend": "6.18.0"
 	},
 	"devDependencies": {
 		"@dsar/typescript-config": "workspace:*",
 		"@effect/language-service": "catalog:effect",
 		"@effect/vitest": "catalog:effect",
-		"@typescript/native-preview": "catalog:utils",
 		"typescript": "catalog:utils",
 		"vitest": "catalog:utils"
 	}

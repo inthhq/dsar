@@ -1,15 +1,41 @@
 {
-	"version": 1,
-	"skills": {
-		"tsdown": {
-			"source": "rolldown/tsdown",
-			"sourceType": "github",
-			"computedHash": "61e35098541ab945fdd6e00bef2ac43d44dc81a6925fb25d6c9a610f3f6e46ae"
-		},
-		"turborepo": {
-			"source": "vercel/turborepo",
-			"sourceType": "github",
-			"computedHash": "64e9191d1ee7fe61adc8be01cc47cc32c899c41ebd123495e2b0ca6959a07677"
-		}
-	}
+  "version": 1,
+  "skills": {
+    "effect-ts": {
+      "source": "effect-ts/skills",
+      "sourceType": "github",
+      "skillPath": "skills/effect-ts/SKILL.md",
+      "computedHash": "301521e167410dd42d834dd0e7cedbe9cfffa519f630a12241dbea7b1d932324"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "computedHash": "b146008599c31057cef1c145774cea5d5afb30e8f43fa802e47a4b461419aaaf"
+    },
+    "leadtype": {
+      "source": "inthhq/leadtype",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/leadtype/SKILL.md",
+      "computedHash": "ed918b36b6be9316fa51b58a6f90b555fde3b4a3b1c8577f3c8875e8691ce584"
+    },
+    "tsdown": {
+      "source": "rolldown/tsdown",
+      "sourceType": "github",
+      "skillPath": "skills/tsdown/SKILL.md",
+      "computedHash": "134c3bed6489790761d46c5f9741077a70a41d2f5edd6395992c1752bc8c723f"
+    },
+    "turborepo": {
+      "source": "vercel/turborepo",
+      "sourceType": "github",
+      "skillPath": "skills/turborepo/SKILL.md",
+      "computedHash": "91ca859d13834ab4103eff55bfd66ae43ef0823a8339664dd1cccc5a9ddfd7cb"
+    },
+    "ultracite": {
+      "source": "haydenbleasel/ultracite",
+      "sourceType": "github",
+      "skillPath": "skills/ultracite/SKILL.md",
+      "computedHash": "e061f8c74bb2ee6ceb57d4a904fc83be81fd559febe6e76971f055913910df75"
+    }
+  }
 }

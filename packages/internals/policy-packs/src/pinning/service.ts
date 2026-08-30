@@ -1,7 +1,7 @@
+import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Ref from "effect/Ref";
-import * as ServiceMap from "effect/ServiceMap";
 
 import type { PinRecord, PolicyScope } from "../types/domain";
 
@@ -35,7 +35,7 @@ export interface PolicyPinningService {
  * Effect service tag for injecting the {@link PolicyPinningService}
  * implementation.
  */
-export class PolicyPinning extends ServiceMap.Service<
+export class PolicyPinning extends Context.Service<
 	PolicyPinning,
 	PolicyPinningService
 >()("PolicyPinning") {}

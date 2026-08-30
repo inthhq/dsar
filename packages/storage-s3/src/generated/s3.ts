@@ -1,12 +1,12 @@
 /* oxlint-disable eqeqeq, max-classes-per-file, no-shadow, require-yield, @typescript-eslint/no-use-before-define, @typescript-eslint/parameter-properties */
 import * as Sdk from "@aws-sdk/client-s3";
+import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as ServiceMap from "effect/ServiceMap";
 
 // *****  GENERATED CODE *****
 
-export class S3Client extends ServiceMap.Service<S3Client, Sdk.S3Client>()(
+export class S3Client extends Context.Service<S3Client, Sdk.S3Client>()(
 	"S3Client"
 ) {
 	static Default = (config?: Sdk.S3ClientConfig) =>
