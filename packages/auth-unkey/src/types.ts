@@ -58,7 +58,7 @@ export interface UnkeyBearerResolverConfig {
 	 * unauthenticated), but this hook lets hosts log or emit metrics so
 	 * provider outages and misconfiguration stay diagnosable.
 	 */
-	readonly onVerifyError?: (error: unknown) => void;
+	readonly onVerifyError?: (error: unknown) => void | PromiseLike<void>;
 	/** Default principal kind when Unkey metadata does not provide one. */
 	readonly fallbackPrincipalKind?: DsarPrincipalKind;
 	/** Default role when Unkey metadata and roles do not provide one. */

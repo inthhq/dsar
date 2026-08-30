@@ -190,13 +190,13 @@ const verifyUnkeyToken = async (
 	verifyInput:
 		| { readonly key: string }
 		| { readonly key: string; readonly permissions: string },
-	onVerifyError?: (error: unknown) => void
+	onVerifyError?: (error: unknown) => void | PromiseLike<void>
 ): Promise<UnkeyVerifyResultShape | undefined> => {
 	try {
 		return (await client.keys.verifyKey(verifyInput)) as UnkeyVerifyResultShape;
 	} catch (error) {
 		try {
-			onVerifyError?.(error);
+			await onVerifyError?.(error);
 		} catch {
 			// Observer failures must not change the resolver's fail-closed result.
 		}
