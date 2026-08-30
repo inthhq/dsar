@@ -1,63 +1,71 @@
-# Next.js Deletion Webhook Quickstart
+# Next.js deletion webhook quickstart
 
-A production-ready Next.js App Router quickstart demonstrating how to receive outbound DSAR deletion webhooks using `@dsar/node-sdk/webhooks/next`.
+This Next.js App Router example receives a signed outbound DSAR webhook,
+deletes the SQLite user linked to its verified `requestId`, writes an audit
+record, and returns `{ "ok": true }`.
 
-## Quickstart in 5 Steps
+## Quickstart in 5 steps
 
-### 1. Clone & Install
+### 1. Install the workspace
+
+From the repository root:
 
 ```bash
 bun install
 ```
 
-### 2. Configure Environment
-
-Copy `.env.example` to `.env`:
+### 2. Configure the webhook secret
 
 ```bash
+cd examples/nextjs-deletion-webhook
 cp .env.example .env
+openssl rand -hex 32
 ```
 
-### 3. Inspect Route Handler
+Paste the generated value after `DSAR_WEBHOOK_SECRET=` in `.env`. Configure the
+same value on the DSAR outbound webhook endpoint.
 
-The Next.js App Router POST route handler lives in [`app/api/webhooks/dsar/route.ts`](app/api/webhooks/dsar/route.ts):
+### 3. Inspect the deletion flow
 
-```typescript
-import { createWebhookReceiver } from "@dsar/node-sdk/webhooks";
-import { nextWebhookHandler } from "@dsar/node-sdk/webhooks/next";
-import { deleteDemoUserByEmail } from "../../../../lib/db";
+[`app/api/webhooks/dsar/route.ts`](app/api/webhooks/dsar/route.ts) verifies the
+signature and handles `request_captured`. The app associates its own user row
+with the DSAR request ID when the request is created, so the webhook does not
+need to carry personal data in `payload`.
 
-const receiver = createWebhookReceiver({
-  signingSecret: process.env.DSAR_WEBHOOK_SECRET!,
-});
+[`lib/db.ts`](lib/db.ts) deletes that row and writes the event ID, request ID,
+idempotency key, policy version, locale, result, and processing time to SQLite
+in one transaction. Repeated delivery of the same event returns the recorded
+result without deleting or auditing twice.
 
-receiver.on("request_captured", (event) => {
-  deleteDemoUserByEmail(event.payload.email as string);
-});
-
-export const POST = nextWebhookHandler(receiver);
-```
-
-### 4. Start Dev Server
+### 4. Start Next.js
 
 ```bash
 bun run dev
 ```
 
-### 5. Run Smoke Test
+The webhook route is `POST /api/webhooks/dsar`.
 
-Run the automated end-to-end verification script:
+### 5. Run the smoke test
 
 ```bash
 bun run smoke
 ```
 
----
+The test creates a temporary SQLite database, sends the same signed webhook
+twice through the exported Next.js route, and checks the acknowledgement,
+deletion, audit metadata, and idempotency. `bun run test` runs the same path in
+CI through Vitest.
 
-## Deploying to Vercel
+## Deploy to Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Finthhq%2Fdsar%2Ftree%2Fmain%2Fexamples%2Fnextjs-deletion-webhook&env=DSAR_WEBHOOK_SECRET)
+[Create a Vercel project from this repository](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Finthhq%2Fdsar) and then:
 
-1. Click the button above to clone and deploy to Vercel.
-2. Set `DSAR_WEBHOOK_SECRET` in your Vercel Environment Variables.
-3. Configure your DSAR Webhook Endpoint URL to point at `https://your-domain.vercel.app/api/webhooks/dsar`.
+1. Set the Root Directory to `examples/nextjs-deletion-webhook`.
+2. Add `DSAR_WEBHOOK_SECRET` with the secret configured in DSAR.
+3. Add `DEMO_DATABASE_PATH=/tmp/dsar-demo.sqlite`.
+4. Point the DSAR webhook endpoint at
+   `https://your-domain.vercel.app/api/webhooks/dsar`.
+
+Vercel's `/tmp` filesystem is ephemeral. It is enough to try this example, but
+it is not durable application storage. Replace `lib/db.ts` with your managed
+database adapter before using this flow in production.

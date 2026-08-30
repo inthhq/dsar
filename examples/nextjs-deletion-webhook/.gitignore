@@ -1,6 +1,8 @@
 .next/
 .env
-.demo-users.json
+.demo-users.sqlite
 *.db
 *.db-shm
 *.db-wal
+*.sqlite-shm
+*.sqlite-wal

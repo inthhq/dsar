@@ -1,6 +1,7 @@
 {
 	"extends": "@dsar/typescript-config/node.json",
 	"compilerOptions": {
+		"allowImportingTsExtensions": true,
 		"jsx": "preserve",
 		"plugins": [
 			{
@@ -8,12 +9,6 @@
 			}
 		]
 	},
-	"include": [
-		"**/*.ts",
-		"**/*.tsx",
-		".next/types/**/*.ts"
-	],
-	"exclude": [
-		"node_modules"
-	]
+	"include": ["**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+	"exclude": ["node_modules"]
 }

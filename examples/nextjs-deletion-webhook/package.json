@@ -7,7 +7,8 @@
 		"build": "next build",
 		"dev": "next dev",
 		"start": "next start",
-		"smoke": "bun ./scripts/smoke.ts",
+		"smoke": "tsx ./scripts/smoke.ts",
+		"test": "vitest run",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
@@ -22,6 +23,12 @@
 		"@types/node": "catalog:types",
 		"@types/react": "^19.0.10",
 		"@types/react-dom": "^19.0.4",
-		"typescript": "catalog:utils"
+		"@typescript/native-preview": "npm:typescript@7.0.2",
+		"tsx": "4.21.0",
+		"typescript": "catalog:utils",
+		"vitest": "catalog:utils"
+	},
+	"engines": {
+		"node": ">=24 <25"
 	}
 }
