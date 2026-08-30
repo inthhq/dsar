@@ -23,6 +23,8 @@ import { accepted, ok } from "../helpers";
 import { getIdempotencyKey } from "../requests/shared";
 import type { RouteDefinition } from "../types";
 
+/* oxlint-disable unicorn/no-useless-undefined -- Effect.succeed requires an explicit value. */
+
 const DEFAULT_WEBHOOK_ENDPOINT_ID = "default";
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 500;
@@ -74,14 +76,14 @@ const parseStatusFilter = (
 	RequestValidationError
 > => {
 	if (!value) {
-		return Effect.succeed();
+		return Effect.succeed(undefined);
 	}
 	const values = value
 		.split(",")
 		.map((entry) => entry.trim())
 		.filter((entry) => entry.length > 0);
 	if (values.length === 0) {
-		return Effect.succeed();
+		return Effect.succeed(undefined);
 	}
 	const statuses: NotificationDeliveryStatus[] = [];
 	for (const entry of values) {
@@ -119,7 +121,7 @@ const parseIsoTimestampParam = (
 	paramName: "created_after" | "created_before"
 ): Effect.Effect<string | undefined, RequestValidationError> => {
 	if (!value || value.trim().length === 0) {
-		return Effect.succeed();
+		return Effect.succeed(undefined);
 	}
 	const normalized = normalizeIsoTimestamp(value);
 	if (!normalized) {
@@ -180,7 +182,7 @@ const parseOptionalStringField = (
 ): Effect.Effect<string | undefined, RequestValidationError> => {
 	const value = body[fieldName];
 	if (value === undefined || value === null) {
-		return Effect.succeed();
+		return Effect.succeed(undefined);
 	}
 	if (typeof value !== "string") {
 		return Effect.fail(
@@ -501,11 +503,21 @@ const replayOneWebhookDispatch = (input: {
 				status: "already_replayed" as const,
 			};
 		}
-		yield* replayWebhookDispatch({
+		const replayResult = yield* replayWebhookDispatch({
 			event,
 			idempotencyKey: replayIdempotencyKey,
 			tenantId: input.tenantId,
 		});
+		if (replayResult.status !== "delivered") {
+			return {
+				dispatchId,
+				error:
+					replayResult.error ??
+					`Webhook dispatch replay was ${replayResult.status}.`,
+				eventId: event.id,
+				status: "failed" as const,
+			};
+		}
 		yield* appendAuditEvent({
 			action: DISPATCH_REPLAY_ACTION,
 			actor: input.actor.id,

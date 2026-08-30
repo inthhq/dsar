@@ -200,6 +200,75 @@ describe("@dsar/node-sdk client", () => {
 		expect(list.unwrap().items).toHaveLength(0);
 	});
 
+	it("calls outbound webhook dispatch recovery endpoints", async () => {
+		const requests: { readonly body?: string; readonly request: Request }[] =
+			[];
+		const sdk = createNodeSdk({
+			baseUrl: "https://example.test/api/v1",
+			fetch: async (input, init) => {
+				const request = new Request(input, init);
+				const { pathname } = new URL(request.url);
+				requests.push({
+					body: init?.body?.toString(),
+					request,
+				});
+				let data: Readonly<Record<string, unknown>> = {
+					dispatchId: "dispatch/one",
+					eventId: "event-one",
+					status: "replayed",
+				};
+				if (pathname.endsWith("/webhooks/dispatches")) {
+					data = { items: [], limit: 20, offset: 5, total: 0 };
+				} else if (pathname.endsWith("/webhooks/dispatches/replay")) {
+					data = {
+						alreadyReplayed: 0,
+						replayed: 0,
+						results: [],
+						total: 0,
+					};
+				}
+				return Response.json({ data, ok: true });
+			},
+		});
+
+		const listed = await sdk.webhooks.listDispatches({
+			limit: 20,
+			offset: 5,
+			status: "failed,pending",
+		});
+		const replayed = await sdk.webhooks.replayDispatch("dispatch/one", {
+			idempotencyKey: "single-replay",
+		});
+		const bulkReplayed = await sdk.webhooks.replayDispatches(
+			{ endpoint_id: "default", limit: 10, status: "failed" },
+			{ idempotencyKey: "bulk-replay" }
+		);
+
+		expect(listed.unwrap().limit).toBe(20);
+		expect(replayed.unwrap().status).toBe("replayed");
+		expect(bulkReplayed.unwrap().total).toBe(0);
+		expect(requests.map(({ request }) => request.method)).toStrictEqual([
+			"GET",
+			"POST",
+			"POST",
+		]);
+		expect(requests[0]?.request.url).toBe(
+			"https://example.test/api/v1/webhooks/dispatches?limit=20&offset=5&status=failed%2Cpending"
+		);
+		expect(requests[1]?.request.url).toBe(
+			"https://example.test/api/v1/webhooks/dispatches/dispatch%2Fone/replay"
+		);
+		expect(requests[1]?.request.headers.get("x-idempotency-key")).toBe(
+			"single-replay"
+		);
+		expect(requests[2]?.request.headers.get("x-idempotency-key")).toBe(
+			"bulk-replay"
+		);
+		expect(requests[2]?.body).toBe(
+			'{"endpoint_id":"default","limit":10,"status":"failed"}'
+		);
+	});
+
 	it("classifies retriable status values", () => {
 		expect(isRetriableHttpStatus(429)).toBeTruthy();
 		expect(isRetriableHttpStatus(503)).toBeTruthy();

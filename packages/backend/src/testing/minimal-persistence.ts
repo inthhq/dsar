@@ -146,7 +146,7 @@ export interface MinimalPersistence {
 	readonly auditEvents: {
 		readonly append: (
 			input: Record<string, unknown>
-		) => Effect.Effect<Record<string, unknown>>;
+		) => Effect.Effect<Record<string, unknown>, Error>;
 		readonly listByRequestId: (
 			requestId: string
 		) => Effect.Effect<readonly Record<string, unknown>[]>;
@@ -358,25 +358,45 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 			auditEvents: {
 				append: (input: Record<string, unknown>) =>
 					Effect.gen(function* append() {
-						const record = { ...input, tenantId: "tenant-default" };
-						const result = yield* Ref.modify(auditEventsRef, (arr) => {
-							if (arr.some((event) => event.id === record.id)) {
+						const record: Record<string, unknown> = {
+							...input,
+							tenantId: "tenant-default",
+						};
+						const result = yield* Ref.modify(
+							auditEventsRef,
+							(
+								arr
+							): readonly [
+								(
+									| {
+											readonly id: unknown;
+											readonly status: "duplicate";
+									  }
+									| {
+											readonly record: Record<string, unknown>;
+											readonly status: "appended";
+									  }
+								),
+								Record<string, unknown>[],
+							] => {
+								if (arr.some((event) => event.id === record.id)) {
+									return [
+										{
+											id: record.id,
+											status: "duplicate",
+										},
+										arr,
+									];
+								}
 								return [
 									{
-										id: record.id,
-										status: "duplicate" as const,
+										record,
+										status: "appended",
 									},
-									arr,
+									[...arr, record],
 								];
 							}
-							return [
-								{
-									record,
-									status: "appended" as const,
-								},
-								[...arr, record],
-							];
-						});
+						);
 						if (result.status === "duplicate") {
 							return yield* Effect.fail(
 								new Error(`Duplicate audit event ${String(result.id)}`)

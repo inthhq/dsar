@@ -275,12 +275,20 @@ const deliverWithRetries = (input: {
 	readonly retryMaxAttempts: number;
 	readonly retryDelayMs: number;
 	readonly startAttempt?: number;
-}): Effect.Effect<void, AppendDeliveryAttemptError, RuntimeServicesTag> => {
+}): Effect.Effect<
+	NotificationDispatchResult,
+	AppendDeliveryAttemptError,
+	RuntimeServicesTag
+> => {
 	const startAttempt = input.startAttempt ?? 1;
 	const maxAttempt = startAttempt + input.retryMaxAttempts - 1;
 	const runAttempt = (
 		attempt: number
-	): Effect.Effect<void, AppendDeliveryAttemptError, RuntimeServicesTag> =>
+	): Effect.Effect<
+		NotificationDispatchResult,
+		AppendDeliveryAttemptError,
+		RuntimeServicesTag
+	> =>
 		Effect.gen(function* runNotificationAttempt() {
 			const services = yield* Effect.service(RuntimeServicesTag);
 			const resultOrError = yield* Effect.result(input.send());
@@ -310,7 +318,10 @@ const deliverWithRetries = (input: {
 					tenantId: input.tenantId,
 				});
 				if (attempt >= maxAttempt || !normalized.retriable) {
-					return;
+					return {
+						error: normalized.message,
+						status: "failed",
+					};
 				}
 				yield* Effect.sleep(input.retryDelayMs);
 				return yield* runAttempt(attempt + 1);
@@ -328,13 +339,13 @@ const deliverWithRetries = (input: {
 				tenantId: input.tenantId,
 			});
 			if (result.status === "delivered") {
-				return;
+				return result;
 			}
 			if (result.status === "skipped") {
-				return;
+				return result;
 			}
 			if (attempt >= maxAttempt) {
-				return;
+				return result;
 			}
 			yield* Effect.sleep(input.retryDelayMs);
 			return yield* runAttempt(attempt + 1);
@@ -355,9 +366,19 @@ const nextWebhookAttemptNumber = (input: {
 };
 
 const supportsNotificationChannel = (
-	adapter: { readonly channels?: readonly string[] } | undefined,
+	adapter:
+		| { readonly channels?: readonly string[]; readonly key: string }
+		| undefined,
 	channel: "email" | "webhook"
-): boolean => adapter?.channels?.includes(channel) === true;
+): boolean => {
+	if (!adapter) {
+		return false;
+	}
+	if (adapter.channels) {
+		return adapter.channels.includes(channel);
+	}
+	return channel === "webhook" && adapter.key !== "outbound-resend";
+};
 
 /**
  * Replays a persisted webhook dispatch without re-sending other notification
@@ -370,7 +391,11 @@ export const replayWebhookDispatch = (input: {
 	readonly event: NotificationEventRecord;
 	readonly idempotencyKey: string;
 	readonly tenantId: string;
-}): Effect.Effect<void, RequestValidationError, RuntimeServicesTag> =>
+}): Effect.Effect<
+	NotificationDispatchResult,
+	RequestValidationError,
+	RuntimeServicesTag
+> =>
 	Effect.gen(function* replayWebhookDispatchProgram() {
 		const services = yield* Effect.service(RuntimeServicesTag);
 		const webhookConfig = services.config.notificationWebhook;
@@ -413,7 +438,7 @@ export const replayWebhookDispatch = (input: {
 			eventId: input.event.id,
 			idempotencyKey: input.idempotencyKey,
 		});
-		yield* deliverWithRetries({
+		return yield* deliverWithRetries({
 			adapterKey: webhookAdapter?.key ?? "webhook-fallback",
 			channel: "webhook",
 			destination: webhookConfig.url,

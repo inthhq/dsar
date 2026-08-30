@@ -367,6 +367,7 @@ const makeServices = (input: {
 	readonly retryMaxAttempts: number;
 	readonly retryDelayMs: number;
 	readonly adapterKey?: string;
+	readonly omitChannelMetadata?: boolean;
 	readonly webhookEnabled?: boolean;
 	readonly outboundResendConfig?: RuntimeServices["config"]["outboundResend"];
 	readonly disableBuiltInEmail?: boolean;
@@ -377,10 +378,14 @@ const makeServices = (input: {
 			: [
 					{
 						capability: "notifications",
-						channels:
-							input.adapterKey === "outbound-resend"
-								? (["email"] as const)
-								: (["webhook"] as const),
+						...(input.omitChannelMetadata
+							? {}
+							: {
+									channels:
+										input.adapterKey === "outbound-resend"
+											? (["email"] as const)
+											: (["webhook"] as const),
+								}),
 						diagnostics: () =>
 							Effect.succeed({
 								capability: "notifications",
@@ -430,6 +435,46 @@ const makeServices = (input: {
 });
 
 describe("notification retry/backoff behavior", () => {
+	it("preserves webhook routing for legacy adapters without channel metadata", async () => {
+		const memory = makeMemoryPersistence();
+		let callCount = 0;
+		const services = makeServices({
+			dispatch: {
+				send: () => {
+					callCount += 1;
+					return Effect.succeed({
+						responseCode: 202,
+						status: "delivered" as const,
+					});
+				},
+			},
+			omitChannelMetadata: true,
+			persistence: memory.persistence,
+			retryDelayMs: 0,
+			retryMaxAttempts: 1,
+		});
+
+		await Effect.runPromise(
+			emitNotificationEvent({
+				draft: makeNotificationDraft({
+					eventType: "clock_due_changed",
+					payload: { dueAt: "2026-03-01T00:00:00.000Z" },
+					requestId: "req-legacy-adapter",
+				}),
+				idempotencyKey: "legacy-adapter",
+				tenantId: "tenant-default",
+			}).pipe(Effect.provideService(RuntimeServicesTag, services))
+		);
+
+		expect(callCount).toBe(1);
+		expect(
+			memory
+				.getAttempts()
+				.filter((attempt) => attempt.channel === "webhook")
+				.map((attempt) => attempt.status)
+		).toStrictEqual(["delivered"]);
+	});
+
 	it("retries failed webhook dispatches using configured backoff", async () => {
 		const { vi } = await import("vitest");
 		vi.useFakeTimers();

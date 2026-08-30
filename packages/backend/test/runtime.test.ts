@@ -1008,6 +1008,78 @@ describe(dsarInstance, () => {
 		expect(sent).toHaveLength(1);
 	});
 
+	it("reports a failed replay when webhook delivery exhausts its attempts", async () => {
+		const persistence = makeMemoryPersistence();
+		await seedWebhookDispatch(persistence, {
+			eventId: "evt-delivery-failure",
+			id: "dispatch-delivery-failure",
+			requestId: "req-delivery-failure",
+		});
+		const runtime = dsarInstance({
+			adapters: {
+				notifications: makeNotificationAdapter({
+					send: () =>
+						Effect.succeed({
+							error: "provider unavailable",
+							status: "failed" as const,
+						}),
+				}),
+			},
+			config: {
+				...TEST_RUNTIME_AUTH.config,
+				notificationWebhook: {
+					endpointId: "default",
+					retryDelayMs: 0,
+					retryMaxAttempts: 1,
+					signingSecret: "secret",
+					tenantScoped: true,
+					timeoutMs: 1000,
+					url: "https://tenant.example/webhook",
+				},
+			},
+			repos: { persistence },
+		});
+
+		const response = await runtime.handler(
+			new Request("https://example.test/webhooks/dispatches/replay", {
+				headers: {
+					...adminHeaders,
+					"x-idempotency-key": "bulk-delivery-failure",
+				},
+				method: "POST",
+			})
+		);
+		const body = (await response.json()) as {
+			readonly data: {
+				readonly replayed: number;
+				readonly results: readonly {
+					readonly dispatchId: string;
+					readonly error?: string;
+					readonly status: string;
+				}[];
+			};
+		};
+		expect(response.status).toBe(202);
+		expect(body.data.replayed).toBe(0);
+		expect(body.data.results).toStrictEqual([
+			{
+				dispatchId: "dispatch-delivery-failure",
+				error: "provider unavailable",
+				eventId: "evt-delivery-failure",
+				status: "failed",
+			},
+		]);
+		const auditEvents = await Effect.runPromise(
+			persistence.auditEvents.listByRequestId("req-delivery-failure")
+		);
+		expect(auditEvents.map((event) => event.action)).toContain(
+			"webhook_dispatch_replay_requested"
+		);
+		expect(auditEvents.map((event) => event.action)).not.toContain(
+			"webhook_dispatch_replayed"
+		);
+	});
+
 	it("validates and protects bulk outbound webhook dispatch replay", async () => {
 		const runtime = dsarInstance({
 			...TEST_RUNTIME_AUTH,

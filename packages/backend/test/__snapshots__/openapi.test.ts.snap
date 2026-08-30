@@ -9009,23 +9009,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "attempt": {
                                 "anyOf": [
                                   {
-                                    "type": "number",
-                                  },
-                                  {
-                                    "enum": [
-                                      "NaN",
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                      },
+                                      {
+                                        "enum": [
+                                          "NaN",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "-Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
                                     ],
-                                    "type": "string",
                                   },
                                   {
                                     "enum": [
                                       "Infinity",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
                                       "-Infinity",
+                                      "NaN",
                                     ],
                                     "type": "string",
                                   },
@@ -9084,23 +9096,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                   {
                                     "anyOf": [
                                       {
-                                        "type": "number",
-                                      },
-                                      {
-                                        "enum": [
-                                          "NaN",
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                          },
+                                          {
+                                            "enum": [
+                                              "NaN",
+                                            ],
+                                            "type": "string",
+                                          },
+                                          {
+                                            "enum": [
+                                              "Infinity",
+                                            ],
+                                            "type": "string",
+                                          },
+                                          {
+                                            "enum": [
+                                              "-Infinity",
+                                            ],
+                                            "type": "string",
+                                          },
                                         ],
-                                        "type": "string",
                                       },
                                       {
                                         "enum": [
                                           "Infinity",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
                                           "-Infinity",
+                                          "NaN",
                                         ],
                                         "type": "string",
                                       },
@@ -9112,32 +9136,13 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                 ],
                               },
                               "status": {
-                                "anyOf": [
-                                  {
-                                    "enum": [
-                                      "pending",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "delivered",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "failed",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "skipped",
-                                    ],
-                                    "type": "string",
-                                  },
+                                "enum": [
+                                  "pending",
+                                  "delivered",
+                                  "failed",
+                                  "skipped",
                                 ],
+                                "type": "string",
                               },
                             },
                             "required": [
@@ -9157,23 +9162,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "limit": {
                           "anyOf": [
                             {
-                              "type": "number",
-                            },
-                            {
-                              "enum": [
-                                "NaN",
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
                               ],
-                              "type": "string",
                             },
                             {
                               "enum": [
                                 "Infinity",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
                                 "-Infinity",
+                                "NaN",
                               ],
                               "type": "string",
                             },
@@ -9182,23 +9199,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "offset": {
                           "anyOf": [
                             {
-                              "type": "number",
-                            },
-                            {
-                              "enum": [
-                                "NaN",
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
                               ],
-                              "type": "string",
                             },
                             {
                               "enum": [
                                 "Infinity",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
                                 "-Infinity",
+                                "NaN",
                               ],
                               "type": "string",
                             },
@@ -9207,23 +9236,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "total": {
                           "anyOf": [
                             {
-                              "type": "number",
-                            },
-                            {
-                              "enum": [
-                                "NaN",
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
                               ],
-                              "type": "string",
                             },
                             {
                               "enum": [
                                 "Infinity",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
                                 "-Infinity",
+                                "NaN",
                               ],
                               "type": "string",
                             },
@@ -9241,9 +9282,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -9267,16 +9305,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -9344,23 +9372,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                       {
                         "anyOf": [
                           {
-                            "type": "number",
-                          },
-                          {
-                            "enum": [
-                              "NaN",
+                            "anyOf": [
+                              {
+                                "type": "number",
+                              },
+                              {
+                                "enum": [
+                                  "NaN",
+                                ],
+                                "type": "string",
+                              },
+                              {
+                                "enum": [
+                                  "Infinity",
+                                ],
+                                "type": "string",
+                              },
+                              {
+                                "enum": [
+                                  "-Infinity",
+                                ],
+                                "type": "string",
+                              },
                             ],
-                            "type": "string",
                           },
                           {
                             "enum": [
                               "Infinity",
-                            ],
-                            "type": "string",
-                          },
-                          {
-                            "enum": [
                               "-Infinity",
+                              "NaN",
                             ],
                             "type": "string",
                           },
@@ -9404,23 +9444,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "alreadyReplayed": {
                           "anyOf": [
                             {
-                              "type": "number",
-                            },
-                            {
-                              "enum": [
-                                "NaN",
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
                               ],
-                              "type": "string",
                             },
                             {
                               "enum": [
                                 "Infinity",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
                                 "-Infinity",
+                                "NaN",
                               ],
                               "type": "string",
                             },
@@ -9429,23 +9481,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "replayed": {
                           "anyOf": [
                             {
-                              "type": "number",
-                            },
-                            {
-                              "enum": [
-                                "NaN",
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
                               ],
-                              "type": "string",
                             },
                             {
                               "enum": [
                                 "Infinity",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
                                 "-Infinity",
+                                "NaN",
                               ],
                               "type": "string",
                             },
@@ -9472,26 +9536,12 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                 "type": "string",
                               },
                               "status": {
-                                "anyOf": [
-                                  {
-                                    "enum": [
-                                      "replayed",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "already_replayed",
-                                    ],
-                                    "type": "string",
-                                  },
-                                  {
-                                    "enum": [
-                                      "failed",
-                                    ],
-                                    "type": "string",
-                                  },
+                                "enum": [
+                                  "replayed",
+                                  "already_replayed",
+                                  "failed",
                                 ],
+                                "type": "string",
                               },
                             },
                             "required": [
@@ -9506,23 +9556,35 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "total": {
                           "anyOf": [
                             {
-                              "type": "number",
-                            },
-                            {
-                              "enum": [
-                                "NaN",
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
                               ],
-                              "type": "string",
                             },
                             {
                               "enum": [
                                 "Infinity",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
                                 "-Infinity",
+                                "NaN",
                               ],
                               "type": "string",
                             },
@@ -9540,9 +9602,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -9566,16 +9625,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [
@@ -9623,24 +9672,26 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "dispatchId": {
                           "type": "string",
                         },
+                        "error": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                            },
+                            {
+                              "type": "null",
+                            },
+                          ],
+                        },
                         "eventId": {
                           "type": "string",
                         },
                         "status": {
-                          "anyOf": [
-                            {
-                              "enum": [
-                                "replayed",
-                              ],
-                              "type": "string",
-                            },
-                            {
-                              "enum": [
-                                "already_replayed",
-                              ],
-                              "type": "string",
-                            },
+                          "enum": [
+                            "replayed",
+                            "already_replayed",
+                            "failed",
                           ],
+                          "type": "string",
                         },
                       },
                       "required": [
@@ -9653,9 +9704,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "meta": {
                       "anyOf": [
                         {
-                          "additionalProperties": {
-                            "type": "null",
-                          },
                           "type": "object",
                         },
                         {
@@ -9679,16 +9727,6 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
               },
             },
             "description": "Success",
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/effect_HttpApiSchemaError",
-                },
-              },
-            },
-            "description": "The request or response did not match the expected schema",
           },
         },
         "security": [

@@ -133,6 +133,15 @@ Supported query parameters:
 }
 ```
 
+Node SDK:
+
+```ts
+const dispatches = await client.webhooks.listDispatches({
+	status: "failed",
+	limit: 50,
+});
+```
+
 ## POST /webhooks/dispatches/{id}/replay
 
 Replay one failed outbound webhook dispatch.
@@ -157,6 +166,19 @@ Required headers:
 	"eventId": "event-123",
 	"status": "replayed"
 }
+```
+
+If the replay delivery exhausts its configured attempts, the endpoint still
+returns `202` with `status="failed"` and an `error` describing the delivery
+failure. The accepted replay marker prevents the same idempotency key from
+sending again; use a new key for another recovery attempt.
+
+Node SDK:
+
+```ts
+const replay = await client.webhooks.replayDispatch("dispatch-123", {
+	idempotencyKey: "incident-2026-08-30-dispatch-123",
+});
 ```
 
 ## POST /webhooks/dispatches/replay
@@ -221,3 +243,12 @@ An empty body replays failed webhook dispatches for the tenant up to the cap.
 Per-dispatch delivery failures are reported in `results` and do not fail the
 whole bulk request. Delivery attempts and replay audit events are recorded per
 dispatch.
+
+Node SDK:
+
+```ts
+const replay = await client.webhooks.replayDispatches(
+	{ status: "failed", endpoint_id: "default", limit: 100 },
+	{ idempotencyKey: "incident-2026-08-30" }
+);
+```

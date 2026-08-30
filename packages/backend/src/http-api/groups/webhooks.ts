@@ -51,8 +51,9 @@ const WebhookDispatchListResponseSchema = Schema.Struct({
 
 const WebhookDispatchReplayResponseSchema = Schema.Struct({
 	dispatchId: Schema.String,
+	error: Schema.optional(Schema.String),
 	eventId: Schema.String,
-	status: Schema.Literals(["replayed", "already_replayed"]),
+	status: Schema.Literals(["replayed", "already_replayed", "failed"]),
 });
 
 const WebhookDispatchBulkReplayPayloadSchema = Schema.Struct({
