@@ -92,6 +92,27 @@ const resolver = makeUnkeyBearerResolver({
 });
 ```
 
+## Provider Failures
+
+If Unkey key verification throws, the resolver fails closed by returning no
+identity. DSAR then treats the request as unauthenticated instead of exposing a
+provider error.
+
+Use `onVerifyError` to report provider outages or configuration failures:
+
+```ts
+const resolver = makeUnkeyBearerResolver({
+	rootKey: process.env.UNKEY_ROOT_KEY!,
+	onVerifyError: async (error) => {
+		await telemetry.recordException(error);
+	},
+});
+```
+
+The observer may be synchronous or asynchronous. The resolver awaits it, but a
+thrown or rejected observer does not change the fail-closed result, so keep the
+observer bounded and avoid lengthy recovery work in the authentication path.
+
 ## Hosted Safety Rules
 
 - Keep browser-held DSAR keys out of subject portals.

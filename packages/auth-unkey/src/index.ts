@@ -180,8 +180,29 @@ const buildDefaultIdentity = (
 	};
 };
 
-const isValidResult = (result: UnkeyVerifyResultShape): boolean =>
-	asRecord(result.data)?.valid === true;
+const isValidResult = (
+	result: UnkeyVerifyResultShape | undefined
+): result is UnkeyVerifyResultShape =>
+	result !== undefined && asRecord(result.data)?.valid === true;
+
+const verifyUnkeyToken = async (
+	client: UnkeyBearerResolverClient,
+	verifyInput:
+		| { readonly key: string }
+		| { readonly key: string; readonly permissions: string },
+	onVerifyError?: (error: unknown) => void | PromiseLike<void>
+): Promise<UnkeyVerifyResultShape | undefined> => {
+	try {
+		return (await client.keys.verifyKey(verifyInput)) as UnkeyVerifyResultShape;
+	} catch (error) {
+		try {
+			await onVerifyError?.(error);
+		} catch {
+			// Observer failures must not change the resolver's fail-closed result.
+		}
+		return undefined;
+	}
+};
 
 /**
  * Creates a DSAR-compatible bearer-token resolver backed by Unkey key
@@ -199,9 +220,11 @@ export const makeUnkeyBearerResolver = (config: UnkeyBearerResolverConfig) => {
 		const verifyInput = config.permissions
 			? { key: input.token, permissions: config.permissions }
 			: { key: input.token };
-		const result = (await client.keys.verifyKey(
-			verifyInput
-		)) as UnkeyVerifyResultShape;
+		const result = await verifyUnkeyToken(
+			client,
+			verifyInput,
+			config.onVerifyError
+		);
 		if (!isValidResult(result)) {
 			return undefined;
 		}
