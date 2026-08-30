@@ -42,7 +42,7 @@ describe("honoWebhookHandler", () => {
 	});
 
 	it("accepts WebhookReceiverOptions directly, registers handlers, and persists across requests", async () => {
-		const verify = vi.fn().mockResolvedValue(undefined);
+		const verify = vi.fn().mockResolvedValue();
 		const capturedHandler = vi.fn();
 		const middleware = honoWebhookMiddleware({
 			handlers: {

@@ -1,6 +1,6 @@
 import { dsarInstance } from "@dsar/backend";
 import { makeMinimalPersistenceSync } from "@dsar/backend/testing/minimal-persistence";
-import { describe, expect, it } from "@effect/vitest";
+import { describe, expect, it, vi } from "@effect/vitest";
 
 /* oxlint-disable max-statements, require-await, jest/max-expects */
 /* oxlint-disable jest/no-conditional-in-test */
@@ -316,15 +316,46 @@ describe("@dsar/node-sdk client", () => {
 		expect(sdkError.meta).toBeUndefined();
 	});
 
-	it("creates a webhook receiver from sdk.webhooks.receiver()", () => {
+	it("dispatches a webhook through sdk.webhooks.receiver()", async () => {
 		const sdk = createNodeSdk({
 			baseUrl: "http://localhost:3000/api/v1",
 			token: TEST_API_TOKEN,
 		});
+		const verify = vi.fn().mockResolvedValue();
+		const handler = vi.fn();
+		const receiver = sdk.webhooks.receiver({
+			handlers: { request_captured: handler },
+			signingSecret: "test-secret",
+			verify,
+		});
+		const rawBody = JSON.stringify({
+			correlationId: "corr_1",
+			eventId: "evt_1",
+			eventType: "request_captured",
+			idempotencyKey: "idem_1",
+			locale: "en-US",
+			payload: { source: "test" },
+			policyVersion: "2026.1",
+			requestId: "req_1",
+		});
 
-		const receiver = sdk.webhooks.receiver({ signingSecret: "test-secret" });
-		expect(receiver).toBeDefined();
-		expect(typeof receiver.handle).toBe("function");
-		expect(typeof receiver.on).toBe("function");
+		const result = await receiver.handle({
+			rawBody,
+			signature: "valid-signature",
+		});
+
+		expect(verify).toHaveBeenCalledWith({
+			payload: rawBody,
+			signature: "valid-signature",
+			signingSecret: "test-secret",
+		});
+		expect(handler).toHaveBeenCalledWith(
+			expect.objectContaining({
+				eventId: "evt_1",
+				eventType: "request_captured",
+				requestId: "req_1",
+			})
+		);
+		expect(result).toEqual({ body: { ok: true }, status: 200 });
 	});
 });

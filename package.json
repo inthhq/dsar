@@ -82,8 +82,7 @@
 		"publint": "^0.3.22",
 		"turbo": "2.10.6",
 		"typescript": "catalog:utils",
-		"ultracite": "7.9.4",
-		"unrun": "^0.3.1"
+		"ultracite": "7.9.4"
 	},
 	"engines": {
 		"node": ">=24 <25"

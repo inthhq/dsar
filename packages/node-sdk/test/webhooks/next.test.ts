@@ -44,7 +44,7 @@ describe("nextWebhookHandler", () => {
 	});
 
 	it("accepts WebhookReceiverOptions directly, registers handlers, and persists across requests", async () => {
-		const verify = vi.fn().mockResolvedValue(undefined);
+		const verify = vi.fn().mockResolvedValue();
 		const capturedHandler = vi.fn();
 		const middleware = nextWebhookMiddleware({
 			handlers: {
@@ -75,6 +75,7 @@ describe("nextWebhookHandler", () => {
 		const res1 = await middleware(makeReq());
 		expect(verify).toHaveBeenCalledTimes(1);
 		expect(res1.status).toBe(200);
+		await expect(res1.json()).resolves.toEqual({ ok: true });
 		expect(capturedHandler).toHaveBeenCalledTimes(1);
 		expect(capturedHandler).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -86,6 +87,7 @@ describe("nextWebhookHandler", () => {
 
 		const res2 = await middleware(makeReq());
 		expect(res2.status).toBe(200);
+		await expect(res2.json()).resolves.toEqual({ ok: true });
 		expect(capturedHandler).toHaveBeenCalledTimes(2);
 	});
 });

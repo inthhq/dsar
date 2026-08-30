@@ -3,7 +3,10 @@ import { timingSafeEqual } from "node:crypto";
 
 import type { DsarResult, RequestOptions } from "../types";
 import { createWebhookReceiver } from "../webhooks/receiver";
-import type { WebhookReceiver, WebhookReceiverOptions } from "../webhooks/receiver";
+import type {
+	WebhookReceiver,
+	WebhookReceiverOptions,
+} from "../webhooks/receiver";
 import type {
 	EndpointContext,
 	WebhookInboundResendPayload,

@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import type { Response } from "express";
 
-import { expressWebhookHandler, expressWebhookMiddleware } from "#src/webhooks/express";
+import {
+	expressWebhookHandler,
+	expressWebhookMiddleware,
+} from "#src/webhooks/express";
 import type { ExpressWebhookRequest } from "#src/webhooks/express";
 import type { WebhookReceiver } from "#src/webhooks/receiver";
 
@@ -91,7 +94,7 @@ describe("expressWebhookHandler", () => {
 	});
 
 	it("accepts WebhookReceiverOptions directly, registers handlers, and persists across requests", async () => {
-		const verify = vi.fn().mockResolvedValue(undefined);
+		const verify = vi.fn().mockResolvedValue();
 		const capturedHandler = vi.fn();
 		const middleware = expressWebhookMiddleware({
 			handlers: {

@@ -57,6 +57,41 @@ Highlights:
 - `unwrap()`, `expect()`, and `orElse()` helpers on results
 - binary helpers for verification evidence and fulfilment artifact flows
 
+### Receive outbound webhooks
+
+Use the framework adapter subpath for your server. Each middleware verifies the
+`x-dsar-signature` header before it decodes and dispatches the event.
+
+```ts
+import { nextWebhookMiddleware } from "@dsar/node-sdk/webhooks/next";
+
+const signingSecret = process.env.DSAR_WEBHOOK_SECRET;
+if (!signingSecret) {
+	throw new Error("DSAR_WEBHOOK_SECRET is required");
+}
+
+export const POST = nextWebhookMiddleware({
+	handlers: {
+		request_captured(event) {
+			console.info("Captured DSAR request", event.requestId);
+		},
+	},
+	signingSecret,
+});
+```
+
+The Express, Hono, and Next.js adapters are exported from
+`@dsar/node-sdk/webhooks/express`, `@dsar/node-sdk/webhooks/hono`, and
+`@dsar/node-sdk/webhooks/next`. Their `*WebhookHandler` and
+`*WebhookMiddleware` names are aliases. When using Express, configure
+`express.raw({ type: "application/json" })` so signature verification receives
+the original request bytes.
+
+For framework-neutral dispatch, call `client.webhooks.receiver(options)` or
+`createWebhookReceiver(options)` from `@dsar/node-sdk/webhooks`. Both accept the
+same `handlers` map, and the returned receiver also supports `.on(eventType,
+handler)` registration.
+
 ## `@dsar/cli`
 
 Use the CLI for operational access and parity with the HTTP contract.

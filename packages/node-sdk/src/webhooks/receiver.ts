@@ -295,10 +295,7 @@ export const createWebhookReceiver = (
 	if (options.handlers) {
 		for (const [type, handler] of Object.entries(options.handlers)) {
 			if (isWebhookEventType(type) && typeof handler === "function") {
-				handlers.set(
-					type,
-					handler as WebhookEventHandler<WebhookEventType>
-				);
+				handlers.set(type, handler as WebhookEventHandler<WebhookEventType>);
 			}
 		}
 	}
@@ -335,6 +332,7 @@ export const createWebhookReceiver = (
  * Resolves a {@link WebhookReceiver} from an existing instance or options object.
  *
  * @param receiverOrOptions - Receiver instance or creation options.
+ * @returns The existing receiver or a receiver created from the supplied options.
  */
 export const resolveReceiver = (
 	receiverOrOptions: WebhookReceiver | WebhookReceiverOptions
