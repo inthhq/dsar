@@ -98,3 +98,134 @@ jobs:
           echo "Published: ${{ steps.changesets-production.outputs.published }}"
           echo "Published packages: ${{ steps.changesets-production.outputs.publishedPackages }}"
           echo "New versions: ${{ steps.changesets-production.outputs.newVersions }}"
+
+    outputs:
+      published: ${{ steps.changesets-production.outputs.published }}
+      publishedPackages: ${{ steps.changesets-production.outputs.publishedPackages }}
+
+  # Opens a PR against inthhq/homebrew-tap whenever a new dsar version is
+  # published to npm. Requires repository secret TAP_GITHUB_TOKEN: a
+  # fine-grained personal access token scoped to inthhq/homebrew-tap with
+  # Contents: write and Pull requests: write.
+  bump-homebrew-tap:
+    name: Bump Homebrew tap
+    needs: release
+    if: |
+      needs.release.outputs.published == 'true' &&
+      github.repository == 'inthhq/dsar' &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Extract published dsar version
+        id: version
+        env:
+          PUBLISHED: ${{ needs.release.outputs.publishedPackages }}
+        run: |
+          set -euo pipefail
+          VERSION="$(node -e '
+            const pkgs = JSON.parse(process.env.PUBLISHED || "[]");
+            const hit = pkgs.find(p => p.name === "dsar");
+            if (!hit) { process.exit(0); }
+            process.stdout.write(hit.version);
+          ')"
+          if [ -z "$VERSION" ]; then
+            echo "dsar not in publishedPackages; nothing to bump."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for npm tarball to be served and compute sha256
+        id: sha
+        if: steps.version.outputs.skip != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          URL="https://registry.npmjs.org/dsar/-/dsar-${VERSION}.tgz"
+          downloaded=false
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fSL --connect-timeout 10 --max-time 60 "$URL" -o dsar.tgz; then
+              downloaded=true
+              break
+            fi
+            rm -f dsar.tgz
+            if [ "$i" -lt 10 ]; then
+              echo "Attempt $i: tarball not ready yet, sleeping..."
+              sleep $((i * 6))
+            fi
+          done
+          if [ "$downloaded" != "true" ] || [ ! -s dsar.tgz ]; then
+            echo "::error::Failed to download dsar.tgz from $URL after 10 attempts"
+            exit 1
+          fi
+          SHA="$(shasum -a 256 dsar.tgz | awk '{print $1}')"
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Check out homebrew-tap
+        if: steps.version.outputs.skip != 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: inthhq/homebrew-tap
+          token: ${{ secrets.TAP_GITHUB_TOKEN }}
+          path: homebrew-tap
+          persist-credentials: false
+
+      - name: Update formula
+        if: steps.version.outputs.skip != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          URL: ${{ steps.sha.outputs.url }}
+          SHA: ${{ steps.sha.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          cd homebrew-tap
+          node -e '
+            const fs = require("node:fs");
+            const path = "Formula/dsar.rb";
+            const src = fs.readFileSync(path, "utf8");
+            const urlPattern = /^(\s*url\s+).*$/gm;
+            const shaPattern = /^(\s*sha256\s+).*$/gm;
+            const urlMatches = src.match(urlPattern)?.length ?? 0;
+            const shaMatches = src.match(shaPattern)?.length ?? 0;
+            if (urlMatches !== 1 || shaMatches !== 1) {
+              console.error(
+                `Expected one url and one sha256 in ${path}; found ${urlMatches} and ${shaMatches}.`,
+              );
+              process.exit(1);
+            }
+            const next = src
+              .replace(urlPattern, `$1"${process.env.URL}"`)
+              .replace(shaPattern, `$1"${process.env.SHA}"`);
+            if (next === src) {
+              console.error("Formula did not change; refusing to commit.");
+              process.exit(1);
+            }
+            fs.writeFileSync(path, next);
+          '
+          git diff -- Formula/dsar.rb
+
+      - name: Create pull request
+        if: steps.version.outputs.skip != 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          path: homebrew-tap
+          token: ${{ secrets.TAP_GITHUB_TOKEN }}
+          branch: bump-dsar-${{ steps.version.outputs.version }}
+          base: main
+          commit-message: "dsar ${{ steps.version.outputs.version }}"
+          title: "dsar ${{ steps.version.outputs.version }}"
+          body: |
+            Bump `dsar` to `${{ steps.version.outputs.version }}`.
+
+            - tarball: ${{ steps.sha.outputs.url }}
+            - sha256: `${{ steps.sha.outputs.sha256 }}`
+
+            Auto-generated by [inthhq/dsar](https://github.com/inthhq/dsar) release pipeline. Tap CI will run `brew audit --strict --online` and `brew test dsar` against this change before it can be merged.
+          delete-branch: true
+          labels: |
+            automated
+            release
