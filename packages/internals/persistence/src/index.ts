@@ -33,6 +33,7 @@ export type {
 	FulfillmentArtifactRecord,
 	JsonValue,
 	ListAuditEventsInput,
+	ListNotificationDeliveryAttemptsInput,
 	ListRequestsBySubjectInput,
 	NotificationDeliveryAttemptRecord,
 	NotificationDeliveryStatus,

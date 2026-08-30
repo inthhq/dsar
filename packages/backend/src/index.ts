@@ -28,6 +28,7 @@ export type {
 	AdapterOperationalEvent,
 	AnyAdapterContract,
 	InboundAdapterContract,
+	NotificationAdapterChannel,
 	NotificationAdapterContract,
 	NotificationDispatchInput,
 	NotificationDispatchResult,

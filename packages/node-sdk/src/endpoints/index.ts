@@ -11,7 +11,17 @@ export type { SubjectsApi } from "./subjects";
 export { makeSystemApi } from "./system";
 export type { SystemApi } from "./system";
 export { makeWebhooksApi } from "./webhooks";
-export type { WebhooksApi } from "./webhooks";
+export type {
+	WebhookDispatch,
+	WebhookDispatchBulkReplayPayload,
+	WebhookDispatchBulkReplayResponse,
+	WebhookDispatchListQuery,
+	WebhookDispatchListResponse,
+	WebhookDispatchReplayResponse,
+	WebhookDispatchStatus,
+	WebhookReplayRequestOptions,
+	WebhooksApi,
+} from "./webhooks";
 export type {
 	AppealDecisionPayload,
 	AuditExportResponse,

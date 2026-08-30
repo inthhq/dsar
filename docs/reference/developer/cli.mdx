@@ -52,6 +52,7 @@ Global flags:
 - `policies list` -> `GET /policies`
 - `policies custom register|activate|deactivate` -> custom policy endpoints
 - `webhooks inbound resend` -> `POST /webhooks/inbound/resend`
+- `webhooks list|replay|replay-all|tail ...` -> outbound webhook dispatch inspection, replay, and polling
 - `requests create|capture` -> `POST /requests`, `POST /requests/capture`
 - `requests clock explain <id>` -> `GET /requests/{id}/clock/explain`
 - `requests verification ...` -> verification endpoints
@@ -82,6 +83,21 @@ Notification replay is part of the current CLI surface:
 
 - `dsar requests notifications list <request-id>`
 - `dsar requests notifications replay <request-id> <event-id>`
+
+Outbound webhook dispatch replay is available through:
+
+- `dsar webhooks list --status failed`
+- `dsar webhooks replay <dispatch-id> --idempotency-key replay-1`
+- `dsar webhooks replay-all --status failed --endpoint-id default --limit 100 --idempotency-key replay-all-1`
+- `dsar webhooks tail --status failed --endpoint-id default --interval 2000`
+
+`replay` targets one failed webhook dispatch. `replay-all` maps to
+`POST /webhooks/dispatches/replay` and builds the bulk replay body from
+`--status`, `--endpoint-id`, `--created-after`, `--created-before`, and
+`--limit`. `--idempotency-key` is required for both replay commands.
+
+`tail` polls `GET /webhooks/dispatches` and streams newly observed dispatches.
+It accepts `--status`, `--endpoint-id`, `--interval`, `--limit`, and `--once`.
 
 ## Parity policy
 

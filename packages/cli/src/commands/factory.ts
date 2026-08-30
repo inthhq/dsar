@@ -26,6 +26,7 @@ export const makeRouteCommand = (routeId: string): CommandDefinition => {
 			const request = await requestFromRoute(route, ctx.input, ctx.params);
 			return await ctx.api.invoke(request);
 		},
+		...(route.flagHelp ? { flagHelp: route.flagHelp } : {}),
 		id: route.id,
 		routeId: route.id,
 		usage: route.command,

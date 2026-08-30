@@ -1,11 +1,18 @@
 import { asNonEmptyString, asRecordOrEmpty } from "@dsar/guards";
 /* oxlint-disable complexity */
 import { withTenant } from "@dsar/persistence";
+import type {
+	NotificationDeliveryAttemptRecord,
+	NotificationEventRecord,
+} from "@dsar/persistence";
 import * as Effect from "effect/Effect";
 
 import { normalizeAdapterError, toAdapterFailureEvent } from "../../adapters";
 import type { AdapterContractError } from "../../adapters";
-import type { NotificationEventDraft } from "../../events/contracts";
+import type {
+	NotificationEventDraft,
+	NotificationEventType,
+} from "../../events/contracts";
 import { makeRequestId } from "../../middleware/auth-context";
 import { RequestValidationError } from "../../types/errors";
 import type {
@@ -21,6 +28,22 @@ const DEFAULT_POLICY_VERSION = "policy-v1";
 const DEFAULT_LOCALE = "en-GB";
 const GENERATED_STATUS = "generated";
 const DEFAULT_WEBHOOK_ENDPOINT_ID = "default";
+const NOTIFICATION_EVENT_TYPES = [
+	"request_captured",
+	"clock_due_changed",
+	"clock_segment_opened",
+	"clock_segment_closed",
+	"request_acknowledged",
+	"acknowledgement_sent",
+	"verification_outcome_recorded",
+	"manifest_review_recorded",
+	"appeal_recorded",
+	"fulfillment_callback_received",
+	"delivery_prepared",
+	"step_up_challenge_issued",
+	"request_fulfilled",
+	"request_refused",
+] as const satisfies readonly NotificationEventType[];
 
 const toGeneratedResult = (
 	eventId: string
@@ -52,6 +75,42 @@ const toNotificationDispatchValidationError = (
 		message: "Failed to generate or dispatch notification event.",
 		reasonCode: "REQUEST_VALIDATION_FAILED",
 	});
+
+const toReplayDispatchValidationError = (
+	error: unknown
+): RequestValidationError => {
+	if (error instanceof RequestValidationError) {
+		return error;
+	}
+	return toNotificationDispatchValidationError(error);
+};
+
+const isNotificationEventType = (
+	value: string
+): value is NotificationEventType => {
+	for (const eventType of NOTIFICATION_EVENT_TYPES) {
+		if (eventType === value) {
+			return true;
+		}
+	}
+	return false;
+};
+
+const parseNotificationEventType = (
+	value: string
+): Effect.Effect<NotificationEventType, RequestValidationError> => {
+	if (isNotificationEventType(value)) {
+		return Effect.succeed(value);
+	}
+	return Effect.fail(
+		new RequestValidationError({
+			details: { eventType: value },
+			message:
+				"Webhook dispatch cannot be replayed because the persisted notification event type is not supported.",
+			reasonCode: "REQUEST_VALIDATION_FAILED",
+		})
+	);
+};
 
 /**
  * Resolves effective outbound-resend policy with workspace > tenant > global precedence.
@@ -215,10 +274,21 @@ const deliverWithRetries = (input: {
 	>;
 	readonly retryMaxAttempts: number;
 	readonly retryDelayMs: number;
-}): Effect.Effect<void, AppendDeliveryAttemptError, RuntimeServicesTag> => {
+	readonly startAttempt?: number;
+}): Effect.Effect<
+	NotificationDispatchResult,
+	AppendDeliveryAttemptError,
+	RuntimeServicesTag
+> => {
+	const startAttempt = input.startAttempt ?? 1;
+	const maxAttempt = startAttempt + input.retryMaxAttempts - 1;
 	const runAttempt = (
 		attempt: number
-	): Effect.Effect<void, AppendDeliveryAttemptError, RuntimeServicesTag> =>
+	): Effect.Effect<
+		NotificationDispatchResult,
+		AppendDeliveryAttemptError,
+		RuntimeServicesTag
+	> =>
 		Effect.gen(function* runNotificationAttempt() {
 			const services = yield* Effect.service(RuntimeServicesTag);
 			const resultOrError = yield* Effect.result(input.send());
@@ -247,8 +317,11 @@ const deliverWithRetries = (input: {
 					status: "failed",
 					tenantId: input.tenantId,
 				});
-				if (attempt >= input.retryMaxAttempts || !normalized.retriable) {
-					return;
+				if (attempt >= maxAttempt || !normalized.retriable) {
+					return {
+						error: normalized.message,
+						status: "failed",
+					};
 				}
 				yield* Effect.sleep(input.retryDelayMs);
 				return yield* runAttempt(attempt + 1);
@@ -266,19 +339,129 @@ const deliverWithRetries = (input: {
 				tenantId: input.tenantId,
 			});
 			if (result.status === "delivered") {
-				return;
+				return result;
 			}
 			if (result.status === "skipped") {
-				return;
+				return result;
 			}
-			if (attempt >= input.retryMaxAttempts) {
-				return;
+			if (attempt >= maxAttempt) {
+				return result;
 			}
 			yield* Effect.sleep(input.retryDelayMs);
 			return yield* runAttempt(attempt + 1);
 		});
-	return runAttempt(1);
+	return runAttempt(startAttempt);
 };
+
+const nextWebhookAttemptNumber = (input: {
+	readonly attempts: readonly NotificationDeliveryAttemptRecord[];
+}): number => {
+	let maxAttempt = 0;
+	for (const attempt of input.attempts) {
+		if (attempt.channel === "webhook") {
+			maxAttempt = Math.max(maxAttempt, attempt.attempt);
+		}
+	}
+	return maxAttempt + 1;
+};
+
+const supportsNotificationChannel = (
+	adapter:
+		| { readonly channels?: readonly string[]; readonly key: string }
+		| undefined,
+	channel: "email" | "webhook"
+): boolean => {
+	if (!adapter) {
+		return false;
+	}
+	if (adapter.channels) {
+		return adapter.channels.includes(channel);
+	}
+	return channel === "webhook" && adapter.key !== "outbound-resend";
+};
+
+/**
+ * Replays a persisted webhook dispatch without re-sending other notification
+ * channels such as email.
+ *
+ * @param input - Original notification event and failed webhook attempt.
+ * @returns Effect that records replay delivery attempts.
+ */
+export const replayWebhookDispatch = (input: {
+	readonly event: NotificationEventRecord;
+	readonly idempotencyKey: string;
+	readonly tenantId: string;
+}): Effect.Effect<
+	NotificationDispatchResult,
+	RequestValidationError,
+	RuntimeServicesTag
+> =>
+	Effect.gen(function* replayWebhookDispatchProgram() {
+		const services = yield* Effect.service(RuntimeServicesTag);
+		const webhookConfig = services.config.notificationWebhook;
+		if (!webhookConfig || webhookConfig.url.length === 0) {
+			return yield* Effect.fail(
+				new RequestValidationError({
+					message:
+						"Webhook dispatch cannot be replayed because no webhook endpoint is configured.",
+					reasonCode: "REQUEST_VALIDATION_FAILED",
+				})
+			);
+		}
+		const resolvedNotificationAdapter =
+			services.adapterRegistry.resolveNotification();
+		const webhookAdapter = supportsNotificationChannel(
+			resolvedNotificationAdapter,
+			"webhook"
+		)
+			? resolvedNotificationAdapter
+			: undefined;
+		const signingKey = yield* resolveWebhookSigningKey({
+			config: webhookConfig,
+			services,
+			tenantId: input.tenantId,
+		});
+		const attempts =
+			yield* services.repos.persistence.notificationDeliveryAttempts
+				.listByNotificationEventId(input.event.id)
+				.pipe(withTenant(input.tenantId));
+		const eventType = yield* parseNotificationEventType(input.event.eventType);
+		const dispatchInput = toDispatchInput({
+			correlationId: services.requestContext.requestId,
+			draft: {
+				eventType,
+				locale: input.event.locale,
+				payload: input.event.payload,
+				policyVersion: input.event.policyVersion,
+				requestId: input.event.requestId,
+			},
+			eventId: input.event.id,
+			idempotencyKey: input.idempotencyKey,
+		});
+		return yield* deliverWithRetries({
+			adapterKey: webhookAdapter?.key ?? "webhook-fallback",
+			channel: "webhook",
+			destination: webhookConfig.url,
+			eventId: input.event.id,
+			requestId: input.event.requestId,
+			retryDelayMs: webhookConfig.retryDelayMs,
+			retryMaxAttempts: webhookConfig.retryMaxAttempts,
+			send: () =>
+				webhookAdapter
+					? webhookAdapter.send({
+							...dispatchInput,
+							webhookSigningKey: signingKey,
+						})
+					: dispatchWebhookNotification({
+							event: dispatchInput,
+							signingKey,
+							timeoutMs: webhookConfig.timeoutMs,
+							url: webhookConfig.url,
+						}),
+			startAttempt: nextWebhookAttemptNumber({ attempts }),
+			tenantId: input.tenantId,
+		});
+	}).pipe(Effect.mapError(toReplayDispatchValidationError));
 
 /**
  * Persists and dispatches a notification event across configured
@@ -354,11 +537,12 @@ export const emitNotificationEvent = (input: {
 			(resolvedNotificationAdapter?.key === "outbound-resend"
 				? resolvedNotificationAdapter
 				: undefined);
-		const webhookAdapter =
-			resolvedNotificationAdapter &&
-			resolvedNotificationAdapter.key !== "outbound-resend"
-				? resolvedNotificationAdapter
-				: undefined;
+		const webhookAdapter = supportsNotificationChannel(
+			resolvedNotificationAdapter,
+			"webhook"
+		)
+			? resolvedNotificationAdapter
+			: undefined;
 
 		// Webhook is optional; we still persist a pending attempt so audit trails can
 		// explain why no outbound webhook dispatch occurred.

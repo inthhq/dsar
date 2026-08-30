@@ -8897,6 +8897,849 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
         ],
       },
     },
+    "/webhooks/dispatches": {
+      "get": {
+        "operationId": "webhooks_dispatches_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "created_after",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "created_before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "endpoint_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "attempt": {
+                                "anyOf": [
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                      },
+                                      {
+                                        "enum": [
+                                          "NaN",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
+                                      {
+                                        "enum": [
+                                          "-Infinity",
+                                        ],
+                                        "type": "string",
+                                      },
+                                    ],
+                                  },
+                                  {
+                                    "enum": [
+                                      "Infinity",
+                                      "-Infinity",
+                                      "NaN",
+                                    ],
+                                    "type": "string",
+                                  },
+                                ],
+                              },
+                              "createdAt": {
+                                "type": "string",
+                              },
+                              "destination": {
+                                "type": "string",
+                              },
+                              "dispatchId": {
+                                "type": "string",
+                              },
+                              "endpointId": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                  },
+                                  {
+                                    "type": "null",
+                                  },
+                                ],
+                              },
+                              "error": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                  },
+                                  {
+                                    "type": "null",
+                                  },
+                                ],
+                              },
+                              "eventId": {
+                                "type": "string",
+                              },
+                              "eventType": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                  },
+                                  {
+                                    "type": "null",
+                                  },
+                                ],
+                              },
+                              "replayable": {
+                                "type": "boolean",
+                              },
+                              "requestId": {
+                                "type": "string",
+                              },
+                              "responseCode": {
+                                "anyOf": [
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                          },
+                                          {
+                                            "enum": [
+                                              "NaN",
+                                            ],
+                                            "type": "string",
+                                          },
+                                          {
+                                            "enum": [
+                                              "Infinity",
+                                            ],
+                                            "type": "string",
+                                          },
+                                          {
+                                            "enum": [
+                                              "-Infinity",
+                                            ],
+                                            "type": "string",
+                                          },
+                                        ],
+                                      },
+                                      {
+                                        "enum": [
+                                          "Infinity",
+                                          "-Infinity",
+                                          "NaN",
+                                        ],
+                                        "type": "string",
+                                      },
+                                    ],
+                                  },
+                                  {
+                                    "type": "null",
+                                  },
+                                ],
+                              },
+                              "status": {
+                                "enum": [
+                                  "pending",
+                                  "delivered",
+                                  "failed",
+                                  "skipped",
+                                ],
+                                "type": "string",
+                              },
+                            },
+                            "required": [
+                              "attempt",
+                              "createdAt",
+                              "destination",
+                              "dispatchId",
+                              "eventId",
+                              "replayable",
+                              "requestId",
+                              "status",
+                            ],
+                            "type": "object",
+                          },
+                          "type": "array",
+                        },
+                        "limit": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                              ],
+                            },
+                            {
+                              "enum": [
+                                "Infinity",
+                                "-Infinity",
+                                "NaN",
+                              ],
+                              "type": "string",
+                            },
+                          ],
+                        },
+                        "offset": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                              ],
+                            },
+                            {
+                              "enum": [
+                                "Infinity",
+                                "-Infinity",
+                                "NaN",
+                              ],
+                              "type": "string",
+                            },
+                          ],
+                        },
+                        "total": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                              ],
+                            },
+                            {
+                              "enum": [
+                                "Infinity",
+                                "-Infinity",
+                                "NaN",
+                              ],
+                              "type": "string",
+                            },
+                          ],
+                        },
+                      },
+                      "required": [
+                        "items",
+                        "limit",
+                        "offset",
+                        "total",
+                      ],
+                      "type": "object",
+                    },
+                    "meta": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+                    "ok": {
+                      "enum": [
+                        true,
+                      ],
+                      "type": "boolean",
+                    },
+                  },
+                  "required": [
+                    "data",
+                    "ok",
+                  ],
+                  "type": "object",
+                },
+              },
+            },
+            "description": "Success",
+          },
+        },
+        "security": [
+          {
+            "BearerAuth": [],
+          },
+        ],
+        "summary": "List outbound webhook dispatches",
+        "tags": [
+          "webhooks",
+        ],
+      },
+    },
+    "/webhooks/dispatches/replay": {
+      "post": {
+        "operationId": "webhooks_dispatches_replay_bulk",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-idempotency-key",
+            "required": true,
+            "schema": {
+              "type": "string",
+            },
+          },
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "created_after": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+                  "created_before": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+                  "endpoint_id": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+                  "limit": {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "type": "number",
+                              },
+                              {
+                                "enum": [
+                                  "NaN",
+                                ],
+                                "type": "string",
+                              },
+                              {
+                                "enum": [
+                                  "Infinity",
+                                ],
+                                "type": "string",
+                              },
+                              {
+                                "enum": [
+                                  "-Infinity",
+                                ],
+                                "type": "string",
+                              },
+                            ],
+                          },
+                          {
+                            "enum": [
+                              "Infinity",
+                              "-Infinity",
+                              "NaN",
+                            ],
+                            "type": "string",
+                          },
+                        ],
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+                  "status": {
+                    "anyOf": [
+                      {
+                        "enum": [
+                          "failed",
+                        ],
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+                },
+                "type": "object",
+              },
+            },
+          },
+          "required": true,
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "alreadyReplayed": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                              ],
+                            },
+                            {
+                              "enum": [
+                                "Infinity",
+                                "-Infinity",
+                                "NaN",
+                              ],
+                              "type": "string",
+                            },
+                          ],
+                        },
+                        "replayed": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                              ],
+                            },
+                            {
+                              "enum": [
+                                "Infinity",
+                                "-Infinity",
+                                "NaN",
+                              ],
+                              "type": "string",
+                            },
+                          ],
+                        },
+                        "results": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "dispatchId": {
+                                "type": "string",
+                              },
+                              "error": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                  },
+                                  {
+                                    "type": "null",
+                                  },
+                                ],
+                              },
+                              "eventId": {
+                                "type": "string",
+                              },
+                              "status": {
+                                "enum": [
+                                  "replayed",
+                                  "already_replayed",
+                                  "failed",
+                                ],
+                                "type": "string",
+                              },
+                            },
+                            "required": [
+                              "dispatchId",
+                              "eventId",
+                              "status",
+                            ],
+                            "type": "object",
+                          },
+                          "type": "array",
+                        },
+                        "total": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                },
+                                {
+                                  "enum": [
+                                    "NaN",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                                {
+                                  "enum": [
+                                    "-Infinity",
+                                  ],
+                                  "type": "string",
+                                },
+                              ],
+                            },
+                            {
+                              "enum": [
+                                "Infinity",
+                                "-Infinity",
+                                "NaN",
+                              ],
+                              "type": "string",
+                            },
+                          ],
+                        },
+                      },
+                      "required": [
+                        "alreadyReplayed",
+                        "replayed",
+                        "results",
+                        "total",
+                      ],
+                      "type": "object",
+                    },
+                    "meta": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+                    "ok": {
+                      "enum": [
+                        true,
+                      ],
+                      "type": "boolean",
+                    },
+                  },
+                  "required": [
+                    "data",
+                    "ok",
+                  ],
+                  "type": "object",
+                },
+              },
+            },
+            "description": "Success",
+          },
+        },
+        "security": [
+          {
+            "BearerAuth": [],
+          },
+        ],
+        "summary": "Replay failed outbound webhook dispatches",
+        "tags": [
+          "webhooks",
+        ],
+      },
+    },
+    "/webhooks/dispatches/{id}/replay": {
+      "post": {
+        "operationId": "webhooks_dispatches_replay",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+            },
+          },
+          {
+            "in": "header",
+            "name": "x-idempotency-key",
+            "required": true,
+            "schema": {
+              "type": "string",
+            },
+          },
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "dispatchId": {
+                          "type": "string",
+                        },
+                        "error": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                            },
+                            {
+                              "type": "null",
+                            },
+                          ],
+                        },
+                        "eventId": {
+                          "type": "string",
+                        },
+                        "status": {
+                          "enum": [
+                            "replayed",
+                            "already_replayed",
+                            "failed",
+                          ],
+                          "type": "string",
+                        },
+                      },
+                      "required": [
+                        "dispatchId",
+                        "eventId",
+                        "status",
+                      ],
+                      "type": "object",
+                    },
+                    "meta": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+                    "ok": {
+                      "enum": [
+                        true,
+                      ],
+                      "type": "boolean",
+                    },
+                  },
+                  "required": [
+                    "data",
+                    "ok",
+                  ],
+                  "type": "object",
+                },
+              },
+            },
+            "description": "Success",
+          },
+        },
+        "security": [
+          {
+            "BearerAuth": [],
+          },
+        ],
+        "summary": "Replay outbound webhook dispatch",
+        "tags": [
+          "webhooks",
+        ],
+      },
+    },
     "/webhooks/endpoints/{id}/rotate-key": {
       "post": {
         "operationId": "webhooks_endpoint_rotate_key",

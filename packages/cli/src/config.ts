@@ -24,7 +24,13 @@ const parseFlags = (
 			commandTokens.push(token ?? "");
 			continue;
 		}
-		const key = stripLeadingDashes(token);
+		const rawKey = stripLeadingDashes(token);
+		const equalsIndex = rawKey.indexOf("=");
+		if (equalsIndex > 0) {
+			flags[rawKey.slice(0, equalsIndex)] = rawKey.slice(equalsIndex + 1);
+			continue;
+		}
+		const key = rawKey;
 		const next = argv[index + 1];
 		if (!next || next.startsWith("--")) {
 			flags[key] = "true";

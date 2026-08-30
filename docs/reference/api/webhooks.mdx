@@ -1,13 +1,14 @@
 ---
 title: "Webhooks API"
-description: "These public endpoints accept inbound provider events and map them into DSAR intake flows."
+description: "Webhook endpoints accept public inbound provider events and expose protected outbound dispatch management."
 group: reference-api
 ---
 
 <include src="../../_shared/alpha-warning.mdx" />
 
-These public endpoints accept inbound provider events and map them into DSAR
-intake flows.
+Webhook endpoints accept public inbound provider events and map them into DSAR
+intake flows. Protected outbound endpoints let operator and service principals
+inspect delivery attempts and replay failed webhook dispatches.
 
 ## POST /webhooks/inbound/resend
 
@@ -86,3 +87,168 @@ Related guides:
 
 - [Inbound Resend](../../integrations/inbound/resend.md)
 - [Inbound Slack](../../integrations/inbound/slack.md)
+
+## GET /webhooks/dispatches
+
+List outbound webhook delivery attempts recorded by the notification delivery
+ledger.
+
+This endpoint is protected and reserved for operator or service principals.
+
+Supported query parameters:
+
+- `status` (string, optional): comma-separated delivery statuses, such as
+  `failed` or `failed,pending`
+- `endpoint_id` (string, optional): configured outbound webhook endpoint id
+- `created_after` (string, optional): only include attempts created after this
+  timestamp
+- `created_before` (string, optional): only include attempts created before this
+  timestamp
+- `limit` (number, optional): page size, from 1 to 500
+- `offset` (number, optional): zero-based offset
+
+**Response (200):**
+
+```json
+{
+	"items": [
+		{
+			"attempt": 3,
+			"createdAt": "2026-01-01T00:00:00.000Z",
+			"destination": "https://customer.example/webhooks/dsar",
+			"dispatchId": "dispatch-123",
+			"endpointId": "default",
+			"error": "500 Internal Server Error",
+			"eventId": "event-123",
+			"eventType": "request_fulfilled",
+			"replayable": true,
+			"requestId": "req-123",
+			"responseCode": 500,
+			"status": "failed"
+		}
+	],
+	"limit": 50,
+	"offset": 0,
+	"total": 1
+}
+```
+
+Node SDK:
+
+```ts
+const dispatches = await client.webhooks.listDispatches({
+	status: "failed",
+	limit: 50,
+});
+```
+
+## POST /webhooks/dispatches/{id}/replay
+
+Replay one failed outbound webhook dispatch.
+
+This endpoint is protected and reserved for operator or service principals. The
+dispatch must be a failed webhook delivery attempt. Successful, pending,
+skipped, or non-webhook attempts are not replayable.
+
+The `x-idempotency-key` header is required. When the same dispatch id and
+idempotency key have already been accepted, the endpoint returns
+`already_replayed` without sending the webhook again.
+
+Required headers:
+
+- `x-idempotency-key` (string, required): caller-provided replay dedupe key
+
+**Response (202):**
+
+```json
+{
+	"dispatchId": "dispatch-123",
+	"eventId": "event-123",
+	"status": "replayed"
+}
+```
+
+If the replay delivery exhausts its configured attempts, the endpoint still
+returns `202` with `status="failed"` and an `error` describing the delivery
+failure. The accepted replay marker prevents the same idempotency key from
+sending again; use a new key for another recovery attempt.
+
+Node SDK:
+
+```ts
+const replay = await client.webhooks.replayDispatch("dispatch-123", {
+	idempotencyKey: "incident-2026-08-30-dispatch-123",
+});
+```
+
+## POST /webhooks/dispatches/replay
+
+Replay a batch of failed outbound webhook dispatches.
+
+This endpoint is protected and reserved for operator or service principals. Only
+failed webhook delivery attempts are replayable; the endpoint always selects
+`channel="webhook"` and `status="failed"` attempts in the caller's tenant.
+
+The `x-idempotency-key` header is required. The server derives a per-dispatch
+idempotency key from the caller key and dispatch id, so retrying the same bulk
+request does not re-send dispatches that were already accepted.
+
+Bulk replay is capped at 100 dispatches per request. Use filters to narrow large
+recovery batches.
+
+Required headers:
+
+- `x-idempotency-key` (string, required): caller-provided bulk replay dedupe key
+
+**Request body:**
+
+- `status` (string, optional): must be `"failed"` when present
+- `endpoint_id` (string, optional): configured outbound webhook endpoint id
+- `created_after` (string, optional): only include attempts created after this
+  timestamp
+- `created_before` (string, optional): only include attempts created before this
+  timestamp
+- `limit` (number, optional): maximum dispatches to replay, from 1 to 100
+
+An empty body replays failed webhook dispatches for the tenant up to the cap.
+
+**Response (202):**
+
+```json
+{
+	"alreadyReplayed": 1,
+	"replayed": 2,
+	"results": [
+		{
+			"dispatchId": "dispatch-123",
+			"eventId": "event-123",
+			"status": "replayed"
+		},
+		{
+			"dispatchId": "dispatch-456",
+			"eventId": "event-456",
+			"status": "already_replayed"
+		},
+		{
+			"dispatchId": "dispatch-789",
+			"error": "Webhook dispatch cannot be replayed because no webhook endpoint is configured.",
+			"eventId": "event-789",
+			"status": "failed"
+		}
+	],
+	"total": 3
+}
+```
+
+Per-dispatch delivery failures are reported in `results` and do not fail the
+whole bulk request. Delivery attempts and replay audit events are recorded per
+dispatch.
+
+Node SDK:
+
+```ts
+const replay = await client.webhooks.replayDispatches(
+	{ status: "failed", endpoint_id: "default", limit: 100 },
+	{ idempotencyKey: "incident-2026-08-30" }
+);
+```

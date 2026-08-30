@@ -21,6 +21,7 @@ import { deriveLifecycleNotificationDrafts } from "../../src/events/contracts";
 import {
 	emitNotificationEvent,
 	makeNotificationDraft,
+	replayWebhookDispatch,
 } from "../../src/services/notifications/service";
 import { RuntimeServicesTag } from "../../src/types/runtime";
 import type {
@@ -130,6 +131,30 @@ const makeMemoryPersistence = (): {
 					attempts.push(record);
 					return Effect.succeed(record);
 				},
+				getById: (id: string) =>
+					Effect.fromNullishOr(
+						attempts.find((attempt) => attempt.id === id)
+					).pipe(
+						Effect.mapError(
+							() => new Error(`missing notification attempt in test: ${id}`)
+						)
+					),
+				list: (input) =>
+					Effect.succeed(
+						attempts.filter((attempt) => {
+							if (input?.channel && attempt.channel !== input.channel) {
+								return false;
+							}
+							if (
+								input?.status &&
+								input.status.length > 0 &&
+								!input.status.includes(attempt.status)
+							) {
+								return false;
+							}
+							return true;
+						})
+					),
 				listByNotificationEventId: (notificationEventId: string) =>
 					Effect.succeed(
 						attempts.filter(
@@ -342,6 +367,7 @@ const makeServices = (input: {
 	readonly retryMaxAttempts: number;
 	readonly retryDelayMs: number;
 	readonly adapterKey?: string;
+	readonly omitChannelMetadata?: boolean;
 	readonly webhookEnabled?: boolean;
 	readonly outboundResendConfig?: RuntimeServices["config"]["outboundResend"];
 	readonly disableBuiltInEmail?: boolean;
@@ -352,6 +378,14 @@ const makeServices = (input: {
 			: [
 					{
 						capability: "notifications",
+						...(input.omitChannelMetadata
+							? {}
+							: {
+									channels:
+										input.adapterKey === "outbound-resend"
+											? (["email"] as const)
+											: (["webhook"] as const),
+								}),
 						diagnostics: () =>
 							Effect.succeed({
 								capability: "notifications",
@@ -401,6 +435,46 @@ const makeServices = (input: {
 });
 
 describe("notification retry/backoff behavior", () => {
+	it("preserves webhook routing for legacy adapters without channel metadata", async () => {
+		const memory = makeMemoryPersistence();
+		let callCount = 0;
+		const services = makeServices({
+			dispatch: {
+				send: () => {
+					callCount += 1;
+					return Effect.succeed({
+						responseCode: 202,
+						status: "delivered" as const,
+					});
+				},
+			},
+			omitChannelMetadata: true,
+			persistence: memory.persistence,
+			retryDelayMs: 0,
+			retryMaxAttempts: 1,
+		});
+
+		await Effect.runPromise(
+			emitNotificationEvent({
+				draft: makeNotificationDraft({
+					eventType: "clock_due_changed",
+					payload: { dueAt: "2026-03-01T00:00:00.000Z" },
+					requestId: "req-legacy-adapter",
+				}),
+				idempotencyKey: "legacy-adapter",
+				tenantId: "tenant-default",
+			}).pipe(Effect.provideService(RuntimeServicesTag, services))
+		);
+
+		expect(callCount).toBe(1);
+		expect(
+			memory
+				.getAttempts()
+				.filter((attempt) => attempt.channel === "webhook")
+				.map((attempt) => attempt.status)
+		).toStrictEqual(["delivered"]);
+	});
+
 	it("retries failed webhook dispatches using configured backoff", async () => {
 		const { vi } = await import("vitest");
 		vi.useFakeTimers();
@@ -758,5 +832,49 @@ describe("notification retry/backoff behavior", () => {
 		expect(closed.map((event) => event.eventType)).toContain(
 			"clock_due_changed"
 		);
+	});
+
+	it("rejects replay for persisted notification events with unsupported event types", async () => {
+		const memory = makeMemoryPersistence();
+		let sendCount = 0;
+		const services = makeServices({
+			dispatch: {
+				send: () =>
+					Effect.sync(() => {
+						sendCount += 1;
+						return {
+							responseCode: 202,
+							status: "delivered" as const,
+						};
+					}),
+			},
+			persistence: memory.persistence,
+			retryDelayMs: 0,
+			retryMaxAttempts: 1,
+		});
+
+		await expect(
+			Effect.runPromise(
+				replayWebhookDispatch({
+					event: {
+						correlationId: "corr-corrupt-event",
+						createdAt: "2026-01-01T00:00:00.000Z",
+						eventType: "corrupt_event_type",
+						id: "evt-corrupt-event",
+						idempotencyKey: "original-corrupt-event",
+						locale: "en-GB",
+						payload: {},
+						policyVersion: "policy-v1",
+						requestId: "req-corrupt-event",
+						tenantId: "tenant-default",
+					},
+					idempotencyKey: "replay-corrupt-event",
+					tenantId: "tenant-default",
+				}).pipe(Effect.provideService(RuntimeServicesTag, services))
+			)
+		).rejects.toThrow(
+			"Webhook dispatch cannot be replayed because the persisted notification event type is not supported."
+		);
+		expect(sendCount).toBe(0);
 	});
 });

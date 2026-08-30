@@ -8,6 +8,7 @@ export type {
 	AdapterInvocationFailure,
 	AnyAdapterContract,
 	InboundAdapterContract,
+	NotificationAdapterChannel,
 	NotificationAdapterContract,
 	NotificationDispatchInput,
 	NotificationDispatchResult,

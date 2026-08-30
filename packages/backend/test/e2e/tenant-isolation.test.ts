@@ -1,4 +1,8 @@
-import { TenantContext, withTenant } from "@dsar/persistence";
+import {
+	PersistenceEntityNotFoundError,
+	TenantContext,
+	withTenant,
+} from "@dsar/persistence";
 import type {
 	AuditEventRecord,
 	ChatStateRecord,
@@ -17,6 +21,7 @@ import type {
 	FulfillmentArtifactRecord,
 	JsonValue,
 	ListAuditEventsInput,
+	ListNotificationDeliveryAttemptsInput,
 	NotificationDeliveryAttemptRecord,
 	NotificationEventRecord,
 	PaginationInput,
@@ -142,6 +147,32 @@ const paginate = <T>(
 	const offset = pagination?.offset ?? 0;
 	const limit = pagination?.limit ?? items.length;
 	return items.slice(offset, offset + limit);
+};
+
+const matchesNotificationAttemptFilter = (
+	attempt: NotificationDeliveryAttemptRecord,
+	input?: ListNotificationDeliveryAttemptsInput
+): boolean => {
+	if (input?.channel && attempt.channel !== input.channel) {
+		return false;
+	}
+	if (
+		input?.status &&
+		input.status.length > 0 &&
+		!input.status.includes(attempt.status)
+	) {
+		return false;
+	}
+	if (input?.destination && attempt.destination !== input.destination) {
+		return false;
+	}
+	if (input?.createdAfter && attempt.createdAt <= input.createdAfter) {
+		return false;
+	}
+	if (input?.createdBefore && attempt.createdAt >= input.createdBefore) {
+		return false;
+	}
+	return true;
 };
 
 const makeTenantScopedMemoryPersistence = (): PersistenceService => {
@@ -381,6 +412,47 @@ const makeTenantScopedMemoryPersistence = (): PersistenceService => {
 					};
 					notificationAttempts.push(record);
 					return record;
+				}),
+			count: (input) =>
+				Effect.gen(function* countNotificationAttempts() {
+					const tenantId = yield* currentTenantId;
+					return notificationAttempts.filter(
+						(attempt) =>
+							attempt.tenantId === tenantId &&
+							matchesNotificationAttemptFilter(attempt, input)
+					).length;
+				}),
+			getById: (id: string) =>
+				Effect.gen(function* getNotificationAttempt() {
+					const tenantId = yield* currentTenantId;
+					const record = notificationAttempts.find(
+						(attempt) => attempt.tenantId === tenantId && attempt.id === id
+					);
+					if (!record) {
+						return yield* Effect.fail(
+							new PersistenceEntityNotFoundError({
+								entity: "notification_delivery_attempts",
+								id,
+							})
+						);
+					}
+					return record;
+				}),
+			list: (input) =>
+				Effect.gen(function* listNotificationAttempts() {
+					const tenantId = yield* currentTenantId;
+					const filtered = notificationAttempts
+						.filter(
+							(attempt) =>
+								attempt.tenantId === tenantId &&
+								matchesNotificationAttemptFilter(attempt, input)
+						)
+						.toSorted((left, right) =>
+							left.createdAt === right.createdAt
+								? right.id.localeCompare(left.id)
+								: right.createdAt.localeCompare(left.createdAt)
+						);
+					return paginate(filtered, input);
 				}),
 			listByNotificationEventId: (notificationEventId: string) =>
 				Effect.gen(function* listNotificationAttempts() {
@@ -1061,6 +1133,30 @@ const makeRouteProbes = (): readonly RouteProbe[] => [
 		key: "POST /webhooks/endpoints/:id/rotate-key",
 		method: "POST",
 		path: "/webhooks/endpoints/default/rotate-key",
+	},
+	{
+		headers: tenantAHeaders,
+		key: "GET /webhooks/dispatches",
+		method: "GET",
+		path: "/webhooks/dispatches?status=failed",
+	},
+	{
+		headers: {
+			...tenantAHeaders,
+			"x-idempotency-key": "tenant-isolation-bulk-replay",
+		},
+		key: "POST /webhooks/dispatches/replay",
+		method: "POST",
+		path: "/webhooks/dispatches/replay",
+	},
+	{
+		headers: {
+			...tenantAHeaders,
+			"x-idempotency-key": "tenant-isolation-single-replay",
+		},
+		key: "POST /webhooks/dispatches/:id/replay",
+		method: "POST",
+		path: `/webhooks/dispatches/attempt-${TENANT_B_EVENT_ID}/replay`,
 	},
 	{
 		headers: tenantAHeaders,

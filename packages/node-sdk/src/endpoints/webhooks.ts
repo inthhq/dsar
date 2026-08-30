@@ -40,6 +40,114 @@ export type WebhookSecretLookup = (input: {
 	readonly keyId?: string;
 }) => Promise<WebhookSecretLookupResult> | WebhookSecretLookupResult;
 
+/** Delivery states recorded for outbound webhook attempts. */
+export type WebhookDispatchStatus =
+	| "pending"
+	| "delivered"
+	| "failed"
+	| "skipped";
+
+/** Query filters accepted by outbound webhook dispatch listing. */
+export interface WebhookDispatchListQuery {
+	readonly [key: string]: string | number | boolean | undefined;
+	/** Include attempts created strictly after this ISO timestamp. */
+	readonly created_after?: string;
+	/** Include attempts created strictly before this ISO timestamp. */
+	readonly created_before?: string;
+	/** Filter attempts to the configured webhook endpoint id. */
+	readonly endpoint_id?: string;
+	/** Maximum attempts to return, from 1 to 500. */
+	readonly limit?: number;
+	/** Zero-based result offset. */
+	readonly offset?: number;
+	/** Comma-separated delivery statuses. */
+	readonly status?: string;
+}
+
+/** Persisted outbound webhook delivery attempt returned by the API. */
+export interface WebhookDispatch {
+	/** One-based attempt number for the notification event. */
+	readonly attempt: number;
+	/** ISO timestamp when the attempt was recorded. */
+	readonly createdAt: string;
+	/** Destination URL used by the attempt. */
+	readonly destination: string;
+	/** Stable delivery-attempt identifier. */
+	readonly dispatchId: string;
+	/** Configured endpoint id when the destination matches one. */
+	readonly endpointId?: string;
+	/** Delivery failure or skip reason when available. */
+	readonly error?: string;
+	/** Notification event associated with the attempt. */
+	readonly eventId: string;
+	/** Notification event type when its persisted event is available. */
+	readonly eventType?: string;
+	/** Whether this attempt is eligible for replay. */
+	readonly replayable: boolean;
+	/** DSAR request associated with the notification event. */
+	readonly requestId: string;
+	/** Provider response code when available. */
+	readonly responseCode?: number;
+	/** Recorded delivery state. */
+	readonly status: WebhookDispatchStatus;
+}
+
+/** Paginated response returned by outbound webhook dispatch listing. */
+export interface WebhookDispatchListResponse {
+	/** Dispatch attempts in reverse chronological order. */
+	readonly items: readonly WebhookDispatch[];
+	/** Bounded page size used by the server. */
+	readonly limit: number;
+	/** Zero-based offset used by the server. */
+	readonly offset: number;
+	/** Number of attempts matching the filters before pagination. */
+	readonly total: number;
+}
+
+/** Optional filters accepted by bulk webhook replay. */
+export interface WebhookDispatchBulkReplayPayload {
+	/** Replay attempts created strictly after this ISO timestamp. */
+	readonly created_after?: string;
+	/** Replay attempts created strictly before this ISO timestamp. */
+	readonly created_before?: string;
+	/** Replay attempts for this configured endpoint id. */
+	readonly endpoint_id?: string;
+	/** Maximum dispatches to replay, from 1 to 100. */
+	readonly limit?: number;
+	/** Must be `failed` when present. */
+	readonly status?: "failed";
+}
+
+/** Result returned for one outbound webhook replay request. */
+export interface WebhookDispatchReplayResponse {
+	/** Dispatch attempt that was selected for replay. */
+	readonly dispatchId: string;
+	/** Delivery failure or skip reason when replay did not deliver. */
+	readonly error?: string;
+	/** Notification event associated with the dispatch. */
+	readonly eventId: string;
+	/** Replay outcome, including deduplicated and failed attempts. */
+	readonly status: "replayed" | "already_replayed" | "failed";
+}
+
+/** Result returned by bulk outbound webhook replay. */
+export interface WebhookDispatchBulkReplayResponse {
+	/** Dispatches skipped because the replay key was already accepted. */
+	readonly alreadyReplayed: number;
+	/** Dispatches delivered successfully by this request. */
+	readonly replayed: number;
+	/** Per-dispatch replay outcomes. */
+	readonly results: readonly WebhookDispatchReplayResponse[];
+	/** Dispatches selected by the request filters. */
+	readonly total: number;
+}
+
+/** Per-request options for webhook replay mutations. */
+export interface WebhookReplayRequestOptions extends RequestOptions {
+	/** Required deduplication key for safe replay retries. */
+	readonly idempotencyKey: string;
+}
+
 /**
  * Input used to verify a DSAR outbound webhook signature.
  */
@@ -149,6 +257,21 @@ export const verifyWebhook = async (
  * Client interface for the Webhooks API namespace.
  */
 export interface WebhooksApi {
+	/** Lists persisted outbound webhook delivery attempts. */
+	readonly listDispatches: (
+		query?: WebhookDispatchListQuery,
+		options?: RequestOptions
+	) => Promise<DsarResult<WebhookDispatchListResponse>>;
+	/** Replays one failed outbound webhook delivery attempt. */
+	readonly replayDispatch: (
+		dispatchId: string,
+		options: WebhookReplayRequestOptions
+	) => Promise<DsarResult<WebhookDispatchReplayResponse>>;
+	/** Replays a filtered batch of failed outbound webhook delivery attempts. */
+	readonly replayDispatches: (
+		payload: WebhookDispatchBulkReplayPayload,
+		options: WebhookReplayRequestOptions
+	) => Promise<DsarResult<WebhookDispatchBulkReplayResponse>>;
 	/**
 	 * Replays a Resend inbound webhook payload into the DSAR ingestion
 	 * pipeline. The call is synchronous — the server processes the event
@@ -211,6 +334,26 @@ export const makeWebhooksApi = (ctx: EndpointContext): WebhooksApi => ({
 			method: "POST",
 			options,
 			path: "/webhooks/inbound/slack",
+		}),
+	listDispatches: (query, options) =>
+		ctx.call({
+			method: "GET",
+			options,
+			path: "/webhooks/dispatches",
+			query,
+		}),
+	replayDispatch: (dispatchId, options) =>
+		ctx.call({
+			method: "POST",
+			options,
+			path: `/webhooks/dispatches/${encodeURIComponent(dispatchId)}/replay`,
+		}),
+	replayDispatches: (payload, options) =>
+		ctx.call({
+			body: payload,
+			method: "POST",
+			options,
+			path: "/webhooks/dispatches/replay",
 		}),
 	rotateKey: (endpointId, payload, options) =>
 		ctx.call({

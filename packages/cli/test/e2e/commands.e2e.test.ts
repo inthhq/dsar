@@ -147,6 +147,43 @@ const commandCases: readonly CommandCase[] = [
 		outputIncludes: ['"endpointId":"default"', '"newSigningSecret"'],
 	},
 	{
+		argv: ["webhooks", "list", "--status=failed"],
+		expectedExitCode: 0,
+		id: "webhooks_dispatches_list",
+		outputIncludes: ['"items":[]', '"total":0'],
+	},
+	{
+		argv: ["webhooks", "replay", "dispatch-1"],
+		expectedExitCode: 1,
+		id: "webhooks_dispatches_replay",
+		outputIncludes: ["--idempotency-key"],
+	},
+	{
+		argv: ["webhooks", "replay", "dispatch-1", "--idempotency-key=replay-1"],
+		expectedExitCode: 1,
+		id: "webhooks_dispatches_replay",
+		outputIncludes: ["dispatch-1"],
+	},
+	{
+		argv: ["webhooks", "replay-all"],
+		expectedExitCode: 1,
+		id: "webhooks_dispatches_replay_bulk",
+		outputIncludes: ["--idempotency-key"],
+	},
+	{
+		argv: [
+			"webhooks",
+			"replay-all",
+			"--status=failed",
+			"--endpoint-id=default",
+			"--limit=10",
+			"--idempotency-key=replay-all-1",
+		],
+		expectedExitCode: 0,
+		id: "webhooks_dispatches_replay_bulk",
+		outputIncludes: ['"results":[]', '"total":0'],
+	},
+	{
 		argv: ["requests", "create", "--json", commonCreateBody],
 		expectedExitCode: 0,
 		id: "requests_create",

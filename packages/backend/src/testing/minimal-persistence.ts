@@ -81,6 +81,63 @@ const boundedLimit = (value: unknown): number => {
 	return Math.max(1, Math.min(MAX_LIST_LIMIT, Math.trunc(value)));
 };
 
+const boundedOffset = (value: unknown): number => {
+	if (typeof value !== "number" || !Number.isFinite(value)) {
+		return 0;
+	}
+	return Math.max(0, Math.trunc(value));
+};
+
+const matchesNotificationAttemptFilter = (
+	attempt: Record<string, unknown>,
+	input?: Record<string, unknown>
+): boolean => {
+	if (typeof input?.channel === "string" && attempt.channel !== input.channel) {
+		return false;
+	}
+	if (
+		Array.isArray(input?.status) &&
+		input.status.length > 0 &&
+		!input.status.includes(attempt.status)
+	) {
+		return false;
+	}
+	if (
+		typeof input?.destination === "string" &&
+		attempt.destination !== input.destination
+	) {
+		return false;
+	}
+	if (
+		typeof input?.createdAfter === "string" &&
+		typeof attempt.createdAt === "string" &&
+		attempt.createdAt <= input.createdAfter
+	) {
+		return false;
+	}
+	if (
+		typeof input?.createdBefore === "string" &&
+		typeof attempt.createdAt === "string" &&
+		attempt.createdAt >= input.createdBefore
+	) {
+		return false;
+	}
+	return true;
+};
+
+const compareNotificationAttemptsDesc = (
+	left: Record<string, unknown>,
+	right: Record<string, unknown>
+): number => {
+	const leftCreatedAt = String(left.createdAt ?? "");
+	const rightCreatedAt = String(right.createdAt ?? "");
+	const order = rightCreatedAt.localeCompare(leftCreatedAt);
+	if (order !== 0) {
+		return order;
+	}
+	return String(right.id ?? "").localeCompare(String(left.id ?? ""));
+};
+
 /**
  * Minimal in-memory persistence surface used by backend tests.
  */
@@ -89,7 +146,7 @@ export interface MinimalPersistence {
 	readonly auditEvents: {
 		readonly append: (
 			input: Record<string, unknown>
-		) => Effect.Effect<Record<string, unknown>>;
+		) => Effect.Effect<Record<string, unknown>, Error>;
 		readonly listByRequestId: (
 			requestId: string
 		) => Effect.Effect<readonly Record<string, unknown>[]>;
@@ -126,6 +183,13 @@ export interface MinimalPersistence {
 		readonly append: (
 			input: Record<string, unknown>
 		) => Effect.Effect<Record<string, unknown>>;
+		readonly count: (input?: Record<string, unknown>) => Effect.Effect<number>;
+		readonly getById: (
+			id: string
+		) => Effect.Effect<Record<string, unknown>, Error>;
+		readonly list: (
+			input?: Record<string, unknown>
+		) => Effect.Effect<readonly Record<string, unknown>[]>;
 		readonly listByNotificationEventId: (
 			id: string
 		) => Effect.Effect<readonly Record<string, unknown>[]>;
@@ -294,9 +358,51 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 			auditEvents: {
 				append: (input: Record<string, unknown>) =>
 					Effect.gen(function* append() {
-						const record = { ...input, tenantId: "tenant-default" };
-						yield* Ref.update(auditEventsRef, (arr) => [...arr, record]);
-						return record;
+						const record: Record<string, unknown> = {
+							...input,
+							tenantId: "tenant-default",
+						};
+						const result = yield* Ref.modify(
+							auditEventsRef,
+							(
+								arr
+							): readonly [
+								(
+									| {
+											readonly id: unknown;
+											readonly status: "duplicate";
+									  }
+									| {
+											readonly record: Record<string, unknown>;
+											readonly status: "appended";
+									  }
+								),
+								Record<string, unknown>[],
+							] => {
+								if (arr.some((event) => event.id === record.id)) {
+									return [
+										{
+											id: record.id,
+											status: "duplicate",
+										},
+										arr,
+									];
+								}
+								return [
+									{
+										record,
+										status: "appended",
+									},
+									[...arr, record],
+								];
+							}
+						);
+						if (result.status === "duplicate") {
+							return yield* Effect.fail(
+								new Error(`Duplicate audit event ${String(result.id)}`)
+							);
+						}
+						return result.record;
 					}),
 				list: (input: Record<string, unknown>) =>
 					Ref.get(auditEventsRef).pipe(
@@ -568,6 +674,40 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 						]);
 						return record;
 					}),
+				count: (input?: Record<string, unknown>) =>
+					Ref.get(notificationAttemptsRef).pipe(
+						Effect.map(
+							(arr) =>
+								arr.filter((a: Record<string, unknown>) =>
+									matchesNotificationAttemptFilter(a, input)
+								).length
+						)
+					),
+				getById: (id: string) =>
+					Ref.get(notificationAttemptsRef).pipe(
+						Effect.flatMap((arr) => {
+							const found = arr.find(
+								(a: Record<string, unknown>) => a.id === id
+							);
+							return found
+								? Effect.succeed(found)
+								: Effect.fail(new Error(`Missing ${id}`));
+						})
+					),
+				list: (input?: Record<string, unknown>) =>
+					Ref.get(notificationAttemptsRef).pipe(
+						Effect.map((arr) =>
+							arr
+								.filter((a: Record<string, unknown>) =>
+									matchesNotificationAttemptFilter(a, input)
+								)
+								.toSorted(compareNotificationAttemptsDesc)
+								.slice(
+									boundedOffset(input?.offset),
+									boundedOffset(input?.offset) + boundedLimit(input?.limit)
+								)
+						)
+					),
 				listByNotificationEventId: (id: string) =>
 					Ref.get(notificationAttemptsRef).pipe(
 						Effect.map((arr) =>
