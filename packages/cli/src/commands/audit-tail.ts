@@ -227,6 +227,10 @@ export const auditTailCommand: CommandDefinition = {
 			process.removeListener("SIGINT", onInterrupt);
 		}
 	},
+	flagHelp: [
+		"--request <id>           Request id to tail (required)",
+		"--interval <ms>          Poll interval in milliseconds (default 2000)",
+	],
 	id: "audit_tail",
 	usage: ["audit", "tail"],
 };

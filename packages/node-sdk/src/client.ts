@@ -68,6 +68,8 @@ const makeCall =
  * Top-level node SDK client surface grouped by DSAR API domains.
  */
 export interface NodeSdkClient {
+	/** Operator-scoped persistence and adapter diagnostics. */
+	readonly diagnostics: SystemApi["diagnostics"];
 	/** Requests API surface exposed by this client. */
 	readonly requests: RequestsApi;
 	/** Subjects API surface exposed by this client. */
@@ -109,6 +111,7 @@ export const createNodeSdk = (config?: NodeSdkConfig): NodeSdkClient => {
 
 	return {
 		audit,
+		diagnostics: system.diagnostics,
 		init: system.init,
 		policies,
 		requests,

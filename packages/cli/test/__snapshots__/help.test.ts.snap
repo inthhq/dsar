@@ -1,0 +1,1167 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`CLI help output > lists command groups for partial command help 1`] = `
+"DSAR CLI
+
+Commands matching 'requests':
+  requests create  - Create request.
+  requests list  - List request queue.
+  requests capture  - Capture request intake.
+  requests get :id  - Get request.
+  requests timeline :id  - Get request timeline.
+  requests clock explain :id  - Explain legal clock.
+  requests clarifications request :id  - Request clarification.
+  requests clarifications receive :id  - Receive clarification.
+  requests extensions create :id  - Create extension.
+  requests refusals create :id  - Refuse request.
+  requests closures create :id  - Close request.
+  requests acknowledgements create :id  - Create acknowledgement.
+  requests requestor set :id  - Set requestor.
+  requests authority submit :id  - Submit authority.
+  requests authority approve :id  - Approve authority.
+  requests authority reject :id  - Reject authority.
+  requests verification request :id  - Create verification case.
+  requests verification evidence :id  - Attach verification evidence.
+  requests verification evidence-upload :id  - Upload verification evidence file.
+  requests verification approve :id  - Approve verification.
+  requests verification reject :id  - Reject verification.
+  requests verification case :id  - Get verification case.
+  requests delivery prepare :id  - Prepare delivery.
+  requests delivery address-verify :id  - Verify delivery address.
+  requests delivery step-up-challenge :id  - Start step-up challenge.
+  requests delivery step-up-complete :id  - Complete step-up challenge.
+  requests artifacts download :id :artifactId  - Download artifact.
+  requests delivery logs :id  - Get delivery logs.
+  requests fulfilment create :id  - Fulfil request.
+  requests fulfilment callback :id  - Fulfilment callback.
+  requests manifest get :id  - Get manifest.
+  requests manifest validate :id  - Validate manifest.
+  requests manifest artifact-upload :id  - Upload manifest artifact.
+  requests manifest artifact-download :id  - Download manifest artifact.
+  requests manifest artifact-replace :id :artifactId  - Replace manifest artifact.
+  requests appeals create :id  - Create appeal.
+  requests appeals list :id  - List appeals.
+  requests appeals decide :id :appealId  - Decide appeal.
+  requests notifications list :id  - List request notifications.
+  requests notifications replay :id :eventId  - Replay a notification event.
+  requests audit export :id  - Export audit trail.
+  requests audit verify :id  - Verify audit trail."
+`;
+
+exports[`CLI help output > matches command help snapshot for 'audit_export' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar audit export [global flags]
+
+Description:
+  Export tenant audit trail.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'audit_list' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar audit list [global flags]
+
+Description:
+  List audit events with filters.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'audit_tail' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar audit tail [global flags]
+
+Description:
+  Stream audit events for a request, polling the audit log endpoint.
+
+Command flags:
+  --request <id>           Request id to tail (required)
+  --interval <ms>          Poll interval in milliseconds (default 2000)
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'doctor_runtime' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar doctor [global flags]
+
+Description:
+  Run DSAR CLI diagnostics for config, runtime reachability, auth, persistence, and exposed health checks.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'init_runtime' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar init [global flags]
+
+Description:
+  Initialize runtime context.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'policies_custom_activate' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar policies custom activate [global flags]
+
+Description:
+  Activate custom policy pack.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'policies_custom_deactivate' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar policies custom deactivate [global flags]
+
+Description:
+  Deactivate custom policy pack.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'policies_custom_register' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar policies custom register [global flags]
+
+Description:
+  Register custom policy pack.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'policies_list' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar policies list [global flags]
+
+Description:
+  List policy surfaces.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'policies_upgrades_apply' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar policies upgrades apply :proposalId [global flags]
+
+Description:
+  Apply policy upgrade.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'policies_upgrades_approve' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar policies upgrades approve :proposalId [global flags]
+
+Description:
+  Approve policy upgrade.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'policies_upgrades_propose' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar policies upgrades propose [global flags]
+
+Description:
+  Propose policy upgrade.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_acknowledgements_create' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests acknowledgements create :id [global flags]
+
+Description:
+  Create acknowledgement.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_appeals_create' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests appeals create :id [global flags]
+
+Description:
+  Create appeal.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_appeals_decide' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests appeals decide :id :appealId [global flags]
+
+Description:
+  Decide appeal.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_appeals_list' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests appeals list :id [global flags]
+
+Description:
+  List appeals.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_artifacts_download' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests artifacts download :id :artifactId [global flags]
+
+Description:
+  Download artifact.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_audit_export' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests audit export :id [global flags]
+
+Description:
+  Export audit trail.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_audit_verify' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests audit verify :id [global flags]
+
+Description:
+  Verify audit trail.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_authority_approve' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests authority approve :id [global flags]
+
+Description:
+  Approve authority.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_authority_reject' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests authority reject :id [global flags]
+
+Description:
+  Reject authority.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_authority_submit' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests authority submit :id [global flags]
+
+Description:
+  Submit authority.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_capture' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests capture [global flags]
+
+Description:
+  Capture request intake.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_clarifications_receive' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests clarifications receive :id [global flags]
+
+Description:
+  Receive clarification.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_clarifications_request' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests clarifications request :id [global flags]
+
+Description:
+  Request clarification.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_clock_explain' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests clock explain :id [global flags]
+
+Description:
+  Explain legal clock.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_closures_create' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests closures create :id [global flags]
+
+Description:
+  Close request.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_create' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests create [global flags]
+
+Description:
+  Create request.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_delivery_address_verify' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests delivery address-verify :id [global flags]
+
+Description:
+  Verify delivery address.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_delivery_logs' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests delivery logs :id [global flags]
+
+Description:
+  Get delivery logs.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_delivery_prepare' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests delivery prepare :id [global flags]
+
+Description:
+  Prepare delivery.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_delivery_step_up_challenge' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests delivery step-up-challenge :id [global flags]
+
+Description:
+  Start step-up challenge.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_delivery_step_up_complete' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests delivery step-up-complete :id [global flags]
+
+Description:
+  Complete step-up challenge.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_extensions_create' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests extensions create :id [global flags]
+
+Description:
+  Create extension.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_fulfilment' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests fulfilment create :id [global flags]
+
+Description:
+  Fulfil request.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_fulfilment_callback' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests fulfilment callback :id [global flags]
+
+Description:
+  Fulfilment callback.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_get' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests get :id [global flags]
+
+Description:
+  Get request.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_list' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests list [global flags]
+
+Description:
+  List request queue.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_manifest_artifact_download' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests manifest artifact-download :id [global flags]
+
+Description:
+  Download manifest artifact.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_manifest_artifact_replace' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests manifest artifact-replace :id :artifactId [global flags]
+
+Description:
+  Replace manifest artifact.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_manifest_artifact_upload' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests manifest artifact-upload :id [global flags]
+
+Description:
+  Upload manifest artifact.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_manifest_get' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests manifest get :id [global flags]
+
+Description:
+  Get manifest.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_manifest_validate' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests manifest validate :id [global flags]
+
+Description:
+  Validate manifest.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_notifications_list' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests notifications list :id [global flags]
+
+Description:
+  List request notifications.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_notifications_replay' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests notifications replay :id :eventId [global flags]
+
+Description:
+  Replay a notification event.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_refusals_create' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests refusals create :id [global flags]
+
+Description:
+  Refuse request.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_requestor_set' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests requestor set :id [global flags]
+
+Description:
+  Set requestor.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_timeline' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests timeline :id [global flags]
+
+Description:
+  Get request timeline.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_verification_approve' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests verification approve :id [global flags]
+
+Description:
+  Approve verification.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_verification_case' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests verification case :id [global flags]
+
+Description:
+  Get verification case.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_verification_evidence' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests verification evidence :id [global flags]
+
+Description:
+  Attach verification evidence.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_verification_evidence_upload' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests verification evidence-upload :id [global flags]
+
+Description:
+  Upload verification evidence file.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_verification_reject' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests verification reject :id [global flags]
+
+Description:
+  Reject verification.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'requests_verification_request' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar requests verification request :id [global flags]
+
+Description:
+  Create verification case.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'status_health' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar status [global flags]
+
+Description:
+  Get runtime health status.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'subjects_get_profile' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar subjects get :subjectId [global flags]
+
+Description:
+  Get subject profile.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'tenants_retention_get' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar tenants retention get :tenantId [global flags]
+
+Description:
+  Get tenant retention.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'tenants_retention_put' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar tenants retention put :tenantId [global flags]
+
+Description:
+  Set tenant retention.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'webhooks_endpoint_rotate_key' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar webhooks rotate-key :id [global flags]
+
+Description:
+  Rotate webhook endpoint signing key.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'webhooks_inbound_resend' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar webhooks inbound resend [global flags]
+
+Description:
+  Handle inbound Resend webhook payload.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'webhooks_inbound_slack' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar webhooks inbound slack [global flags]
+
+Description:
+  Handle inbound Slack webhook payload.
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches the global help snapshot 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar <command> [args] [--api-url URL] [--token TOKEN] [--output json|text]
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands
+
+Commands:
+  init  - Initialize runtime context.
+  status  - Get runtime health status.
+  doctor  - Run DSAR CLI diagnostics for config, runtime reachability, auth, persistence, and exposed health checks.
+  requests create  - Create request.
+  requests list  - List request queue.
+  requests capture  - Capture request intake.
+  requests get :id  - Get request.
+  requests timeline :id  - Get request timeline.
+  requests clock explain :id  - Explain legal clock.
+  requests clarifications request :id  - Request clarification.
+  requests clarifications receive :id  - Receive clarification.
+  requests extensions create :id  - Create extension.
+  requests refusals create :id  - Refuse request.
+  requests closures create :id  - Close request.
+  requests acknowledgements create :id  - Create acknowledgement.
+  requests requestor set :id  - Set requestor.
+  requests authority submit :id  - Submit authority.
+  requests authority approve :id  - Approve authority.
+  requests authority reject :id  - Reject authority.
+  requests verification request :id  - Create verification case.
+  requests verification evidence :id  - Attach verification evidence.
+  requests verification evidence-upload :id  - Upload verification evidence file.
+  requests verification approve :id  - Approve verification.
+  requests verification reject :id  - Reject verification.
+  requests verification case :id  - Get verification case.
+  requests delivery prepare :id  - Prepare delivery.
+  requests delivery address-verify :id  - Verify delivery address.
+  requests delivery step-up-challenge :id  - Start step-up challenge.
+  requests delivery step-up-complete :id  - Complete step-up challenge.
+  requests artifacts download :id :artifactId  - Download artifact.
+  requests delivery logs :id  - Get delivery logs.
+  requests fulfilment create :id  - Fulfil request.
+  requests fulfilment callback :id  - Fulfilment callback.
+  requests manifest get :id  - Get manifest.
+  requests manifest validate :id  - Validate manifest.
+  requests manifest artifact-upload :id  - Upload manifest artifact.
+  requests manifest artifact-download :id  - Download manifest artifact.
+  requests manifest artifact-replace :id :artifactId  - Replace manifest artifact.
+  requests appeals create :id  - Create appeal.
+  requests appeals list :id  - List appeals.
+  requests appeals decide :id :appealId  - Decide appeal.
+  requests notifications list :id  - List request notifications.
+  requests notifications replay :id :eventId  - Replay a notification event.
+  requests audit export :id  - Export audit trail.
+  requests audit verify :id  - Verify audit trail.
+  subjects get :subjectId  - Get subject profile.
+  policies list  - List policy surfaces.
+  policies upgrades propose  - Propose policy upgrade.
+  policies upgrades approve :proposalId  - Approve policy upgrade.
+  policies upgrades apply :proposalId  - Apply policy upgrade.
+  policies custom register  - Register custom policy pack.
+  policies custom activate  - Activate custom policy pack.
+  policies custom deactivate  - Deactivate custom policy pack.
+  webhooks inbound resend  - Handle inbound Resend webhook payload.
+  webhooks inbound slack  - Handle inbound Slack webhook payload.
+  webhooks rotate-key :id  - Rotate webhook endpoint signing key.
+  tenants retention get :tenantId  - Get tenant retention.
+  tenants retention put :tenantId  - Set tenant retention.
+  audit list  - List audit events with filters.
+  audit export  - Export tenant audit trail.
+  audit tail  - Stream audit events for a request, polling the audit log endpoint."
+`;

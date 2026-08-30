@@ -10,7 +10,14 @@ const GLOBAL_FLAG_KEYS = new Set([
 
 const stripLeadingDashes = (value: string): string => value.replace(/^-+/, "");
 
-const parseFlags = (
+/**
+ * Splits raw CLI argv into positional command tokens and parsed `--flag`
+ * entries without resolving environment-dependent global config.
+ *
+ * @param argv - Raw command-line tokens, excluding the runtime binary name.
+ * @returns Parsed command tokens and flag values.
+ */
+export const parseCliArguments = (
 	argv: readonly string[]
 ): {
 	readonly commandTokens: readonly string[];
@@ -48,10 +55,14 @@ const toOutputMode = (value: string | undefined): "json" | "text" => {
 
 const resolveApiUrl = (
 	flags: Readonly<Record<string, string>>,
-	env: NodeJS.ProcessEnv
+	env: NodeJS.ProcessEnv,
+	allowMissing: boolean
 ): string => {
 	const value = flags["api-url"] ?? env.DSAR_API_URL;
 	if (!value) {
+		if (allowMissing) {
+			return "";
+		}
 		throw new Error(
 			"Missing DSAR API URL. Set --api-url or DSAR_API_URL environment variable."
 		);
@@ -61,10 +72,15 @@ const resolveApiUrl = (
 
 const buildGlobalConfig = (input: {
 	readonly env: NodeJS.ProcessEnv;
+	readonly allowMissingApiUrl?: boolean;
 	readonly flags: Readonly<Record<string, string>>;
 	readonly fetchImpl: typeof fetch;
 }): GlobalCliConfig => ({
-	apiUrl: resolveApiUrl(input.flags, input.env),
+	apiUrl: resolveApiUrl(
+		input.flags,
+		input.env,
+		input.allowMissingApiUrl === true
+	),
 	fetch: input.fetchImpl,
 	idempotencyKey: input.flags["idempotency-key"],
 	output: toOutputMode(input.flags.output),
@@ -79,6 +95,9 @@ const buildGlobalConfig = (input: {
  * @param input.argv - Full argument vector (flags like `--api-url`, `--token`,
  *   `--idempotency-key`, `--output` are extracted;
  *   remaining tokens become positional commands).
+ * @param input.allowMissingApiUrl - Allows config-sensitive commands such as
+ *   `doctor` to report a missing URL as a diagnostic instead of failing during
+ *   parsing.
  * @param input.env - Process environment used for fallback values (e.g.
  *   `DSAR_API_TOKEN`, `DSAR_API_URL`).
  * @param input.fetchImpl - Fetch implementation injected into the global
@@ -87,11 +106,12 @@ const buildGlobalConfig = (input: {
  *   the fully-resolved `global` configuration.
  */
 export const parseCliInput = (input: {
+	readonly allowMissingApiUrl?: boolean;
 	readonly argv: readonly string[];
 	readonly env: NodeJS.ProcessEnv;
 	readonly fetchImpl: typeof fetch;
 }): ParsedCliInput => {
-	const { commandTokens, flags } = parseFlags(input.argv);
+	const { commandTokens, flags } = parseCliArguments(input.argv);
 	const globalFlagsOnly: Record<string, string> = {};
 	for (const [key, value] of Object.entries(flags)) {
 		if (GLOBAL_FLAG_KEYS.has(key)) {
@@ -102,6 +122,7 @@ export const parseCliInput = (input: {
 		commandTokens,
 		flags,
 		global: buildGlobalConfig({
+			allowMissingApiUrl: input.allowMissingApiUrl,
 			env: input.env,
 			fetchImpl: input.fetchImpl,
 			flags: globalFlagsOnly,

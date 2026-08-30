@@ -51,7 +51,8 @@ import {
 	mapWebhookEndpointRecord,
 	mapWebhookSigningKeyRecord,
 } from "./persistence/mappers";
-import { runMigrations } from "./persistence/migrations";
+import { readMigrationStatus, runMigrations } from "./persistence/migrations";
+import type { PersistenceMigrationStatus } from "./persistence/migrations";
 import {
 	BOOTSTRAP_TENANT_ID,
 	extractRequestLookupFields,
@@ -69,7 +70,15 @@ import type {
 	WebhookSigningSecretEncryptionOptions,
 } from "./persistence/webhook-secret-encryption";
 
-export { runMigrations } from "./persistence/migrations";
+export {
+	currentPersistenceMigrationStatus,
+	readMigrationStatus,
+	runMigrations,
+} from "./persistence/migrations";
+export type {
+	PersistenceMigrationInfo,
+	PersistenceMigrationStatus,
+} from "./persistence/migrations";
 export type { WebhookSigningSecretEncryptionOptions } from "./persistence/webhook-secret-encryption";
 
 interface WebhookEndpointSqlRow {
@@ -123,6 +132,11 @@ const mapWebhookSigningKeySqlRow = (
  * Effect service surface for all tenant-scoped persistence repositories.
  */
 export interface PersistenceService {
+	/** Read-only schema migration freshness report for operator diagnostics. */
+	readonly migrationStatus?: () => Effect.Effect<
+		PersistenceMigrationStatus,
+		unknown
+	>;
 	/** Request repository bound to mandatory tenant scope. */
 	readonly requests: RequestsRepository;
 	/** Timeline repository for request lifecycle and legal-clock events. */
@@ -1576,6 +1590,7 @@ const makePersistence = (
 			chatRuntimeState,
 			clockSegments,
 			fulfillmentArtifacts,
+			migrationStatus: () => readMigrationStatus(sql),
 			notificationDeliveryAttempts,
 			notificationEvents,
 			policyAssignments,

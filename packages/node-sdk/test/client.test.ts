@@ -187,6 +187,9 @@ describe("@dsar/node-sdk client", () => {
 		expect(refusal.unwrap().status).toBe("refused");
 		const notifications = await sdk.requests.notifications(requestId);
 		expect(notifications.unwrap().events.length).toBeGreaterThan(0);
+		const diagnostics = await sdk.diagnostics();
+		expect(diagnostics.unwrap().migrations.current).toBe(true);
+		expect(diagnostics.unwrap().persistence.reachable).toBe(true);
 	});
 
 	it("preserves base path prefixes when joining request URLs", async () => {

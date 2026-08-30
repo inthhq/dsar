@@ -1,6 +1,6 @@
 ---
 title: "Status API"
-description: "Return the current runtime health payload."
+description: "Inspect runtime health, persistence migrations, and registered adapters."
 group: reference-api
 ---
 
@@ -27,6 +27,44 @@ runtime and base path are mounted as expected.
 
 Related surfaces:
 
-- Node SDK: `client.system.status()`
+- Node SDK: `client.status()`
 - CLI: `dsar status`
 - See also [API Contract Surface](../../architecture/api-contract-surface.md)
+
+## GET /status/diagnostics
+
+Return persistence migration freshness and health information for every
+registered adapter. This endpoint requires a bearer token for an operator or
+service principal. Subject principals receive `403 Forbidden`.
+
+**Response:**
+
+```json
+{
+	"adapters": [
+		{
+			"capability": "notifications",
+			"key": "outbound-resend",
+			"status": "healthy"
+		}
+	],
+	"migrations": {
+		"applied": [{ "id": 1, "name": "initial" }],
+		"current": true,
+		"expected": [{ "id": 1, "name": "initial" }]
+	},
+	"persistence": {
+		"reachable": true
+	}
+}
+```
+
+The endpoint still returns `200 OK` when persistence or an adapter is down so
+diagnostic clients can inspect the other checks. In that case,
+`persistence.reachable` is `false` with an `error`, or the affected adapter has
+`status: "down"` with failure information under `details`.
+
+Related surfaces:
+
+- Node SDK: `client.diagnostics()`
+- CLI: `dsar doctor`
