@@ -1,11 +1,13 @@
 import type { BuildS3ArtifactKeyInput, S3ArtifactReference } from "../types";
 
-const safeSegment = (value: string) =>
-	value
+const safeSegment = (value: string) => {
+	const sanitized = value
 		.toLowerCase()
 		.replaceAll(/[^a-z0-9._-]/g, "-")
 		.replaceAll(/-+/g, "-")
 		.replaceAll(/^-|-$/g, "");
+	return sanitized === "." || sanitized === ".." ? "_" : sanitized;
+};
 
 const nonEmpty = (value: string | undefined) =>
 	value !== undefined && value.trim().length > 0 ? value : undefined;

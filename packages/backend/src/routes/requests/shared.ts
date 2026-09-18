@@ -7,6 +7,7 @@ import type { PolicyPackVersionRecord } from "@dsar/policy-packs";
 import * as Clock from "effect/Clock";
 import * as Effect from "effect/Effect";
 
+import { IntakePayloadSchema } from "../../http-api/request-schemas";
 import { captureRequestLifecycle } from "../../lifecycle/service";
 import { runInitialPolicyEvaluation } from "../../services/policy-evaluation/evaluate";
 import { backendErrorCatalogByCode } from "../../types/error-codes";
@@ -21,7 +22,7 @@ import {
 	requireRequestActor,
 	requireRequestTenantId,
 } from "../authz";
-import { accepted, ok, parseParam, requireJson } from "../helpers";
+import { accepted, decodeJsonBody, ok, parseParam } from "../helpers";
 import type { RouteDefinition } from "../types";
 
 /** Effect that yields the current time as an ISO-8601 string. */
@@ -40,30 +41,6 @@ export const currentTimeMs: Effect.Effect<number> =
  */
 export const isoTimeOffset = (offsetMs: number): Effect.Effect<string> =>
 	currentTimeMs.pipe(Effect.map((ms) => new Date(ms + offsetMs).toISOString()));
-
-/**
- * Ensures a request-creation payload contains `intakeSource`.
- *
- * @param payload - Request payload to validate.
- * @returns An effect that succeeds with the payload when intake source is present.
- */
-export const requireIntakeSource = (payload: unknown) => {
-	if (
-		typeof payload !== "object" ||
-		payload === null ||
-		!("intakeSource" in payload) ||
-		typeof payload.intakeSource !== "object" ||
-		payload.intakeSource === null
-	) {
-		return Effect.fail(
-			new RequestValidationError({
-				message: "Request creation requires intakeSource.",
-				reasonCode: backendErrorCatalogByCode.REQUEST_VALIDATION_FAILED.code,
-			})
-		);
-	}
-	return Effect.succeed(payload);
-};
 
 /**
  * Resolves the authenticated tenant id from runtime services.
@@ -408,7 +385,7 @@ export const toValidationFailure = (
 			cause: getErrorMessage(error),
 		},
 		message,
-		reasonCode: backendErrorCatalogByCode.INTERNAL_RUNTIME_ERROR.code,
+		reasonCode: backendErrorCatalogByCode.REQUEST_VALIDATION_FAILED.code,
 	});
 };
 
@@ -471,21 +448,22 @@ export const createRequestHandler =
 	({ request }: { request: Request }) =>
 		Effect.gen(function* handler() {
 			const services = yield* Effect.service(RuntimeServicesTag);
-			const payload = yield* requireJson(request);
-			yield* requireIntakeSource(payload);
+			const payload = yield* decodeJsonBody(request, IntakePayloadSchema);
+			const tenantId = getTenantId(services);
+			const workspaceId = getWorkspaceId(services);
 			const jurisdiction = yield* requireJurisdiction(payload);
 			const enrichedPayload = yield* enrichCaptureWithPolicy({
 				jurisdiction,
 				payload,
-				tenantId: getTenantId(services),
-				workspaceId: getWorkspaceId(services),
+				tenantId,
+				workspaceId,
 			});
 			const actor = services.requestContext.actor?.id ?? "system";
 			const created = yield* captureRequestLifecycle({
 				actor,
 				payload: enrichedPayload,
-				tenantId: getTenantId(services),
-				workspaceId: getWorkspaceId(services),
+				tenantId,
+				workspaceId,
 			});
 			return accepted({
 				...(options.includeDueAt ? { dueAt: created.dueAt } : {}),

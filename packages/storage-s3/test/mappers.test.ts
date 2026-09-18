@@ -18,6 +18,28 @@ describe("storage-s3 mappers", () => {
 		);
 	});
 
+	it("sanitises path-traversal segments in generated keys", () => {
+		const key = buildS3ArtifactKey(
+			{
+				artifactId: "../passwd",
+				category: "../secret",
+				fileName: "../escape.pdf",
+				manifestId: "..",
+				requestId: "../..",
+			},
+			"../artifacts"
+		);
+		expect(key.split("/").includes("..")).toBe(false);
+		expect(key.split("/").includes(".")).toBe(false);
+		expect(key).toBe("..-artifacts/..-../_/..-secret/raw/full/..-escape.pdf");
+	});
+
+	it("returns an explicit key override without sanitising it", () => {
+		expect(buildS3ArtifactKey({ key: "../explicit/path" }, "artifacts")).toBe(
+			"../explicit/path"
+		);
+	});
+
 	it("maps head object output into normalized metadata", () => {
 		const metadata = mapHeadObjectToMetadata({
 			head: {

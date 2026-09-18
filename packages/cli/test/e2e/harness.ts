@@ -128,6 +128,7 @@ export const BASE_JSON_BODY = {
 	id: "retention-general",
 	intakeSource: {
 		channel: "api",
+		rawText: "please provide my data",
 		receivedAt: "2026-02-20T00:00:00.000Z",
 		type: "api",
 	},

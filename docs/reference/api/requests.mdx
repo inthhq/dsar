@@ -21,6 +21,8 @@ Request creation and capture use the same intake body:
 - `intakeSource.receivedAt` (string, required)
 - `intakeSource.contact` (string, optional)
 - `intakeSource.sourceEvidence` (array, optional)
+- `intakeSource.type` (string, optional)
+- `intakeSource.rawContextRef` (string, optional)
 - `requestor` (object, optional)
 - `requestor.type` (string, required when present)
 - `requestor.name` (string, optional)
@@ -31,11 +33,19 @@ Request creation and capture use the same intake body:
 - `authority.status` (string, required when present)
 - `authority.verifiedAt` (string, optional)
 - `receivedAt` (string, optional)
+- `requestType` (string, optional)
+- `requiresVerification` (boolean, optional)
+- `isComplex` (boolean, optional)
 
 `intakeSource.receivedAt` is the timestamp from the original external intake
 channel and is required for provenance. The top-level `receivedAt` is the time
 DSAR recorded or ingested the request and may be later than the intake-source
 timestamp or omitted entirely.
+
+Create and capture decode this body with `IntakePayloadSchema`. Invalid JSON
+returns `REQUEST_BODY_INVALID_JSON`. Schema failures return
+`REQUEST_VALIDATION_FAILED`. Tenant and actor identity come from request
+context, not from the body.
 
 ## POST /requests
 

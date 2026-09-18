@@ -121,6 +121,7 @@ const runClarificationRoundTrip = async (
 		json: {
 			intakeSource: {
 				channel: "api",
+				rawText: "please provide my data",
 				receivedAt: "2026-03-01T00:00:00.000Z",
 				type: "api",
 			},
@@ -398,6 +399,7 @@ describe("api e2e full flow over real HTTP", () => {
 					json: {
 						intakeSource: {
 							channel: "api",
+							rawText: "please provide my data",
 							receivedAt: "2026-03-01T00:00:00.000Z",
 							type: "api",
 						},

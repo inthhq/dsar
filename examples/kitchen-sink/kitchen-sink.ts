@@ -225,7 +225,12 @@ const steps: readonly Step[] = [
 			return isAcceptedMappedJurisdiction(payload, response);
 		},
 		body: {
-			intakeSource: { channel: "api", receivedAt: toIsoNow(), type: "api" },
+			intakeSource: {
+				channel: "api",
+				rawText: "please provide my data",
+				receivedAt: toIsoNow(),
+				type: "api",
+			},
 			jurisdiction: "uk",
 		},
 		method: "POST",
@@ -236,7 +241,12 @@ const steps: readonly Step[] = [
 		assert: ({ payload, response }) =>
 			isAcceptedMappedJurisdiction(payload, response),
 		body: {
-			intakeSource: { channel: "api", receivedAt: toIsoNow(), type: "api" },
+			intakeSource: {
+				channel: "api",
+				rawText: "please provide my data",
+				receivedAt: toIsoNow(),
+				type: "api",
+			},
 			jurisdiction: "eu",
 		},
 		method: "POST",
@@ -247,7 +257,12 @@ const steps: readonly Step[] = [
 		assert: ({ payload, response }) =>
 			isAcceptedMappedJurisdiction(payload, response),
 		body: {
-			intakeSource: { channel: "api", receivedAt: toIsoNow(), type: "api" },
+			intakeSource: {
+				channel: "api",
+				rawText: "please provide my data",
+				receivedAt: toIsoNow(),
+				type: "api",
+			},
 			jurisdiction: "us",
 		},
 		method: "POST",
@@ -401,7 +416,12 @@ const steps: readonly Step[] = [
 			);
 		},
 		body: {
-			intakeSource: { channel: "api", receivedAt: toIsoNow(), type: "api" },
+			intakeSource: {
+				channel: "api",
+				rawText: "please provide my data",
+				receivedAt: toIsoNow(),
+				type: "api",
+			},
 		},
 		method: "POST",
 		name: "POST /requests rejects missing jurisdiction",
@@ -418,7 +438,12 @@ const steps: readonly Step[] = [
 			);
 		},
 		body: {
-			intakeSource: { channel: "api", receivedAt: toIsoNow(), type: "api" },
+			intakeSource: {
+				channel: "api",
+				rawText: "please provide my data",
+				receivedAt: toIsoNow(),
+				type: "api",
+			},
 			jurisdiction: "zz-unknown",
 		},
 		method: "POST",

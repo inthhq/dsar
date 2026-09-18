@@ -11,6 +11,7 @@ import {
 	FulfillmentManifestSchema,
 	RequestClockSchema,
 	RequestorSchema,
+	RequestTypeSchema,
 	RetentionPolicySchema,
 	StepUpChallengeSchema,
 	StepUpCompleteSchema,
@@ -33,10 +34,17 @@ export const LifecycleResultSchema = Schema.Struct({
 /** Request-intake payload schema accepted by create and capture endpoints. */
 export const IntakePayloadSchema = Schema.Struct({
 	authority: Schema.optional(AuthoritySchema),
-	intakeSource: CapturedIntakeSchema,
+	intakeSource: Schema.Struct({
+		...CapturedIntakeSchema.fields,
+		rawContextRef: Schema.optional(Schema.String),
+		type: Schema.optional(Schema.String),
+	}),
+	isComplex: Schema.optional(Schema.Boolean),
 	jurisdiction: Schema.String,
 	receivedAt: Schema.optional(Schema.String),
+	requestType: Schema.optional(RequestTypeSchema),
 	requestor: Schema.optional(RequestorSchema),
+	requiresVerification: Schema.optional(Schema.Boolean),
 });
 
 /** Legal-clock explanation schema returned by request explainability endpoints. */

@@ -3,12 +3,14 @@ import type {
 	FilesystemArtifactReference,
 } from "../types";
 
-const safeSegment = (value: string) =>
-	value
+const safeSegment = (value: string) => {
+	const sanitized = value
 		.toLowerCase()
 		.replaceAll(/[^a-z0-9._-]/g, "-")
 		.replaceAll(/-+/g, "-")
 		.replaceAll(/^-|-$/g, "");
+	return sanitized === "." || sanitized === ".." ? "_" : sanitized;
+};
 
 const nonEmpty = (value: string | undefined) =>
 	value && value.length > 0 ? value : undefined;
