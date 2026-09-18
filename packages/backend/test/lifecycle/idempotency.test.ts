@@ -213,6 +213,7 @@ const makeMemoryPersistence = (): PersistenceService => {
 				notificationAttempts.push(record);
 				return Effect.succeed(record);
 			},
+			claimDue: () => Effect.succeed(null),
 			getById: (id: string) =>
 				Effect.fromNullishOr(
 					notificationAttempts.find((attempt) => attempt.id === id)
@@ -241,6 +242,10 @@ const makeMemoryPersistence = (): PersistenceService => {
 						(attempt) => attempt.notificationEventId === notificationEventId
 					)
 				),
+			listDue: () => Effect.succeed([]),
+			listDueTenantIds: () => Effect.succeed([]),
+			update: (id: string) =>
+				Effect.fail(new Error(`Missing notification attempt ${id}`)),
 		},
 		notificationEvents: {
 			append: (input) => {

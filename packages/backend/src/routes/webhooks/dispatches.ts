@@ -91,7 +91,8 @@ const parseStatusFilter = (
 			case "delivered":
 			case "failed":
 			case "pending":
-			case "skipped": {
+			case "skipped":
+			case "dead": {
 				statuses.push(entry);
 				break;
 			}
@@ -322,7 +323,9 @@ const toDispatchSummary = (
 	error: attempt.error,
 	eventId: attempt.notificationEventId,
 	eventType: event?.eventType,
-	replayable: attempt.channel === "webhook" && attempt.status === "failed",
+	replayable:
+		attempt.channel === "webhook" &&
+		(attempt.status === "failed" || attempt.status === "dead"),
 	requestId: attempt.requestId,
 	responseCode: attempt.responseCode,
 	status: attempt.status,
@@ -339,7 +342,7 @@ const ensureReplayableWebhookDispatch = (
 			})
 		);
 	}
-	if (attempt.status !== "failed") {
+	if (attempt.status !== "failed" && attempt.status !== "dead") {
 		return Effect.fail(
 			new RequestValidationError({
 				message: `Dispatch ${attempt.id} is not failed and cannot be replayed.`,
@@ -409,7 +412,6 @@ const replayOneWebhookDispatch = (input: {
 	Effect.gen(function* replayOneWebhookDispatchProgram() {
 		const services = yield* Effect.service(RuntimeServicesTag);
 		const dispatchId = input.attempt.id;
-		yield* ensureReplayableWebhookDispatch(input.attempt);
 		const event = yield* services.repos.persistence.notificationEvents
 			.getById(input.attempt.notificationEventId)
 			.pipe(withTenant(input.tenantId));
@@ -503,6 +505,7 @@ const replayOneWebhookDispatch = (input: {
 				status: "already_replayed" as const,
 			};
 		}
+		yield* ensureReplayableWebhookDispatch(input.attempt);
 		const replayResult = yield* replayWebhookDispatch({
 			event,
 			idempotencyKey: replayIdempotencyKey,

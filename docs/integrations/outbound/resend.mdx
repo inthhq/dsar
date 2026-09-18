@@ -45,7 +45,7 @@ Notification generation remains mandatory; delivery channels execute independent
 
 - Webhook channel (`notificationWebhook`) dispatches signed payloads.
 - Built-in email channel dispatches via `@dsar/outbound-resend` when enabled.
-- Delivery outcomes are persisted as `pending`, `delivered`, `failed`, or `skipped`.
+- Delivery outcomes are persisted as `pending`, `delivered`, `failed`, `skipped`, or `dead`.
 
 ## Email enable/disable precedence
 
@@ -98,6 +98,7 @@ If no recipient resolves, the email attempt is recorded as `skipped`.
 
 ## Retry and failure semantics
 
-- Retriable channel failures follow `notificationWebhook.retryMaxAttempts` and `retryDelayMs`.
+- Email retries still use in-process `notificationWebhook.retryMaxAttempts` and `retryDelayMs`.
+- Webhook retries are durable. The first send is recorded as a pending job, then a worker resumes later attempts on a 1m / 5m / 30m / 2h / 6h / 24h schedule (`retryScheduleMs`). Exhausted jobs are marked `dead`. Each attempt is written to the request timeline as `webhook_delivery_attempted` using the same delivery-attempt id.
 - `skipped` outcomes do not retry.
 - Adapter errors are normalized to DSAR categories (`timeout`, `rate_limit`, `network`, `auth`, `validation`, `config`, `unknown`).

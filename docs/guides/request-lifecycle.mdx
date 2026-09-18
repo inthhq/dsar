@@ -39,7 +39,7 @@ Operators typically use these endpoints while triaging the request:
 
 - `GET /requests`
 - `GET /requests/:id`
-- `GET /requests/:id/timeline`
+- `GET /requests/:id/timeline` (includes `webhook_delivery_attempted` events for outbound webhook retries)
 - `GET /requests/:id/clock/explain`
 - `PUT /requests/:id/requestor`
 - `POST /requests/:id/clarifications/request`
