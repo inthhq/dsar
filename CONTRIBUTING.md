@@ -38,6 +38,13 @@ Run tests:
 bun run test
 ```
 
+Optional latency benches (clock recompute, subject lookup, policy diff) are
+gated behind `PERF=1` and are not part of the default test job:
+
+```sh
+bun run bench
+```
+
 Format and fix common issues:
 
 ```sh

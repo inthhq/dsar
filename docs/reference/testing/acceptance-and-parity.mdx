@@ -24,6 +24,8 @@ for the current DSAR repo state.
 - Route-level lifecycle coverage exists in `packages/backend/test/routes/requests-lifecycle.test.ts`.
 - Notification retry and built-in email behavior are covered in `packages/backend/test/services/notifications.service.test.ts`.
 - CLI/backend parity is guarded by `packages/cli/test/parity.test.ts` and `packages/cli/test/e2e/parity-guard.e2e.test.ts`.
+- Optional p95 benches for clock recompute, subject lookup, and policy-pack
+  diff live behind `bun run bench`. See [Performance Benches](perf-benches.md).
 
 ## Gaps to keep tracking
 
