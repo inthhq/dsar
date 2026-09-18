@@ -31,9 +31,15 @@ List policy packs visible to the current request context.
 
 Create a policy-upgrade proposal.
 
-The current OpenAPI contract does not declare a required request body for this
-endpoint. Treat it as a workflow trigger that creates a new proposal and returns
-the proposal ID and status.
+**Request body:**
+
+- `fromVersion` (string, required): baseline pack version to diff from
+- `tenantId` (string, required): must match the authenticated tenant
+- `toVersion` (string, required): target pack version
+- `workspaceId` (string, optional)
+
+Node SDK: `client.policies.proposeUpgrade({ fromVersion, tenantId, toVersion })`.
+CLI: `dsar policies upgrades propose --json '<payload>'`.
 
 **Response (202):**
 

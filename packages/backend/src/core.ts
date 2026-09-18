@@ -1,6 +1,9 @@
+import { PolicyPacksLive } from "@dsar/policy-packs";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
+import * as Layer from "effect/Layer";
+import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as HttpEffect from "effect/unstable/http/HttpEffect";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
@@ -230,6 +233,9 @@ export const dsarInstance = (options: DsarInstanceOptions): DsarInstance => {
 	const httpApi = makeDsarHttpApi(basePath);
 	const spec = OpenApi.fromApi(httpApi);
 	const specUrlPath = `${basePath === "/" ? "" : basePath}/spec.json`;
+	const policyPacksRuntime = ManagedRuntime.make(
+		PolicyPacksLive.pipe(Layer.orDie)
+	);
 
 	const dispatchRequest = async (request: Request): Promise<Response> => {
 		try {
@@ -307,15 +313,13 @@ export const dsarInstance = (options: DsarInstanceOptions): DsarInstance => {
 				requestContext
 			);
 
-			const exitResult = await Effect.runPromise(
-				Effect.exit(
-					matched.route
-						.handler({
-							params: matched.params,
-							request,
-						})
-						.pipe(Effect.provideService(RuntimeServicesTag, services))
-				)
+			const exitResult = await policyPacksRuntime.runPromiseExit(
+				matched.route
+					.handler({
+						params: matched.params,
+						request,
+					})
+					.pipe(Effect.provideService(RuntimeServicesTag, services))
 			);
 			if (Exit.isFailure(exitResult)) {
 				const { cause } = exitResult;

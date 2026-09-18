@@ -1,7 +1,6 @@
 import {
 	activateCustomPolicyPack,
 	deactivateCustomPolicyPack,
-	PolicyPacksLive,
 	PolicyRegistry,
 	PolicyUpgrade,
 	registerCustomPolicyPack,
@@ -162,7 +161,7 @@ const rawPolicyRoutes: readonly RouteDefinition[] = [
 					}))
 				);
 				return ok(catalog);
-			}).pipe(Effect.provide(PolicyPacksLive)),
+			}),
 		method: "GET",
 		path: "/policies",
 		protected: true,
@@ -186,7 +185,7 @@ const rawPolicyRoutes: readonly RouteDefinition[] = [
 					tenantId: actorContext.tenantId,
 					toVersion: body.toVersion,
 					workspaceId: actorContext.workspaceId,
-				}).pipe(Effect.provide(PolicyPacksLive));
+				});
 				return accepted(result);
 			}),
 		method: "POST",
@@ -215,7 +214,7 @@ const rawPolicyRoutes: readonly RouteDefinition[] = [
 					publishedAt,
 					role: actorContext.role,
 					version: body.version,
-				}).pipe(Effect.provide(PolicyPacksLive));
+				});
 				return accepted({
 					jurisdiction: record.jurisdiction,
 					name: record.name,
@@ -247,7 +246,7 @@ const rawPolicyRoutes: readonly RouteDefinition[] = [
 						workspaceId: actorContext.workspaceId,
 					},
 					version: body.version,
-				}).pipe(Effect.provide(PolicyPacksLive));
+				});
 				return accepted({
 					jurisdiction: body.jurisdiction,
 					status: "activated",
@@ -281,7 +280,7 @@ const rawPolicyRoutes: readonly RouteDefinition[] = [
 						tenantId: actorContext.tenantId,
 						workspaceId: actorContext.workspaceId,
 					},
-				}).pipe(Effect.provide(PolicyPacksLive));
+				});
 				return accepted({
 					status: "deactivated",
 					tenantId: actorContext.tenantId,
@@ -307,7 +306,7 @@ const rawPolicyRoutes: readonly RouteDefinition[] = [
 						now: new Date().toISOString(),
 						proposalId,
 					});
-				}).pipe(Effect.provide(PolicyPacksLive));
+				});
 				return accepted(result);
 			}),
 		method: "POST",
@@ -328,7 +327,7 @@ const rawPolicyRoutes: readonly RouteDefinition[] = [
 						now: new Date().toISOString(),
 						proposalId,
 					});
-				}).pipe(Effect.provide(PolicyPacksLive));
+				});
 				return accepted(result);
 			}),
 		method: "POST",

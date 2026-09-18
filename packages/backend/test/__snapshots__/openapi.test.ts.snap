@@ -1149,6 +1149,43 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
       "post": {
         "operationId": "policies_upgrades_propose",
         "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "fromVersion": {
+                    "type": "string",
+                  },
+                  "tenantId": {
+                    "type": "string",
+                  },
+                  "toVersion": {
+                    "type": "string",
+                  },
+                  "workspaceId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+                },
+                "required": [
+                  "fromVersion",
+                  "tenantId",
+                  "toVersion",
+                ],
+                "type": "object",
+              },
+            },
+          },
+          "required": true,
+        },
         "responses": {
           "202": {
             "content": {
