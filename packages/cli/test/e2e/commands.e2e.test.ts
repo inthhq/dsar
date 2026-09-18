@@ -184,6 +184,42 @@ const commandCases: readonly CommandCase[] = [
 		outputIncludes: ['"results":[]', '"total":0'],
 	},
 	{
+		argv: ["webhooks", "dlq", "list"],
+		expectedExitCode: 0,
+		id: "webhooks_dlq_list",
+		outputIncludes: ['"items":[]', '"total":0'],
+	},
+	{
+		argv: ["webhooks", "dlq", "replay", "dispatch-1"],
+		expectedExitCode: 1,
+		id: "webhooks_dlq_replay",
+		outputIncludes: ["--idempotency-key"],
+	},
+	{
+		argv: [
+			"webhooks",
+			"dlq",
+			"replay",
+			"dispatch-1",
+			"--idempotency-key=dlq-replay-1",
+		],
+		expectedExitCode: 1,
+		id: "webhooks_dlq_replay",
+		outputIncludes: ["dispatch-1"],
+	},
+	{
+		argv: ["webhooks", "dlq", "replay"],
+		expectedExitCode: 1,
+		id: "webhooks_dlq_replay_bulk",
+		outputIncludes: ["--idempotency-key"],
+	},
+	{
+		argv: ["webhooks", "dlq", "replay", "--idempotency-key=dlq-replay-all-1"],
+		expectedExitCode: 0,
+		id: "webhooks_dlq_replay_bulk",
+		outputIncludes: ['"results":[]', '"total":0'],
+	},
+	{
 		argv: ["requests", "create", "--json", commonCreateBody],
 		expectedExitCode: 0,
 		id: "requests_create",

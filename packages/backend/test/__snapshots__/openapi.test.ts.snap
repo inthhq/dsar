@@ -9809,6 +9809,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                       {
                         "enum": [
                           "failed",
+                          "dead",
                         ],
                         "type": "string",
                       },
@@ -10025,7 +10026,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
             "BearerAuth": [],
           },
         ],
-        "summary": "Replay failed outbound webhook dispatches",
+        "summary": "Replay failed or dead outbound webhook dispatches",
         "tags": [
           "webhooks",
         ],
