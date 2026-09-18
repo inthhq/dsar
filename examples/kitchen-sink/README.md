@@ -23,6 +23,13 @@ turbo run kitchen-sink --filter=dsar-kitchen-sink-example
 ## Notes
 
 - The local runtime defaults to `http://kitchen-sink.localhost:1355`.
+- This process is the **self-hosted backend** for `examples/subject-portal`
+  (`http://localhost:1356`) and `examples/dashboard` (`http://localhost:1357`).
+  Those UIs call `/api/v1` over CORS. CLI and SDK still use bearer tokens.
+- A separate Acme product SQLite file (`.dsar-acme.db`) is seeded with Ada,
+  Kaylee, Sam, and the portal demo subject. Fulfilment posts
+  `request_fulfilled` to `/demo/webhooks/dsar`, which erases that person's
+  sessions, orders, and account.
 - `DSAR_API_TOKEN` remains the simplest self-hosted setup: one tenant-scoped
   machine key for CLI, SDK, or automation.
 - `UNKEY_ROOT_KEY` is optional. When present, `runtime.config.ts` wires

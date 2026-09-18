@@ -8,7 +8,7 @@ export default defineConfig({
 		dts: {
 			neverBundle: [/^@dsar\//],
 		},
-		neverBundle: [/^@effect\//, "dotenv", "effect"],
+		neverBundle: [/^@effect\//, "dotenv", "effect", "react", "react-dom"],
 	},
 	dts: {
 		generator: "tsgo",
@@ -30,6 +30,7 @@ export default defineConfig({
 		"outbound-resend": "src/outbound-resend.ts",
 		"persistence-pg": "src/persistence-pg.ts",
 		"persistence-sqlite": "src/persistence-sqlite.ts",
+		react: "src/react.ts",
 		redis: "src/redis.ts",
 		"storage-filesystem": "src/storage-filesystem.ts",
 		"storage-s3": "src/storage-s3.ts",

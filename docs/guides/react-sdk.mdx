@@ -1,0 +1,51 @@
+---
+title: "React SDK"
+description: "Embed a subject portal or operator queue with @dsar/react. Local self-host via kitchen-sink. Production backends live on inth.com."
+group: guides
+---
+
+<include src="../_shared/alpha-warning.mdx" />
+
+`@dsar/react` is the UI kit. It does not own login. That matches the [auth model](../architecture/auth-model.md): the host authenticates, DSAR sees a projected identity.
+
+## Hosted (inth.com)
+
+```tsx
+import { DsarProvider, SubjectPortal, hosted } from "@dsar/react";
+
+<DsarProvider mode={hosted({ project: "acme" })}>
+	<SubjectPortal />
+</DsarProvider>
+```
+
+Requests go to `https://acme.inth.app/dsar`. Webhooks for that project use the same origin. Cookies stay on inth.app. Do not put `DSAR_API_TOKEN` in the browser.
+
+## Local self-host
+
+Run kitchen-sink as the DSAR HTTP server. The Next examples are UI only.
+
+```tsx
+import { DsarProvider, SubjectPortal, selfHosted } from "@dsar/react";
+
+<DsarProvider
+	mode={selfHosted({ url: "http://kitchen-sink.localhost:1355/api/v1" })}
+>
+	<SubjectPortal />
+</DsarProvider>
+```
+
+```sh
+bunx turbo run dev --filter=dsar-kitchen-sink-example --filter=dsar-subject-portal-example --filter=dsar-dashboard-example
+```
+
+- Backend: `http://kitchen-sink.localhost:1355/api/v1`
+- Subject portal: `http://localhost:1356`
+- Operator queue: `http://localhost:1357`
+
+Kitchen-sink SQLite is the default store (`DSAR_PERSISTENCE_DRIVER=pg` for Postgres). In development it CORS-allows those UI origins and maps `Origin` to a demo subject or operator identity. CLI and SDK keep using bearer tokens.
+
+## Docker Postgres
+
+```sh
+DSAR_PERSISTENCE_DRIVER=pg DSAR_PERSISTENCE_PG_URL=postgres://postgres:postgres@localhost:5432/dsar bunx turbo run dev --filter=dsar-kitchen-sink-example
+```
