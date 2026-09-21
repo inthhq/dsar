@@ -35,6 +35,9 @@ const runtime = dsarInstance({
 			retryDelayMs: 500,
 			timeoutMs: 3000,
 		},
+		onDeadWebhook(event) {
+			console.error("dead webhook", event.tenantId, event.attemptId);
+		},
 	},
 });
 ```
@@ -100,5 +103,7 @@ If no recipient resolves, the email attempt is recorded as `skipped`.
 
 - Email retries still use in-process `notificationWebhook.retryMaxAttempts` and `retryDelayMs`.
 - Webhook retries are durable. The first send is recorded as a pending job, then a worker resumes later attempts on a 1m / 5m / 30m / 2h / 6h / 24h schedule (`retryScheduleMs`). Exhausted jobs are marked `dead`. Each attempt is written to the request timeline as `webhook_delivery_attempted` using the same delivery-attempt id.
+- When a job becomes `dead`, `config.onDeadWebhook` runs once with a tenant-scoped payload (`tenantId`, `attemptId`, `requestId`, destination, error). Hook failures are ignored so a pager outage cannot stall the worker. Ordinary `failed` retries do not fire the hook.
+- Operators can list and replay dead jobs with `dsar webhooks dlq list` and `dsar webhooks dlq replay`, or `GET /webhooks/dispatches?status=dead`.
 - `skipped` outcomes do not retry.
 - Adapter errors are normalized to DSAR categories (`timeout`, `rate_limit`, `network`, `auth`, `validation`, `config`, `unknown`).

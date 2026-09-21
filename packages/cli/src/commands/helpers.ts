@@ -172,6 +172,16 @@ const payloadForRoute = (
 	if (route.id === "webhooks_dispatches_replay_bulk") {
 		return parseWebhookBulkReplayPayload(input.flags);
 	}
+	if (route.id === "webhooks_dlq_replay_bulk") {
+		const payload = parseWebhookBulkReplayPayload({
+			...input.flags,
+			status: "dead",
+		});
+		return {
+			...payload,
+			status: "dead",
+		};
+	}
 	const parsedJson = getJsonBody(input.flags);
 	if (parsedJson !== undefined) {
 		return parsedJson;
@@ -230,6 +240,16 @@ const queryForRoute = (
 			status: input.flags.status,
 		};
 	}
+	if (route.id === "webhooks_dlq_list") {
+		return {
+			created_after: input.flags["created-after"] ?? input.flags.since,
+			created_before: input.flags["created-before"] ?? input.flags.until,
+			endpoint_id: input.flags["endpoint-id"],
+			limit: input.flags.limit,
+			offset: input.flags.offset,
+			status: "dead",
+		};
+	}
 	if (route.id === "requests_manifest_artifact_download") {
 		return {
 			key: requireFlag(
@@ -285,7 +305,9 @@ const headersForRoute = (
 	}
 	if (
 		route.id === "webhooks_dispatches_replay" ||
-		route.id === "webhooks_dispatches_replay_bulk"
+		route.id === "webhooks_dispatches_replay_bulk" ||
+		route.id === "webhooks_dlq_replay" ||
+		route.id === "webhooks_dlq_replay_bulk"
 	) {
 		return {
 			"x-idempotency-key": requireFlag(

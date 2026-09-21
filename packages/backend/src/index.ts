@@ -52,6 +52,7 @@ export type {
 } from "./rate-limit";
 export type {
 	AuthenticatedRequestIdentity,
+	DeadWebhookAlert,
 	DsarConfigOptions,
 	DsarInstanceOptions,
 	RequestPrincipalKind,

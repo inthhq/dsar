@@ -1094,7 +1094,75 @@ Description:
 
 Command flags:
   --idempotency-key <key>  Bulk replay dedupe key (required)
-  --status <status>        Must be 'failed' when present
+  --status <status>        Must be 'failed' or 'dead' when present
+  --endpoint-id <id>       Filter by configured webhook endpoint id
+  --created-after <iso>    Only replay attempts created after this time
+  --created-before <iso>   Only replay attempts created before this time
+  --limit <n>              Maximum dispatches to replay, 1-100
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'webhooks_dlq_list' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar webhooks dlq list [global flags]
+
+Description:
+  List dead outbound webhook dispatches.
+
+Command flags:
+  --endpoint-id <id>       Filter by configured webhook endpoint id
+  --created-after <iso>    Only include attempts created after this time
+  --created-before <iso>   Only include attempts created before this time
+  --limit <n>              Page size, 1-500 (default 50)
+  --offset <n>             Zero-based page offset
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'webhooks_dlq_replay' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar webhooks dlq replay :id [global flags]
+
+Description:
+  Replay a dead outbound webhook dispatch.
+
+Command flags:
+  --idempotency-key <key>  Replay dedupe key (required)
+
+Global flags:
+  --api-url <url>          Override DSAR_API_URL
+  --token <token>          Override DSAR_API_TOKEN
+  --idempotency-key <key>  Set x-idempotency-key header
+  --output <mode>          text|json
+  --json '<payload>'       JSON body payload for POST/PUT commands"
+`;
+
+exports[`CLI help output > matches command help snapshot for 'webhooks_dlq_replay_bulk' 1`] = `
+"DSAR CLI
+
+Usage:
+  dsar webhooks dlq replay [global flags]
+
+Description:
+  Replay dead outbound webhook dispatches.
+
+Command flags:
+  --idempotency-key <key>  Bulk replay dedupe key (required)
   --endpoint-id <id>       Filter by configured webhook endpoint id
   --created-after <iso>    Only replay attempts created after this time
   --created-before <iso>   Only replay attempts created before this time
@@ -1257,6 +1325,9 @@ Commands:
   webhooks list  - List outbound webhook dispatches.
   webhooks replay :id  - Replay outbound webhook dispatch.
   webhooks replay-all  - Replay failed outbound webhook dispatches.
+  webhooks dlq list  - List dead outbound webhook dispatches.
+  webhooks dlq replay :id  - Replay a dead outbound webhook dispatch.
+  webhooks dlq replay  - Replay dead outbound webhook dispatches.
   webhooks tail  - Stream outbound webhook dispatches.
   tenants retention get :tenantId  - Get tenant retention.
   tenants retention put :tenantId  - Set tenant retention.

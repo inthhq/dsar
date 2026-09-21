@@ -29,6 +29,7 @@ import {
 import { dispatchWebhookNotification } from "./webhook";
 
 const DEFAULT_WEBHOOK_ENDPOINT_ID = "default";
+const DEAD_WEBHOOK_HOOK_TIMEOUT_MS = 5000;
 const NOTIFICATION_EVENT_TYPES = [
 	"request_captured",
 	"clock_due_changed",
@@ -304,6 +305,43 @@ const recordAdapterFailure = (input: {
 		return normalized;
 	});
 
+const notifyDeadWebhook = (input: {
+	readonly services: RuntimeServices;
+	readonly tenantId: string;
+	readonly attempt: number;
+	readonly attemptId: string;
+	readonly destination: string;
+	readonly notificationEventId: string;
+	readonly occurredAt: string;
+	readonly requestId: string;
+	readonly error?: string;
+	readonly responseCode?: number;
+}) =>
+	Effect.gen(function* notifyDeadWebhookProgram() {
+		const hook = input.services.config.onDeadWebhook;
+		if (!hook) {
+			return;
+		}
+		yield* Effect.tryPromise(() =>
+			Promise.resolve(
+				hook({
+					attempt: input.attempt,
+					attemptId: input.attemptId,
+					destination: input.destination,
+					error: input.error,
+					notificationEventId: input.notificationEventId,
+					occurredAt: input.occurredAt,
+					requestId: input.requestId,
+					responseCode: input.responseCode,
+					tenantId: input.tenantId,
+				})
+			)
+		).pipe(
+			Effect.timeout(Duration.millis(DEAD_WEBHOOK_HOOK_TIMEOUT_MS)),
+			Effect.catch(() => Effect.void)
+		);
+	});
+
 /**
  * Claims a persisted webhook job, sends once, then records the outcome.
  *
@@ -456,6 +494,20 @@ export const processWebhookDeliveryJob = Effect.fn("processWebhookDeliveryJob")(
 			requestId: claimed.requestId,
 			tenantId: input.tenantId,
 		});
+		if (status === "dead") {
+			yield* notifyDeadWebhook({
+				attempt: attemptNumber,
+				attemptId: claimed.id,
+				destination: claimed.destination,
+				error: result.error,
+				notificationEventId: claimed.notificationEventId,
+				occurredAt: completedAt,
+				requestId: claimed.requestId,
+				responseCode: result.responseCode,
+				services,
+				tenantId: input.tenantId,
+			});
+		}
 		return {
 			error: result.error,
 			responseCode: result.responseCode,

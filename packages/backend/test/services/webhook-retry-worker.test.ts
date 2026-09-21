@@ -11,7 +11,10 @@ import {
 	emitNotificationEvent,
 	makeNotificationDraft,
 } from "../../src/services/notifications/service";
-import type { RuntimeServices } from "../../src/types/runtime";
+import type {
+	DeadWebhookAlert,
+	RuntimeServices,
+} from "../../src/types/runtime";
 import { RuntimeServicesTag } from "../../src/types/runtime";
 import { makeMemoryPersistence } from "../e2e/fixtures";
 
@@ -24,6 +27,7 @@ const makeServices = (input: {
 	}>;
 	readonly retryMaxAttempts?: number;
 	readonly retryScheduleMs?: readonly number[];
+	readonly onDeadWebhook?: RuntimeServices["config"]["onDeadWebhook"];
 }): RuntimeServices => ({
 	adapterRegistry: makeAdapterRegistry([
 		{
@@ -65,6 +69,7 @@ const makeServices = (input: {
 			timeoutMs: 1000,
 			url: "https://tenant.example/webhook",
 		},
+		onDeadWebhook: input.onDeadWebhook,
 	},
 	repos: {
 		persistence: input.persistence,
@@ -239,6 +244,125 @@ describe("webhook retry worker", () => {
 				yield* persistence.notificationDeliveryAttempts.getById("nda-crash");
 			expect(job.status).toBe("delivered");
 			expect(job.id).toBe("nda-crash");
+		})
+	);
+
+	it.effect(
+		"fires onDeadWebhook once when a job becomes dead, not on failed retries",
+		() =>
+			Effect.gen(function* deadWebhookAlertProgram() {
+				const persistence = makeMemoryPersistence();
+				const alerts: DeadWebhookAlert[] = [];
+				let callCount = 0;
+				const services = makeServices({
+					onDeadWebhook: (event) => {
+						alerts.push(event);
+					},
+					persistence,
+					retryMaxAttempts: 3,
+					retryScheduleMs: [60_000, 5 * 60_000],
+					send: () =>
+						Effect.sync(() => {
+							callCount += 1;
+							return {
+								error: "receiver unavailable",
+								status: "failed" as const,
+							};
+						}),
+				});
+
+				yield* emitNotificationEvent({
+					draft: makeNotificationDraft({
+						eventType: "request_captured",
+						payload: { action: "capture" },
+						requestId: "req-dead-alert",
+					}),
+					idempotencyKey: "idem-dead-alert",
+					tenantId: "tenant-default",
+				}).pipe(Effect.provideService(RuntimeServicesTag, services));
+
+				expect(callCount).toBe(1);
+				expect(alerts).toHaveLength(0);
+				const events =
+					yield* persistence.notificationEvents.listByRequestId(
+						"req-dead-alert"
+					);
+				const eventId = events[0]?.id;
+				expect(eventId).toBeDefined();
+				let jobs =
+					(yield* persistence.notificationDeliveryAttempts.listByNotificationEventId(
+						eventId ?? ""
+					)).filter((attempt) => attempt.channel === "webhook");
+				expect(jobs[0]?.status).toBe("failed");
+				const attemptId = jobs[0]?.id;
+
+				yield* TestClock.adjust("1 minute");
+				yield* deliverDueWebhookRetries({
+					tenantId: "tenant-default",
+				}).pipe(Effect.provideService(RuntimeServicesTag, services));
+				expect(callCount).toBe(2);
+				expect(alerts).toHaveLength(0);
+
+				yield* TestClock.adjust("5 minutes");
+				yield* deliverDueWebhookRetries({
+					tenantId: "tenant-default",
+				}).pipe(Effect.provideService(RuntimeServicesTag, services));
+				expect(callCount).toBe(3);
+				jobs =
+					(yield* persistence.notificationDeliveryAttempts.listByNotificationEventId(
+						eventId ?? ""
+					)).filter((attempt) => attempt.channel === "webhook");
+				expect(jobs[0]?.status).toBe("dead");
+				expect(alerts).toHaveLength(1);
+				expect(alerts[0]).toMatchObject({
+					attempt: 3,
+					attemptId,
+					destination: "https://tenant.example/webhook",
+					error: "receiver unavailable",
+					notificationEventId: eventId,
+					requestId: "req-dead-alert",
+					tenantId: "tenant-default",
+				});
+			})
+	);
+
+	it.effect("keeps a job dead when onDeadWebhook throws", () =>
+		Effect.gen(function* deadWebhookAlertFailureProgram() {
+			const persistence = makeMemoryPersistence();
+			let hookCalls = 0;
+			const services = makeServices({
+				onDeadWebhook: () => {
+					hookCalls += 1;
+					throw new Error("pager unavailable");
+				},
+				persistence,
+				retryMaxAttempts: 1,
+				send: () =>
+					Effect.succeed({
+						error: "receiver unavailable",
+						status: "failed" as const,
+					}),
+			});
+
+			yield* emitNotificationEvent({
+				draft: makeNotificationDraft({
+					eventType: "request_captured",
+					payload: { action: "capture" },
+					requestId: "req-dead-hook-throw",
+				}),
+				idempotencyKey: "idem-dead-hook-throw",
+				tenantId: "tenant-default",
+			}).pipe(Effect.provideService(RuntimeServicesTag, services));
+
+			expect(hookCalls).toBe(1);
+			const events = yield* persistence.notificationEvents.listByRequestId(
+				"req-dead-hook-throw"
+			);
+			const jobs =
+				yield* persistence.notificationDeliveryAttempts.listByNotificationEventId(
+					events[0]?.id ?? ""
+				);
+			expect(jobs[0]?.status).toBe("dead");
 		})
 	);
 });

@@ -120,8 +120,8 @@ export interface WebhookDispatchBulkReplayPayload {
 	readonly endpoint_id?: string;
 	/** Maximum dispatches to replay, from 1 to 100. */
 	readonly limit?: number;
-	/** Must be `failed` when present. */
-	readonly status?: "failed";
+	/** Must be `failed` or `dead` when present. Defaults to failed. */
+	readonly status?: "failed" | "dead";
 }
 
 /** Result returned for one outbound webhook replay request. */
@@ -268,12 +268,12 @@ export interface WebhooksApi {
 		query?: WebhookDispatchListQuery,
 		options?: RequestOptions
 	) => Promise<DsarResult<WebhookDispatchListResponse>>;
-	/** Replays one failed outbound webhook delivery attempt. */
+	/** Replays one failed or dead outbound webhook delivery attempt. */
 	readonly replayDispatch: (
 		dispatchId: string,
 		options: WebhookReplayRequestOptions
 	) => Promise<DsarResult<WebhookDispatchReplayResponse>>;
-	/** Replays a filtered batch of failed outbound webhook delivery attempts. */
+	/** Replays a filtered batch of failed or dead outbound webhook delivery attempts. */
 	readonly replayDispatches: (
 		payload: WebhookDispatchBulkReplayPayload,
 		options: WebhookReplayRequestOptions
