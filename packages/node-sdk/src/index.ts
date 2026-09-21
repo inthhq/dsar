@@ -27,6 +27,7 @@ export type {
 	ManifestValidatePayload,
 	PersistenceMigrationInfo,
 	PolicyUpgradeActionResponse,
+	PolicyUpgradeProposePayload,
 	PolicyUpgradeProposalResponse,
 	RequestRecord,
 	StatusDiagnosticsAdapter,

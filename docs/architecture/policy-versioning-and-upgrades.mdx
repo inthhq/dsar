@@ -11,7 +11,7 @@ This document defines the T04 policy lifecycle model for immutable versioning, s
 ## Components
 
 - `@dsar/policy-packs`: Registry, pinning resolution, legal-impact diffing, proposal workflow, and audit events.
-- `@dsar/backend`: Route handler stubs for `propose`, `approve`, and `apply` operations.
+- `@dsar/backend`: Live HTTP handlers for `GET /policies`, `POST /policies/upgrades/propose`, `POST /policies/upgrades/:proposalId/approve`, and `POST /policies/upgrades/:proposalId/apply`. Propose requires `fromVersion`, `tenantId`, and `toVersion`. Approvers must have role `admin` or `compliance_admin`. Apply pins the target version for the tenant or workspace. There is no reject route. Pin a custom pack with `POST /policies/custom/activate`.
 
 ## Lifecycle
 

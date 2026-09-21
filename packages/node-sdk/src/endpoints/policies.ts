@@ -5,6 +5,7 @@ import type {
 	CustomPolicyRegisterResponse,
 	EndpointContext,
 	PolicyUpgradeActionResponse,
+	PolicyUpgradeProposePayload,
 	PolicyUpgradeProposalResponse,
 } from "./types";
 
@@ -18,7 +19,7 @@ export interface PoliciesApi {
 	) => Promise<DsarResult<{ policies: readonly unknown[] }>>;
 	/** Creates a policy-upgrade proposal with the supplied change payload. */
 	readonly proposeUpgrade: (
-		payload: Readonly<Record<string, unknown>>,
+		payload: PolicyUpgradeProposePayload,
 		options?: RequestOptions
 	) => Promise<DsarResult<PolicyUpgradeProposalResponse>>;
 	/** Approves a pending upgrade proposal identified by its proposal ID. */
