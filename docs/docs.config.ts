@@ -219,7 +219,7 @@ export default defineDocsConfig({
 				},
 				{
 					base: "testing",
-					pages: ["acceptance-and-parity"],
+					pages: ["acceptance-and-parity", "perf-benches"],
 					title: "Testing",
 				},
 				{

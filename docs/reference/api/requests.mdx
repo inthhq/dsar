@@ -151,7 +151,9 @@ Return the request timeline.
 Explain how DSAR calculated the current deadline.
 
 The response includes the base deadline, final due date, policy pack/version,
-extensions, pauses, and segmented legal-clock history.
+extensions, pauses, and segmented legal-clock history. In-process recompute
+p95 on a 512-event timeline is gated by `bun run bench`. See
+[Performance Benches](../testing/perf-benches.md).
 
 **Response (200):**
 
