@@ -1,0 +1,27 @@
+{
+	"name": "dsar-nextjs-deletion-webhook-example",
+	"private": true,
+	"description": "Next.js App Router example that receives signed DSAR webhooks and deletes a demo user on fulfilment.",
+	"type": "module",
+	"scripts": {
+		"dev": "next dev",
+		"start": "next start",
+		"smoke": "vitest run",
+		"test": "vitest run",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@dsar/node-sdk": "workspace:*",
+		"next": "^16.2.11",
+		"react": "^19.2.4",
+		"react-dom": "^19.2.4"
+	},
+	"devDependencies": {
+		"@dsar/typescript-config": "workspace:*",
+		"@types/node": "catalog:types",
+		"@types/react": "^19.3.0",
+		"@types/react-dom": "^19.3.0",
+		"typescript": "catalog:utils",
+		"vitest": "catalog:utils"
+	}
+}

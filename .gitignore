@@ -22,3 +22,5 @@ examples/local-storage/.dsar-local.db-wal
 examples/local-storage/.smoke-server.log
 examples/kitchen-sink/.dsar-kitchen-sink.db
 examples/kitchen-sink/.dsar-kitchen-sink-artifacts
+examples/nextjs-deletion-webhook/.next
+examples/nextjs-deletion-webhook/.data
