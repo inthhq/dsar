@@ -130,6 +130,8 @@ Return a request detail record.
 
 Return the request timeline.
 
+Outbound webhook retries append `webhook_delivery_attempted` events. The payload reuses the notification event id and delivery-attempt id so operators can see retries without polling SQL.
+
 **Response (200):**
 
 ```json

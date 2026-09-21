@@ -106,6 +106,7 @@ const start = async (): Promise<void> => {
 	const runtime = dsarInstance({
 		...runtimeConfig,
 		repos: runtimeReposFromPersistence(persistence),
+		runWebhookRetryWorker: true,
 	});
 
 	const server = createServer(async (incoming, outgoing) => {

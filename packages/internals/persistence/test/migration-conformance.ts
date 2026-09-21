@@ -189,6 +189,9 @@ export const defineMigrationConformanceTests = (
 					async (context) => {
 						const snapshot = await context.run((sql) =>
 							Effect.gen(function* migrationUpDownProgram() {
+								if (migration.id === 4) {
+									yield* migrations[0].up(sql);
+								}
 								yield* migration.up(sql);
 								const afterUp = yield* options.inspectSchema(sql);
 								yield* migration.down(sql);
@@ -223,6 +226,14 @@ export const defineMigrationConformanceTests = (
 							);
 							expect(snapshot.afterDown.tables).not.toContain(
 								"chat_state_queues"
+							);
+						}
+						if (migration.id === 4) {
+							expect(snapshot.afterUp.indexes).toContain(
+								"idx_notification_attempts_tenant_due"
+							);
+							expect(snapshot.afterDown.indexes).not.toContain(
+								"idx_notification_attempts_tenant_due"
 							);
 						}
 					}

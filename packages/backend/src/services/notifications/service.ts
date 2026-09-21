@@ -1,18 +1,12 @@
 import { asNonEmptyString, asRecordOrEmpty } from "@dsar/guards";
 /* oxlint-disable complexity */
 import { withTenant } from "@dsar/persistence";
-import type {
-	NotificationDeliveryAttemptRecord,
-	NotificationEventRecord,
-} from "@dsar/persistence";
+import type { NotificationEventRecord } from "@dsar/persistence";
 import * as Effect from "effect/Effect";
 
 import { normalizeAdapterError, toAdapterFailureEvent } from "../../adapters";
 import type { AdapterContractError } from "../../adapters";
-import type {
-	NotificationEventDraft,
-	NotificationEventType,
-} from "../../events/contracts";
+import type { NotificationEventDraft } from "../../events/contracts";
 import { makeRequestId } from "../../middleware/auth-context";
 import { RequestValidationError } from "../../types/errors";
 import type {
@@ -21,29 +15,16 @@ import type {
 	RuntimeServices,
 } from "../../types/runtime";
 import { RuntimeServicesTag } from "../../types/runtime";
-import { dispatchWebhookNotification } from "./webhook";
+import {
+	currentIsoTimestamp,
+	parseNotificationEventType,
+	processWebhookDeliveryJob,
+} from "./retry";
 
 const DEFAULT_TENANT_ID = "tenant-default";
 const DEFAULT_POLICY_VERSION = "policy-v1";
 const DEFAULT_LOCALE = "en-GB";
 const GENERATED_STATUS = "generated";
-const DEFAULT_WEBHOOK_ENDPOINT_ID = "default";
-const NOTIFICATION_EVENT_TYPES = [
-	"request_captured",
-	"clock_due_changed",
-	"clock_segment_opened",
-	"clock_segment_closed",
-	"request_acknowledged",
-	"acknowledgement_sent",
-	"verification_outcome_recorded",
-	"manifest_review_recorded",
-	"appeal_recorded",
-	"fulfillment_callback_received",
-	"delivery_prepared",
-	"step_up_challenge_issued",
-	"request_fulfilled",
-	"request_refused",
-] as const satisfies readonly NotificationEventType[];
 
 const toGeneratedResult = (
 	eventId: string
@@ -83,33 +64,6 @@ const toReplayDispatchValidationError = (
 		return error;
 	}
 	return toNotificationDispatchValidationError(error);
-};
-
-const isNotificationEventType = (
-	value: string
-): value is NotificationEventType => {
-	for (const eventType of NOTIFICATION_EVENT_TYPES) {
-		if (eventType === value) {
-			return true;
-		}
-	}
-	return false;
-};
-
-const parseNotificationEventType = (
-	value: string
-): Effect.Effect<NotificationEventType, RequestValidationError> => {
-	if (isNotificationEventType(value)) {
-		return Effect.succeed(value);
-	}
-	return Effect.fail(
-		new RequestValidationError({
-			details: { eventType: value },
-			message:
-				"Webhook dispatch cannot be replayed because the persisted notification event type is not supported.",
-			reasonCode: "REQUEST_VALIDATION_FAILED",
-		})
-	);
 };
 
 /**
@@ -201,49 +155,31 @@ const toDispatchInput = (input: {
 	};
 };
 
-const resolveWebhookSigningKey = (input: {
-	readonly config: NonNullable<
-		RuntimeServices["config"]["notificationWebhook"]
-	>;
-	readonly services: RuntimeServices;
-	readonly tenantId: string;
-}) =>
-	input.services.repos.persistence.webhookEndpoints
-		.ensureConfigured({
-			createdAt: new Date().toISOString(),
-			id: input.config.endpointId ?? DEFAULT_WEBHOOK_ENDPOINT_ID,
-			signingSecret: input.config.signingSecret,
-			url: input.config.url,
-		})
-		.pipe(
-			withTenant(input.tenantId),
-			Effect.map(({ primaryKey }) => ({
-				id: primaryKey.id,
-				secret: primaryKey.secret,
-			}))
-		);
-
 const appendDeliveryAttempt = (input: {
 	readonly eventId: string;
 	readonly requestId: string;
 	readonly attempt: number;
 	readonly destination: string;
 	readonly channel: string;
-	readonly status: "pending" | "delivered" | "failed" | "skipped";
+	readonly status: "pending" | "delivered" | "failed" | "skipped" | "dead";
 	readonly responseCode?: number;
 	readonly error?: string;
 	readonly tenantId: string;
+	readonly id?: string;
+	readonly nextAttemptAt?: string;
 }) =>
 	Effect.gen(function* appendDeliveryAttemptProgram() {
 		const services = yield* Effect.service(RuntimeServicesTag);
-		yield* services.repos.persistence.notificationDeliveryAttempts
+		const createdAt = yield* currentIsoTimestamp();
+		return yield* services.repos.persistence.notificationDeliveryAttempts
 			.append({
 				attempt: input.attempt,
 				channel: input.channel,
-				createdAt: new Date().toISOString(),
+				createdAt,
 				destination: input.destination,
 				error: input.error,
-				id: makeRequestId(),
+				id: input.id ?? makeRequestId(),
+				nextAttemptAt: input.nextAttemptAt,
 				notificationEventId: input.eventId,
 				requestId: input.requestId,
 				responseCode: input.responseCode,
@@ -353,33 +289,6 @@ const deliverWithRetries = (input: {
 	return runAttempt(startAttempt);
 };
 
-const nextWebhookAttemptNumber = (input: {
-	readonly attempts: readonly NotificationDeliveryAttemptRecord[];
-}): number => {
-	let maxAttempt = 0;
-	for (const attempt of input.attempts) {
-		if (attempt.channel === "webhook") {
-			maxAttempt = Math.max(maxAttempt, attempt.attempt);
-		}
-	}
-	return maxAttempt + 1;
-};
-
-const supportsNotificationChannel = (
-	adapter:
-		| { readonly channels?: readonly string[]; readonly key: string }
-		| undefined,
-	channel: "email" | "webhook"
-): boolean => {
-	if (!adapter) {
-		return false;
-	}
-	if (adapter.channels) {
-		return adapter.channels.includes(channel);
-	}
-	return channel === "webhook" && adapter.key !== "outbound-resend";
-};
-
 /**
  * Replays a persisted webhook dispatch without re-sending other notification
  * channels such as email.
@@ -408,59 +317,53 @@ export const replayWebhookDispatch = (input: {
 				})
 			);
 		}
-		const resolvedNotificationAdapter =
-			services.adapterRegistry.resolveNotification();
-		const webhookAdapter = supportsNotificationChannel(
-			resolvedNotificationAdapter,
-			"webhook"
-		)
-			? resolvedNotificationAdapter
-			: undefined;
-		const signingKey = yield* resolveWebhookSigningKey({
-			config: webhookConfig,
-			services,
-			tenantId: input.tenantId,
-		});
+		yield* parseNotificationEventType(input.event.eventType);
 		const attempts =
 			yield* services.repos.persistence.notificationDeliveryAttempts
 				.listByNotificationEventId(input.event.id)
 				.pipe(withTenant(input.tenantId));
-		const eventType = yield* parseNotificationEventType(input.event.eventType);
-		const dispatchInput = toDispatchInput({
-			correlationId: services.requestContext.requestId,
-			draft: {
-				eventType,
-				locale: input.event.locale,
-				payload: input.event.payload,
-				policyVersion: input.event.policyVersion,
-				requestId: input.event.requestId,
-			},
-			eventId: input.event.id,
+		const now = yield* currentIsoTimestamp();
+		let job = attempts.find(
+			(attempt) =>
+				attempt.channel === "webhook" &&
+				(attempt.status === "pending" ||
+					attempt.status === "failed" ||
+					attempt.status === "dead")
+		);
+		if (!job) {
+			job = attempts.find((attempt) => attempt.channel === "webhook");
+		}
+		job = job
+			? yield* services.repos.persistence.notificationDeliveryAttempts
+					.update(job.id, {
+						claimExpiresAt: null,
+						claimedAt: null,
+						destination: webhookConfig.url,
+						nextAttemptAt: now,
+						status: "pending",
+					})
+					.pipe(withTenant(input.tenantId))
+			: yield* appendDeliveryAttempt({
+					attempt: 1,
+					channel: "webhook",
+					destination: webhookConfig.url,
+					eventId: input.event.id,
+					nextAttemptAt: now,
+					requestId: input.event.requestId,
+					status: "pending",
+					tenantId: input.tenantId,
+				});
+		const result = yield* processWebhookDeliveryJob({
+			attemptId: job.id,
 			idempotencyKey: input.idempotencyKey,
-		});
-		return yield* deliverWithRetries({
-			adapterKey: webhookAdapter?.key ?? "webhook-fallback",
-			channel: "webhook",
-			destination: webhookConfig.url,
-			eventId: input.event.id,
-			requestId: input.event.requestId,
-			retryDelayMs: webhookConfig.retryDelayMs,
-			retryMaxAttempts: webhookConfig.retryMaxAttempts,
-			send: () =>
-				webhookAdapter
-					? webhookAdapter.send({
-							...dispatchInput,
-							webhookSigningKey: signingKey,
-						})
-					: dispatchWebhookNotification({
-							event: dispatchInput,
-							signingKey,
-							timeoutMs: webhookConfig.timeoutMs,
-							url: webhookConfig.url,
-						}),
-			startAttempt: nextWebhookAttemptNumber({ attempts }),
 			tenantId: input.tenantId,
 		});
+		return (
+			result ?? {
+				error: "Webhook dispatch job was not claimed.",
+				status: "failed" as const,
+			}
+		);
 	}).pipe(Effect.mapError(toReplayDispatchValidationError));
 
 /**
@@ -537,13 +440,6 @@ export const emitNotificationEvent = (input: {
 			(resolvedNotificationAdapter?.key === "outbound-resend"
 				? resolvedNotificationAdapter
 				: undefined);
-		const webhookAdapter = supportsNotificationChannel(
-			resolvedNotificationAdapter,
-			"webhook"
-		)
-			? resolvedNotificationAdapter
-			: undefined;
-
 		// Webhook is optional; we still persist a pending attempt so audit trails can
 		// explain why no outbound webhook dispatch occurred.
 		if (!webhookConfig || webhookConfig.url.length === 0) {
@@ -557,31 +453,37 @@ export const emitNotificationEvent = (input: {
 				tenantId,
 			});
 		} else {
-			const signingKey = yield* resolveWebhookSigningKey({
-				config: webhookConfig,
-				services,
-				tenantId,
-			});
-			yield* deliverWithRetries({
-				adapterKey: webhookAdapter?.key ?? "webhook-fallback",
-				channel: "webhook",
-				destination: webhookConfig.url,
-				eventId,
-				requestId: input.draft.requestId,
-				retryDelayMs: webhookConfig.retryDelayMs,
-				retryMaxAttempts: webhookConfig.retryMaxAttempts,
-				send: () =>
-					webhookAdapter
-						? webhookAdapter.send({
-								...dispatchInput,
-								webhookSigningKey: signingKey,
-							})
-						: dispatchWebhookNotification({
-								event: dispatchInput,
-								signingKey,
-								timeoutMs: webhookConfig.timeoutMs,
-								url: webhookConfig.url,
-							}),
+			const now = yield* currentIsoTimestamp();
+			const existingAttempts =
+				yield* services.repos.persistence.notificationDeliveryAttempts
+					.listByNotificationEventId(eventId)
+					.pipe(withTenant(tenantId));
+			const existingJob = existingAttempts.find(
+				(attempt) => attempt.channel === "webhook"
+			);
+			const job = existingJob
+				? yield* services.repos.persistence.notificationDeliveryAttempts
+						.update(existingJob.id, {
+							claimExpiresAt: null,
+							claimedAt: null,
+							destination: webhookConfig.url,
+							nextAttemptAt: now,
+							status: "pending",
+						})
+						.pipe(withTenant(tenantId))
+				: yield* appendDeliveryAttempt({
+						attempt: 1,
+						channel: "webhook",
+						destination: webhookConfig.url,
+						eventId,
+						nextAttemptAt: now,
+						requestId: input.draft.requestId,
+						status: "pending",
+						tenantId,
+					});
+			yield* processWebhookDeliveryJob({
+				attemptId: job.id,
+				idempotencyKey: input.idempotencyKey,
 				tenantId,
 			});
 		}

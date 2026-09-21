@@ -4,6 +4,10 @@ export {
 	proposePolicyUpgrade,
 } from "./routes/policies/handlers";
 export { dsarInstance } from "./core";
+export {
+	deliverDueWebhookRetries,
+	runWebhookRetryWorker,
+} from "./services/notifications/retry";
 export { createOpenApiSpec, makeDsarHttpApi } from "./http-api";
 export { Persistence, runtimeReposFromPersistence } from "./persistence";
 export { createMemoryRateLimitStore } from "./rate-limit";
