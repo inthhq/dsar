@@ -13,12 +13,12 @@ group: guides
 ```tsx
 import { DsarProvider, SubjectPortal, hosted } from "@dsar/react";
 
-<DsarProvider mode={hosted({ project: "acme" })}>
+<DsarProvider mode={hosted({ url: "https://acme-prod.inth.app/dsar" })}>
 	<SubjectPortal />
 </DsarProvider>
 ```
 
-Requests go to `https://acme.inth.app/dsar`. Webhooks for that project use the same origin. Cookies stay on inth.app. Do not put `DSAR_API_TOKEN` in the browser.
+Pass the full origin (`https://org-project.inth.app/dsar`). Webhooks use that same origin. Cookies stay on inth.app. Do not put `DSAR_API_TOKEN` in the browser.
 
 ## Local self-host
 

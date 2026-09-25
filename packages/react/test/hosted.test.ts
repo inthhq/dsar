@@ -3,15 +3,15 @@ import { describe, expect, it } from "vitest";
 import { hosted, LOCAL_SELF_HOST_URL, selfHosted } from "../src/hosted";
 
 describe("hosted", () => {
-	it("builds the inth.app DSAR origin from a project slug", () => {
-		expect(hosted({ project: "acme" })).toEqual({
-			baseUrl: "https://acme.inth.app/dsar",
+	it("keeps the full inth.app URL", () => {
+		expect(hosted({ url: "https://acme-prod.inth.app/dsar/" })).toEqual({
+			baseUrl: "https://acme-prod.inth.app/dsar",
 			kind: "hosted",
 		});
 	});
 
-	it("rejects a hostname as a project slug", () => {
-		expect(() => hosted({ project: "acme.inth.app" })).toThrow(/slug/);
+	it("rejects an empty url", () => {
+		expect(() => hosted({ url: "  " })).toThrow(/url/);
 	});
 });
 

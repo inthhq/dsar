@@ -1,7 +1,7 @@
 /**
- * Client transport. Same split as c15t: hosted inth.com vs self-hosted URL.
+ * Client transport. Same split as c15t: hosted URL vs self-hosted URL.
  *
- * Production: `hosted({ project: "acme" })` → `https://acme.inth.app/dsar`
+ * Production: `hosted({ url: "https://org-project.inth.app/dsar" })`
  * Local: `selfHosted({ url: "http://kitchen-sink.localhost:1355/api/v1" })`
  */
 
@@ -39,29 +39,17 @@ const requireUrl = (url: string, label: string): string => {
 };
 
 /**
- * Hosted inth.app backend.
+ * Hosted inth.app backend. Pass the full origin (`org-project.inth.app`).
  *
- * @param input - Project slug, for example `acme`.
- * @returns Mode pointing at `https://{project}.inth.app/dsar`.
+ * @param input - Absolute DSAR HTTP base URL.
+ * @returns Mode pointing at that URL with a trailing slash stripped.
  * @example
- * hosted({ project: "acme" })
- * // https://acme.inth.app/dsar
+ * hosted({ url: "https://acme-prod.inth.app/dsar" })
  */
-export const hosted = (input: { readonly project: string }): HostedMode => {
-	const project = input.project.trim();
-	if (project.length === 0) {
-		throw new Error("hosted({ project }) requires a project slug");
-	}
-	if (project.includes("/") || project.includes(".")) {
-		throw new Error(
-			"hosted({ project }) is a slug, not a hostname. Use selfHosted({ url }) for a full URL."
-		);
-	}
-	return {
-		baseUrl: `https://${project}.inth.app/dsar`,
-		kind: "hosted",
-	};
-};
+export const hosted = (input: { readonly url: string }): HostedMode => ({
+	baseUrl: requireUrl(input.url, "hosted({ url })"),
+	kind: "hosted",
+});
 
 /**
  * Self-hosted DSAR HTTP server (kitchen-sink locally, or your own deploy).
