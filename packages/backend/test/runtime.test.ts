@@ -437,16 +437,16 @@ describe(dsarInstance, () => {
 			},
 		]).toStrictEqual([
 			{
-				docsUrl: expect.stringContaining("/dsar-be-1201"),
+				docsUrl: "https://dsar-sdk.dev/docs/reference/errors/dsar-be-1201",
 				id: "DSAR-BE-1201",
 			},
 			{
-				docsUrl: expect.stringContaining("/dsar-be-1001"),
+				docsUrl: "https://dsar-sdk.dev/docs/reference/errors/dsar-be-1001",
 				id: "DSAR-BE-1001",
 			},
 		]);
 		expect(badPayloadBody.error.docsUrl).toContain(
-			"https://dsar-sdk.dev/errors/"
+			"https://dsar-sdk.dev/docs/reference/errors/"
 		);
 	});
 

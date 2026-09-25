@@ -286,7 +286,8 @@ describe("@dsar/node-sdk client", () => {
 					JSON.stringify({
 						error: {
 							code: "INTERNAL_RUNTIME_ERROR",
-							docsUrl: "https://dsar-sdk.dev/errors/dsar-be-1500",
+							docsUrl:
+								"https://dsar-sdk.dev/docs/reference/errors/dsar-be-1500",
 							id: "DSAR-BE-1500",
 							message: "Unhandled runtime error.",
 							status: 500,
@@ -306,7 +307,9 @@ describe("@dsar/node-sdk client", () => {
 		const { message } = err as Error;
 		expect(message).toContain("INTERNAL_RUNTIME_ERROR");
 		expect(message).toContain("DSAR-BE-1500");
-		expect(message).toContain("https://dsar-sdk.dev/errors/dsar-be-1500");
+		expect(message).toContain(
+			"https://dsar-sdk.dev/docs/reference/errors/dsar-be-1500"
+		);
 	});
 
 	it("enriches sdk-native failures with catalog docs metadata", async () => {
@@ -325,7 +328,9 @@ describe("@dsar/node-sdk client", () => {
 		const { message } = err as Error;
 		expect(message).toContain("SDK_INVALID_ENVELOPE");
 		expect(message).toContain("DSAR-SDK-1301");
-		expect(message).toContain("https://dsar-sdk.dev/errors/dsar-sdk-1301");
+		expect(message).toContain(
+			"https://dsar-sdk.dev/docs/reference/errors/dsar-sdk-1301"
+		);
 	});
 
 	it("maps backend error.id to sdk errorId and never exposes id or details", () => {
@@ -333,7 +338,7 @@ describe("@dsar/node-sdk client", () => {
 			body: {
 				error: {
 					code: "LIFECYCLE_TRANSITION_DISALLOWED",
-					docsUrl: "https://dsar-sdk.dev/errors/dsar-be-1401",
+					docsUrl: "https://dsar-sdk.dev/docs/reference/errors/dsar-be-1401",
 					id: "DSAR-BE-1401",
 					message:
 						'Lifecycle transition disallowed: cannot apply "extension" from "captured" state.',
@@ -354,7 +359,9 @@ describe("@dsar/node-sdk client", () => {
 		expect(sdkError.type).toBe("dsar.sdk.error");
 		expect(sdkError.name).toBe("DsarSdkError");
 		expect(sdkError.errorId).toBe("DSAR-BE-1401");
-		expect(sdkError.docsUrl).toBe("https://dsar-sdk.dev/errors/dsar-be-1401");
+		expect(sdkError.docsUrl).toBe(
+			"https://dsar-sdk.dev/docs/reference/errors/dsar-be-1401"
+		);
 		expect(sdkError.code).toBe("LIFECYCLE_TRANSITION_DISALLOWED");
 		expect(sdkError).not.toHaveProperty("id");
 		expect(sdkError).not.toHaveProperty("details");
@@ -373,7 +380,7 @@ describe("@dsar/node-sdk client", () => {
 			body: {
 				error: {
 					code: "REQUEST_VALIDATION_FAILED",
-					docsUrl: "https://dsar-sdk.dev/errors/dsar-be-1199",
+					docsUrl: "https://dsar-sdk.dev/docs/reference/errors/dsar-be-1199",
 					id: "DSAR-BE-1199",
 					message: "Validation failed.",
 					status: 400,

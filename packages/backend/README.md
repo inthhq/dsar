@@ -78,9 +78,9 @@ Protected routes now distinguish `operator`, `service`, and `subject` principals
 
 See:
 
-- `docs/architecture/auth-model.md`
-- `docs/integrations/unkey.md`
-- `docs/errors/dsar-be-1003.md`
+- `docs/architecture/auth-model.mdx`
+- `docs/integrations/auth/unkey.mdx`
+- `docs/reference/errors/dsar-be-1003.mdx`
 
 ## Support
 

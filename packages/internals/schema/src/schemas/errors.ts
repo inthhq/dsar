@@ -1,3 +1,4 @@
+import { DSAR_ERROR_DOCS_BASE_URL } from "@dsar/internals-error-codes";
 import * as Schema from "effect/Schema";
 
 import { IsoTimestampSchema, MetadataSchema } from "./shared";
@@ -9,8 +10,7 @@ import { IsoTimestampSchema, MetadataSchema } from "./shared";
  */
 export const ErrorCodeSchema = Schema.String.pipe(
 	Schema.annotate({
-		message:
-			"SCHEMA_RUNTIME_ERROR: Invalid error code. See https://dsar-sdk.dev/errors/dsar-sch-1500",
+		message: `SCHEMA_RUNTIME_ERROR: Invalid error code. See ${DSAR_ERROR_DOCS_BASE_URL}/dsar-sch-1500`,
 	})
 );
 

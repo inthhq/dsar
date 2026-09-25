@@ -77,7 +77,8 @@ type CatalogCodesTuple<
 /**
  * Default base URL used to build DSAR error documentation links.
  */
-export const DSAR_ERROR_DOCS_BASE_URL = "https://dsar-sdk.dev/errors";
+export const DSAR_ERROR_DOCS_BASE_URL =
+	"https://dsar-sdk.dev/docs/reference/errors";
 
 const toCatalogEntry = <TCode extends string, TId extends ErrorId>(
 	entry: ErrorCatalogInputEntry<TCode, TId>,
