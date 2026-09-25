@@ -2,7 +2,7 @@
 
 React provider and portal widgets for DSAR. Same split as `@c15t/react`:
 
-- **Hosted**: `hosted({ url: "https://org-project.inth.app/dsar" })`
+- **Hosted**: `hosted({ url: "https://org-project.inth.app" })` (adds `/dsar` if the path is empty)
 - **Self-host**: `selfHosted({ url })` talks to your DSAR HTTP server (kitchen-sink locally)
 
 Do not pass `DSAR_API_TOKEN` into these components.
@@ -12,7 +12,7 @@ import { DsarProvider, SubjectPortal, hosted } from "@dsar/react";
 
 export function App() {
 	return (
-		<DsarProvider mode={hosted({ url: "https://acme-prod.inth.app/dsar" })}>
+		<DsarProvider mode={hosted({ url: "https://acme-prod.inth.app" })}>
 			<SubjectPortal subjectId="sub_123" defaultEmail="ada@example.com" />
 		</DsarProvider>
 	);

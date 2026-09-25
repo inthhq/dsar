@@ -38,16 +38,32 @@ const requireUrl = (url: string, label: string): string => {
 	return trimTrailingSlash(trimmed);
 };
 
+const ensureHostedDsarPath = (url: string): string => {
+	let parsed: URL;
+	try {
+		parsed = new URL(url);
+	} catch {
+		throw new Error("hosted({ url }) must be an absolute URL");
+	}
+	const path = trimTrailingSlash(parsed.pathname);
+	if (path === "") {
+		parsed.pathname = "/dsar";
+	}
+	return trimTrailingSlash(parsed.toString());
+};
+
 /**
- * Hosted inth.app backend. Pass the full origin (`org-project.inth.app`).
+ * Hosted inth.app backend. Pass `https://org-project.inth.app`; `/dsar`
+ * is added when the path is empty.
  *
- * @param input - Absolute DSAR HTTP base URL.
- * @returns Mode pointing at that URL with a trailing slash stripped.
+ * @param input - Absolute hosted origin or DSAR HTTP base URL.
+ * @returns Mode pointing at that URL, with `/dsar` if you omitted the path.
  * @example
- * hosted({ url: "https://acme-prod.inth.app/dsar" })
+ * hosted({ url: "https://acme-prod.inth.app" })
+ * // https://acme-prod.inth.app/dsar
  */
 export const hosted = (input: { readonly url: string }): HostedMode => ({
-	baseUrl: requireUrl(input.url, "hosted({ url })"),
+	baseUrl: ensureHostedDsarPath(requireUrl(input.url, "hosted({ url })")),
 	kind: "hosted",
 });
 

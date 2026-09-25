@@ -3,7 +3,14 @@ import { describe, expect, it } from "vitest";
 import { hosted, LOCAL_SELF_HOST_URL, selfHosted } from "../src/hosted";
 
 describe("hosted", () => {
-	it("keeps the full inth.app URL", () => {
+	it("appends /dsar when the origin has no path", () => {
+		expect(hosted({ url: "https://acme-prod.inth.app" })).toEqual({
+			baseUrl: "https://acme-prod.inth.app/dsar",
+			kind: "hosted",
+		});
+	});
+
+	it("does not double /dsar", () => {
 		expect(hosted({ url: "https://acme-prod.inth.app/dsar/" })).toEqual({
 			baseUrl: "https://acme-prod.inth.app/dsar",
 			kind: "hosted",
