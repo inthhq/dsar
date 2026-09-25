@@ -34,6 +34,12 @@ export interface IntakePayload {
 	readonly requiresVerification?: boolean;
 	/** Optional flag that policy evaluation treats as a complex request. */
 	readonly isComplex?: boolean;
+	/** Optional data-subject identifiers the portal posts with the filing. */
+	readonly subject?: {
+		readonly email?: string;
+		readonly externalRef?: string;
+		readonly subjectId?: string;
+	};
 }
 
 /**

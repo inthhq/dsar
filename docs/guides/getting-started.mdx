@@ -17,19 +17,19 @@ and make your first request through the runtime.
 
 ## Fastest Local Path
 
-The quickest way to see the full surface is the kitchen-sink runtime plus the
-dashboard and subject-portal examples.
+The quickest HTTP surface is kitchen-sink, which is the local self-hosted
+backend. The subject portal and dashboard are UIs that call it. For
+production, point `@dsar/react` at a hosted project on inth.com.
 
 ```sh
-bunx turbo run dev --filter=./examples/kitchen-sink --filter=./examples/dashboard --filter=./examples/subject-portal
+bunx turbo run dev --filter=./examples/kitchen-sink --filter=./examples/subject-portal --filter=./examples/dashboard
 ```
 
-Supporting example READMEs:
-
 - `examples/kitchen-sink/README.md`
-- `examples/nextjs-deletion-webhook/README.md`
-- `examples/dashboard/README.md`
 - `examples/subject-portal/README.md`
+- `examples/dashboard/README.md`
+- `examples/nextjs-deletion-webhook/README.md`
+- [React SDK](./react-sdk.md)
 
 ## Verify the Runtime
 

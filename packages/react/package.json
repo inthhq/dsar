@@ -1,0 +1,43 @@
+{
+	"name": "@dsar/react",
+	"version": "0.0.6",
+	"private": true,
+	"description": "React provider, hosted transport, and portal components for DSAR.",
+	"license": "Apache-2.0",
+	"files": [
+		"src",
+		"styles.css"
+	],
+	"type": "module",
+	"imports": {
+		"#src": "./src/index.ts",
+		"#src/*": "./src/*"
+	},
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"import": "./src/index.ts"
+		},
+		"./styles.css": "./styles.css"
+	},
+	"scripts": {
+		"format": "oxfmt --check src test package.json tsconfig.json README.md",
+		"lint": "oxlint .",
+		"test": "vitest run",
+		"typecheck": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"@dsar/typescript-config": "workspace:*",
+		"@types/react": "^19.2.2",
+		"@types/react-dom": "^19.2.2",
+		"jsdom": "^27.0.0",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0",
+		"typescript": "catalog:utils",
+		"vitest": "catalog:utils"
+	},
+	"peerDependencies": {
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0"
+	}
+}

@@ -15,6 +15,7 @@ import {
 	RetentionPolicySchema,
 	StepUpChallengeSchema,
 	StepUpCompleteSchema,
+	SubjectSchema,
 	TokenGatedDownloadSchema,
 	VerificationCaseSchema,
 } from "@dsar/schema";
@@ -45,6 +46,7 @@ export const IntakePayloadSchema = Schema.Struct({
 	requestType: Schema.optional(RequestTypeSchema),
 	requestor: Schema.optional(RequestorSchema),
 	requiresVerification: Schema.optional(Schema.Boolean),
+	subject: Schema.optional(SubjectSchema),
 });
 
 /** Legal-clock explanation schema returned by request explainability endpoints. */

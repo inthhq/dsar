@@ -1,0 +1,23 @@
+{
+	"name": "dsar-subject-portal-example",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "next dev --port 1356",
+		"build": "next build",
+		"start": "next start --port 1356"
+	},
+	"dependencies": {
+		"@dsar/react": "workspace:*",
+		"next": "^16.2.11",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0"
+	},
+	"devDependencies": {
+		"@dsar/typescript-config": "workspace:*",
+		"@types/node": "catalog:types",
+		"@types/react": "^19.2.2",
+		"@types/react-dom": "^19.2.2",
+		"typescript": "catalog:utils"
+	}
+}

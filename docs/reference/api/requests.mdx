@@ -36,6 +36,10 @@ Request creation and capture use the same intake body:
 - `requestType` (string, optional)
 - `requiresVerification` (boolean, optional)
 - `isComplex` (boolean, optional)
+- `subject` (object, optional)
+- `subject.email` (string, optional)
+- `subject.externalRef` (string, optional)
+- `subject.subjectId` (string, optional)
 
 `intakeSource.receivedAt` is the timestamp from the original external intake
 channel and is required for provenance. The top-level `receivedAt` is the time
