@@ -40,6 +40,7 @@ export type {
 	NotificationReplayResponse,
 	PersistenceMigrationInfo,
 	PolicyUpgradeActionResponse,
+	PolicyUpgradeProposePayload,
 	PolicyUpgradeProposalResponse,
 	RefusalPayload,
 	RequestDetailResponse,

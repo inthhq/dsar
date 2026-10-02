@@ -2,7 +2,7 @@
 import { asNonEmptyString, asObject, isRecord } from "@dsar/guards";
 import type { JsonValue } from "@dsar/persistence";
 import { withTenant } from "@dsar/persistence";
-import { PolicyPacksLive, resolveActivePolicyPack } from "@dsar/policy-packs";
+import { resolveActivePolicyPack } from "@dsar/policy-packs";
 import type { PolicyPackVersionRecord } from "@dsar/policy-packs";
 import * as Clock from "effect/Clock";
 import * as Effect from "effect/Effect";
@@ -221,7 +221,7 @@ const enrichCaptureWithPolicy = (input: {
 				tenantId: input.tenantId,
 				workspaceId: input.workspaceId,
 			},
-		}).pipe(Effect.provide(PolicyPacksLive));
+		});
 		const intakeReceivedAt = asNonEmptyString(
 			asObject(asObject(input.payload)?.intakeSource)?.receivedAt
 		);

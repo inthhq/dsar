@@ -38,6 +38,13 @@ const CustomPolicyDeactivatePayloadSchema = Schema.Struct({
 	workspaceId: Schema.optional(Schema.String),
 });
 
+const PolicyUpgradePayloadSchema = Schema.Struct({
+	fromVersion: Schema.String,
+	tenantId: Schema.String,
+	toVersion: Schema.String,
+	workspaceId: Schema.optional(Schema.String),
+});
+
 /** OpenAPI group describing policy listing and custom policy lifecycle endpoints. */
 export const policiesGroup = HttpApiGroup.make("policies", { topLevel: true })
 	.add(
@@ -64,6 +71,7 @@ export const policiesGroup = HttpApiGroup.make("policies", { topLevel: true })
 				"policies_upgrades_propose",
 				"/policies/upgrades/propose",
 				{
+					payload: PolicyUpgradePayloadSchema,
 					success: successEnvelope(
 						Schema.Struct({
 							proposalId: Schema.String,

@@ -34,6 +34,20 @@ export type {
 } from "./types/requests";
 
 /**
+ * Request body for `POST /policies/upgrades/propose`.
+ */
+export interface PolicyUpgradeProposePayload {
+	/** Baseline pack version used as the diff source. */
+	readonly fromVersion: string;
+	/** Tenant that owns the upgrade proposal. Must match auth context. */
+	readonly tenantId: string;
+	/** Target pack version to pin after apply. */
+	readonly toVersion: string;
+	/** Optional workspace scope under the tenant. */
+	readonly workspaceId?: string;
+}
+
+/**
  * Response payload returned when creating a policy-upgrade proposal.
  */
 export interface PolicyUpgradeProposalResponse {

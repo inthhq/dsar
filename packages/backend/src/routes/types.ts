@@ -1,7 +1,21 @@
+import type {
+	PolicyAudit,
+	PolicyPackDiff,
+	PolicyPinning,
+	PolicyRegistry,
+	PolicyUpgrade,
+} from "@dsar/policy-packs";
 import type { Effect } from "effect";
 
 import type { BackendRuntimeError } from "../types/errors";
 import type { RuntimeServicesTag } from "../types/runtime";
+
+type PolicyPacksServices =
+	| PolicyAudit
+	| PolicyPackDiff
+	| PolicyPinning
+	| PolicyRegistry
+	| PolicyUpgrade;
 
 /**
  * Dynamic path parameter values extracted during route matching.
@@ -31,5 +45,9 @@ export interface RouteDefinition {
 	readonly handler: (input: {
 		readonly request: Request;
 		readonly params: Readonly<Record<string, string>>;
-	}) => Effect.Effect<Response, BackendRuntimeError, RuntimeServicesTag>;
+	}) => Effect.Effect<
+		Response,
+		BackendRuntimeError,
+		RuntimeServicesTag | PolicyPacksServices
+	>;
 }
