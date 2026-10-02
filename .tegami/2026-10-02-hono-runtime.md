@@ -21,7 +21,9 @@ that serve DSAR inside an existing app or gateway:
 - `observability` logs one evlog wide event per request, with PII redaction
   on. By default it leaves the host's evlog configuration alone and keeps
   failed and rejected requests through its sampling; `level` opts in to DSAR
-  configuring evlog. Errors no longer print a JSON line with `console.error`.
+  configuring evlog. Events carry no request bodies, and 4xx events carry no
+  error messages or stacks. Errors no longer print a JSON line with
+  `console.error`.
 
 Downloaded artifacts now arrive byte for byte. Before, the response was
 decoded as text, which corrupted binary files such as PDFs and archives.

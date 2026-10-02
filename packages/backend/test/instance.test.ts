@@ -269,6 +269,61 @@ describe("request logging", () => {
 		});
 	});
 
+	it("keeps error messages and stacks off 4xx events", async () => {
+		const recorder = recordEvents();
+		const instance = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			observability: { drain: recorder.drain, level: "warn" },
+			repos: { persistence: makeMemoryPersistence() },
+		});
+
+		// Rejected inside auth resolution, which throws.
+		await instance.handler(
+			new Request("https://example.test/requests", {
+				headers: { authorization: "Bearer unknown-token" },
+			})
+		);
+
+		await vi.waitFor(() => expect(recorder.events).toHaveLength(1));
+		expect(recorder.events[0]).toMatchObject({ status: 401 });
+		expect(recorder.events[0]?.error).toStrictEqual({
+			code: "AUTH_ACTOR_CONTEXT_MISSING",
+			id: "DSAR-BE-1001",
+			status: 401,
+		});
+	});
+
+	it("redacts the console line when DSAR configures evlog", async () => {
+		const lines: string[] = [];
+		const capture = (...args: unknown[]) => {
+			lines.push(
+				args.map((arg) => JSON.stringify(arg) ?? String(arg)).join(" ")
+			);
+		};
+		const spies = (["log", "info", "warn", "error"] as const).map((method) =>
+			vi.spyOn(console, method).mockImplementation(capture)
+		);
+		try {
+			const instance = dsarInstance({
+				...TEST_RUNTIME_AUTH,
+				observability: { level: "warn" },
+				repos: { persistence: makeMemoryPersistence() },
+			});
+
+			await instance.handler(
+				new Request("https://example.test/subjects/jane@example.com")
+			);
+
+			await vi.waitFor(() => expect(lines.join("\n")).toContain("/subjects/"));
+			expect(lines.join("\n")).not.toContain("jane@example.com");
+		} finally {
+			for (const spy of spies) {
+				spy.mockRestore();
+			}
+			initLogger();
+		}
+	});
+
 	it("does not put the bearer token on the event", async () => {
 		const recorder = recordEvents();
 		const instance = dsarInstance({

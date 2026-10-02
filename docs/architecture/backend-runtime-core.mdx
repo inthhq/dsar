@@ -123,8 +123,13 @@ to evlog's global output.
 Events carry `dsar.requestId` on every request, including unmatched routes,
 plus `dsar.route`, `dsar.tenantId`, and `dsar.principalKind` on matched
 routes. Failed requests add `error.id`, `error.code`, and `error.status`.
-Server errors also record the sanitized error and request trace; client
-errors do not, because their bodies can hold subject data.
+Server errors also record the sanitized error with the request method and
+path. No event carries a request body, query string, or headers, and 4xx
+events carry no error message or stack.
+
+evlog writes its console line with its global redaction setting. When DSAR
+sets `level`, it passes `redact` to `initLogger`; otherwise configure
+redaction in the host's own `initLogger` call.
 
 ## Cross-origin requests
 
@@ -135,3 +140,48 @@ including errors:
   origin and allows credentials.
 - `*` answers with `Access-Control-Allow-Origin: *` and no credentials, so a
   browser never sends the host's cookies to DSAR on behalf of an unknown site.
+
+## Route module map and ownership
+
+- `packages/backend/src/routes/init.ts` - runtime initialization surface
+- `packages/backend/src/routes/requests.ts` - request lifecycle and capability-upgrade route categories (stubbed in T05)
+- `packages/backend/src/routes/subjects.ts` - subject lookup placeholder surface
+- `packages/backend/src/routes/policies.ts` - policy catalog, upgrade propose/approve/apply, and custom pack register/activate/deactivate
+- `packages/backend/src/routes/status.ts` - health/status surface
+
+Representative capability-upgrade paths mounted in T05:
+
+- `/requests/:id/clock/explain`
+- `/requests/:id/verification/*`
+- `/requests/:id/fulfilment/callback`
+- `/requests/:id/appeals*`
+- `/tenants/:tenantId/retention`
+- `/requests/:id/audit/export`
+
+## Error envelope contract
+
+All errors follow:
+
+- `ok: false`
+- `error.id: string` (stable backend identifier, `DSAR-BE-xxxx`)
+- `error.code: string` (deterministic boundary code, e.g. `AUTH_ACTOR_CONTEXT_MISSING`, `REQUEST_VALIDATION_FAILED`, `REQUEST_ROUTE_NOT_FOUND`)
+- `error.docsUrl: string` (canonical link to error catalog entry)
+- `error.message: string`
+- `error.status: number`
+- `error.trace?: object` (safe metadata only)
+
+Canonical catalog: `docs/architecture/error-codes.md`
+
+## Base path behavior
+
+- `options.basePath` normalizes trailing slashes.
+- Routes are matched under `basePath`; a trailing slash on the request path is ignored.
+- Requests outside `basePath` return normalized `REQUEST_ROUTE_NOT_FOUND`.
+- Matching requests continue through shared auth/context handling and normalized envelope conversion.
+
+## Contract and docs endpoints (T06)
+
+- Runtime exposes generated OpenAPI at `/spec.json`.
+- Runtime exposes interactive docs at `/docs`.
+- Both endpoints honor `basePath` mounting, e.g. `/api/v1/spec.json` and `/api/v1/docs`.
+- Spec generation is driven from `packages/backend/src/http-api/api.ts` HttpApi contracts.

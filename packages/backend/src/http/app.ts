@@ -218,16 +218,23 @@ export const createApp = (options: CreateAppOptions): Hono => {
 	scoped.get("/docs", (c) => c.html(options.docsHtml));
 
 	for (const route of options.routes) {
-		scoped.on(route.method, route.path, (c) => {
+		scoped.on(route.method, route.path, async (c) => {
 			const log = requestLog(c);
 			log.set({ dsar: { route: `${route.method} ${route.path}` } });
-			return options.dispatch({
-				log,
-				params: c.req.param(),
-				request: c.req.raw,
-				requestId: requestIds.get(c.req.raw) ?? makeRequestId(),
-				route,
-			});
+			// Rendered here rather than in `onError`: when Hono handles a throw,
+			// evlog attaches the error's message and stack to the event, and a
+			// 4xx must not carry those.
+			try {
+				return await options.dispatch({
+					log,
+					params: c.req.param(),
+					request: c.req.raw,
+					requestId: requestIds.get(c.req.raw) ?? makeRequestId(),
+					route,
+				});
+			} catch (error) {
+				return await options.renderError(error, c.req.raw, log);
+			}
 		});
 	}
 

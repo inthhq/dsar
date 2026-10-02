@@ -35,7 +35,7 @@ export const responseFrom = (
  * Records a mapped backend error on the request's wide event.
  *
  * Every error gets its catalog id, code, and status. Server errors also get
- * the sanitized error and request trace, and mark the event as failed. Client
+ * the sanitized error and request method and path, and mark the event as failed. Client
  * errors do not: a 4xx is the caller's mistake, and its request body can hold
  * subject data that has no business in a log.
  *
@@ -61,9 +61,15 @@ export const logMappedError = (
 	if (input.mapped.status < 500) {
 		return;
 	}
+	// Method and path only. evlog writes the console line with the host's
+	// redaction, which may be off, so request bodies, query strings, and
+	// headers never go on the event.
 	const details = {
 		cause: sanitizeErrorForLog(input.error),
-		request: input.requestTrace,
+		request: {
+			method: input.requestTrace?.method,
+			pathname: input.requestTrace?.pathname,
+		},
 	};
 	log.error(
 		input.error instanceof Error ? input.error : new Error(String(input.error)),

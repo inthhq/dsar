@@ -78,7 +78,12 @@ export interface ObservabilityOptions {
 	readonly include?: readonly string[];
 	/** Route globs to skip. Takes precedence over `include`. */
 	readonly exclude?: readonly string[];
-	/** PII redaction for email, IPv4, JWT, and bearer tokens. On unless disabled. */
+	/**
+	 * PII redaction for email, IPv4, JWT, and bearer tokens. On unless
+	 * disabled. It always covers `drain`. evlog's console output follows its
+	 * global configuration: DSAR sets that only when `level` is set, so a host
+	 * that configures evlog itself controls console redaction.
+	 */
 	readonly redact?: EvlogHonoOptions["redact"];
 	/**
 	 * Also sends this instance's events here. evlog's global output, such as
@@ -215,7 +220,9 @@ export const observabilityMiddleware = (
 
 	const rates = level === undefined ? undefined : ratesFor(level);
 	if (rates !== undefined) {
-		initLogger({ sampling: { rates } });
+		// evlog redacts the console line with this global setting, not the
+		// middleware's, so pass DSAR's redaction through.
+		initLogger({ redact: options?.redact ?? true, sampling: { rates } });
 	}
 
 	return evlog(resolveOptions(options ?? {}));
