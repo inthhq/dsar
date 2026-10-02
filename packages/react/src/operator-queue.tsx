@@ -85,6 +85,7 @@ interface AcmePerson {
 		readonly amountCents: number;
 		readonly createdAt: string;
 		readonly deletedAt: string | null;
+		readonly id: string;
 		readonly sku: string;
 	}>;
 	readonly sessions: AcmeSlice<{
