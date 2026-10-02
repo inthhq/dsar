@@ -12,9 +12,134 @@ This document captures T05 runtime boundaries, route surface, and error contract
 
 - Factory: `dsarInstance(options)`
 - Primary boundary: `handler(request) => Promise<Response>`
-- Mounting: any fetch-compatible runtime (Workers, Bun, Node adapters)
-- Runtime internals: `@effect/platform` web handler boundary via `HttpApp.toWebHandler`
+- Mounting: any fetch-compatible host, such as a Next.js route handler, Bun,
+  a Node adapter, or a gateway that builds one instance per project
+- Routing: a Hono app over the flat route registry in `src/routes`
 - Runtime repo integration: `runtimeReposFromPersistence()` bridges `@dsar/persistence` into `RuntimeServicesTag`
+
+DSAR has no server process of its own. Mount the handler where your app
+already serves HTTP:
+
+```ts
+// app/api/dsar/[...path]/route.ts
+import { dsarInstance, runtimeReposFromPersistence } from "dsar/backend";
+import { makePgPersistenceService } from "dsar/persistence-pg";
+
+const persistence = await makePgPersistenceService({
+  connectionUrl: process.env.DATABASE_URL ?? "",
+});
+
+const dsar = dsarInstance({
+  basePath: "/api/dsar",
+  repos: runtimeReposFromPersistence(persistence),
+  trustedOrigins: ["https://app.example.com"],
+});
+
+export const GET = dsar.handler;
+export const POST = dsar.handler;
+export const PUT = dsar.handler;
+export const PATCH = dsar.handler;
+export const DELETE = dsar.handler;
+export const OPTIONS = dsar.handler;
+```
+
+## Instance options
+
+| Option | Purpose |
+| --- | --- |
+| `repos` | Persistence. Required. The caller owns it and closes it. |
+| `config` | Auth, webhooks, notifications, rate limits, and feature flags. |
+| `adapters` | Notification, storage, and inbound adapters. |
+| `basePath` | Mount prefix, for example `/api/dsar`. |
+| `tenantId` | Binds the instance to one tenant. See [Tenant binding](#tenant-binding). |
+| `requireTenantId` | Refuses to build an instance without `tenantId`. |
+| `trustedOrigins` | Origins allowed to call from a browser: exact origins, `https://*.example.com`, or `*` (no credentials). |
+| `observability` | Request logging through evlog. See [Request logging](#request-logging). |
+| `runWebhookRetryWorker` | Starts a background retry loop. Long-lived servers only. |
+
+The instance also exposes `runWebhookRetries()` and `dispose()`.
+
+## Tenant binding
+
+Without `tenantId`, each protected request takes its tenant from its verified
+identity, and an identity without one gets a `401`.
+
+With `tenantId`, the instance serves one tenant, the way a gateway serves one
+project per instance:
+
+- An identity scoped to another tenant gets a `403` with
+  `AUTH_REQUEST_ACCESS_FORBIDDEN`.
+- An identity without a tenant acts for the instance's tenant.
+- Public routes run in the instance's tenant, and an inbound adapter that
+  routes to another tenant gets a `403`.
+
+`tenantId` must be a non-empty string without surrounding whitespace. Set
+`requireTenantId: true` wherever a missing tenant would be a bug, such as a
+host that looks the tenant up per project.
+
+## Webhook retries
+
+Outbound webhook retries are durable rows with claim leases, so no process has
+to stay alive between them.
+
+- Serverless hosts call `runWebhookRetries()` from a scheduled job, such as a
+  Vercel Cron route. Each call delivers the retries that are due and returns.
+  A tenant-bound instance drains only its own tenant.
+- Long-lived servers can pass `runWebhookRetryWorker: true` instead and call
+  `dispose()` on shutdown to stop the loop. A tenant-bound instance's worker
+  also drains only its own tenant.
+
+Running both, or several instances at once, is safe: a claim stops two
+deliveries of the same attempt.
+
+## Request logging
+
+Each request produces one evlog wide event.
+
+By default DSAR leaves evlog's process-wide configuration to the host: it does
+not call `initLogger`, so the host's drains, plugins, sampling, and service
+name stay in place. It grades each event `warn` (4xx) or `error` (5xx) and
+force-keeps failed and rejected requests through the host's sampling.
+
+Set `level` only where nothing else configures evlog. `"error"`, `"warn"`,
+and `"info"` call `initLogger` with matching sampling rates, which replaces
+the process's evlog state. `"warn"` logs failed and rejected requests and
+nothing else.
+
+```ts
+dsarInstance({
+  // ...
+  observability: {
+    service: "dsar", // set on this instance's events only
+    drain: (ctx) => sendToYourPipeline(ctx.event),
+  },
+});
+```
+
+Redaction of email addresses, IP addresses, JWTs, and bearer tokens is on
+unless `redact: false`. A `drain` receives this instance's events in addition
+to evlog's global output.
+
+Events carry `dsar.requestId` on every request, including unmatched routes,
+plus `dsar.route`, `dsar.tenantId`, and `dsar.principalKind` on matched
+routes. Failed requests add `error.id`, `error.code`, and `error.status`.
+Server errors also record the sanitized error with the request method and
+path. No event carries a request body, query string, or headers, and 4xx
+events carry no error message or stack.
+
+evlog writes its console line with its global redaction setting. When DSAR
+sets `level`, it passes `redact` to `initLogger`; otherwise configure
+redaction in the host's own `initLogger` call.
+
+## Cross-origin requests
+
+`trustedOrigins` adds CORS headers to preflights and to every response,
+including errors:
+
+- An exact origin or a `https://*.example.com` subdomain match echoes the
+  origin and allows credentials.
+- `*` answers with `Access-Control-Allow-Origin: *` and no credentials, so a
+  browser never sends the host's cookies to DSAR on behalf of an unknown site.
 
 ## Route module map and ownership
 
@@ -50,8 +175,8 @@ Canonical catalog: `docs/architecture/error-codes.md`
 ## Base path behavior
 
 - `options.basePath` normalizes trailing slashes.
-- Incoming request paths are stripped against `basePath` before route matching.
-- Non-matching base path requests return normalized `REQUEST_ROUTE_NOT_FOUND`.
+- Routes are matched under `basePath`; a trailing slash on the request path is ignored.
+- Requests outside `basePath` return normalized `REQUEST_ROUTE_NOT_FOUND`.
 - Matching requests continue through shared auth/context handling and normalized envelope conversion.
 
 ## Contract and docs endpoints (T06)

@@ -571,12 +571,19 @@ export const deliverDueWebhookRetries = Effect.fn("deliverDueWebhookRetries")(
  * @returns An effect that runs until interrupted.
  */
 export const runWebhookRetryWorker = Effect.fn("runWebhookRetryWorker")(
-	function* runWebhookRetryWorkerProgram() {
-		yield* deliverDueWebhookRetries().pipe(Effect.catch(() => Effect.void));
+	function* runWebhookRetryWorkerProgram(input?: {
+		/** Only drain this tenant's jobs. Unset drains every tenant. */
+		readonly tenantId?: string;
+	}) {
+		yield* deliverDueWebhookRetries(input).pipe(
+			Effect.catch(() => Effect.void)
+		);
 		yield* Effect.forever(
 			Effect.gen(function* pollDueWebhookRetries() {
 				yield* Effect.sleep(Duration.millis(WEBHOOK_RETRY_WORKER_POLL_MS));
-				yield* deliverDueWebhookRetries().pipe(Effect.catch(() => Effect.void));
+				yield* deliverDueWebhookRetries(input).pipe(
+					Effect.catch(() => Effect.void)
+				);
 			})
 		);
 	}

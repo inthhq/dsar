@@ -8,6 +8,7 @@ import type {
 	NotificationAdapterContract,
 	StorageAdapterContract,
 } from "../adapters";
+import type { ObservabilityOptions } from "../observability/evlog";
 import type { RuntimeRateLimitConfig } from "../rate-limit";
 
 /**
@@ -283,7 +284,44 @@ export interface DsarInstanceOptions {
 	readonly adapters?: Partial<RuntimeAdapters>;
 	/**
 	 * When true, fork the durable webhook retry worker beside the HTTP handler.
+	 * Use it on a long-lived server and call `dispose()` on shutdown. On
+	 * serverless hosts, call `runWebhookRetries()` from a scheduled job instead.
 	 * Tests leave this unset so Vitest does not leak a poll loop.
 	 */
 	readonly runWebhookRetryWorker?: boolean;
+	/**
+	 * Binds the instance to one tenant.
+	 *
+	 * Credentials scoped to another tenant are refused with a 403, and
+	 * credentials without a tenant act for this one. Inbound adapters cannot
+	 * capture into another tenant. Unset, each request's tenant comes from its
+	 * verified identity. Set it wherever one instance serves one project, such
+	 * as a gateway that builds an instance per project.
+	 */
+	readonly tenantId?: string;
+	/**
+	 * Refuse to build an instance without a `tenantId`.
+	 *
+	 * Set it where a missing `tenantId` would be a bug, for example a failed
+	 * project lookup in a multi-tenant host.
+	 *
+	 * @defaultValue false
+	 */
+	readonly requireTenantId?: boolean;
+	/**
+	 * Origins allowed to call the backend from a browser. Entries are exact
+	 * origins, `https://*.example.com` for subdomains, or `*`.
+	 */
+	readonly trustedOrigins?: readonly string[];
+	/**
+	 * Request logging through evlog: one wide event per request, with PII
+	 * redaction on for drains.
+	 *
+	 * Without `level`, DSAR leaves evlog's process-wide configuration to the
+	 * host and force-keeps 4xx and 5xx events through its sampling. If nothing
+	 * in the process configures evlog, successful requests are logged too. Set
+	 * `level: "warn"` to have DSAR configure evlog to log failures only; that
+	 * replaces any evlog configuration the host already set.
+	 */
+	readonly observability?: ObservabilityOptions;
 }

@@ -1,10 +1,8 @@
+import type { RequestLog } from "../observability/log";
+import { silentLog } from "../observability/log";
 import { resolveBackendErrorCatalogEntry } from "../types/error-codes";
 import { errorMappers } from "./errors/mappers";
-import {
-	logMappedError,
-	logUnhandledError,
-	responseFrom,
-} from "./errors/render";
+import { logMappedError, responseFrom } from "./errors/render";
 import { toRequestTrace } from "./errors/request-trace";
 import type { MappedError } from "./errors/shared";
 
@@ -13,18 +11,20 @@ import type { MappedError } from "./errors/shared";
  *
  * @param error - Unhandled error produced by route handlers, middleware, or adapters.
  * @param request - Optional request context used for sanitized request-trace logging.
+ * @param log - The request's wide event. Defaults to recording nothing.
  * @returns A JSON `Response` with catalog-backed `code`, `id`, `docsUrl`, and HTTP status.
  */
 export const toErrorResponse = async (
 	error: unknown,
-	request?: Request
+	request?: Request,
+	log: RequestLog = silentLog
 ): Promise<Response> => {
 	const requestTrace = request ? await toRequestTrace(request) : undefined;
 	for (const mapper of errorMappers) {
 		const mapped = mapper(error);
 		if (mapped) {
 			const catalogEntry = resolveBackendErrorCatalogEntry(mapped.code);
-			logMappedError({
+			logMappedError(log, {
 				catalogEntry,
 				error,
 				mapped,
@@ -39,7 +39,7 @@ export const toErrorResponse = async (
 		status: 500,
 	};
 	const catalogEntry = resolveBackendErrorCatalogEntry(mapped.code);
-	logUnhandledError({
+	logMappedError(log, {
 		catalogEntry,
 		error,
 		mapped,

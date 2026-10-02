@@ -1,162 +1,64 @@
+/**
+ * The package's entry point: `dsarInstance(options).handler(request)`.
+ *
+ * Web `Request` in, web `Response` out, so an instance mounts in a Next.js
+ * route handler, a Node or Bun server, or a gateway that routes many projects
+ * to many instances. There is no DSAR server process to run.
+ *
+ * ## Serverless
+ *
+ * Nothing here needs a long-lived process. Webhook retries are durable rows,
+ * so a scheduled job (Vercel Cron, a queue consumer) can call
+ * {@link DsarInstance.runWebhookRetries} to drain the due ones. A long-lived
+ * server can pass `runWebhookRetryWorker: true` instead, and calls
+ * {@link DsarInstance.dispose} on shutdown.
+ *
+ * ## Tenants
+ *
+ * `tenantId` binds an instance to one tenant, the way `@c15t/backend` binds
+ * one instance to one project. Credentials that name another tenant are
+ * refused, credentials that name none act for this tenant, and inbound
+ * adapters cannot capture into another tenant. Without `tenantId`, each
+ * request's tenant comes from its verified identity, as before.
+ */
 import { PolicyPacksLive } from "@dsar/policy-packs";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
+import * as Fiber from "effect/Fiber";
 import * as OpenApi from "effect/http-api/OpenApi";
-import * as HttpEffect from "effect/http/HttpEffect";
-import * as HttpServerRequest from "effect/http/HttpServerRequest";
-import * as HttpServerResponse from "effect/http/HttpServerResponse";
 import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
 
 import { makeDsarHttpApi, renderDocsHtml } from "./http-api";
+import { createApp } from "./http/app";
+import type { RouteDispatchInput } from "./http/app";
 import {
 	buildRuntimeServices,
 	makeAdapterModule,
 	makeCoreModule,
 } from "./layers";
-import {
-	makeRequestId,
-	resolveRequestContext,
-} from "./middleware/auth-context";
-import { normalizeBasePath, stripBasePath } from "./middleware/base-path";
+import { resolveRequestContext } from "./middleware/auth-context";
+import { normalizeBasePath } from "./middleware/base-path";
 import { toErrorResponse } from "./middleware/errors";
+import { sanitizeErrorForLog } from "./middleware/errors/shared";
 import { enforceIntakeIpRateLimit } from "./rate-limit";
 import { coreRoutes } from "./routes";
-import { matchRoute } from "./routes/helpers";
 import type { RouteDefinition } from "./routes/types";
-import { runWebhookRetryWorker } from "./services/notifications/retry";
-import { InternalRuntimeError, RouteNotFoundError } from "./types/errors";
+import {
+	deliverDueWebhookRetries,
+	runWebhookRetryWorker,
+} from "./services/notifications/retry";
+import { backendErrorCatalogByCode } from "./types/error-codes";
+import { InternalRuntimeError } from "./types/errors";
 import type {
 	DsarInstanceOptions,
 	RuntimeAdapters,
 	RuntimeConfig,
 	RuntimeRepos,
+	RuntimeRequestContext,
 } from "./types/runtime";
 import { RuntimeServicesTag } from "./types/runtime";
-
-const backendLogger = {
-	error: (event: string, payload: Readonly<Record<string, unknown>>): void => {
-		console.error(JSON.stringify({ event, ...payload }));
-	},
-};
-
-const findRoute = (
-	routes: readonly RouteDefinition[],
-	method: string,
-	pathname: string
-):
-	| {
-			readonly route: RouteDefinition;
-			readonly params: Readonly<Record<string, string>>;
-	  }
-	| undefined => {
-	for (const route of routes) {
-		const params = matchRoute(route, method, pathname);
-		if (params) {
-			return { params, route };
-		}
-	}
-	return undefined;
-};
-
-const toTraceRequest = (request: Request) =>
-	Effect.try({
-		catch: () => new Error("clone failed"),
-		try: () => request.clone(),
-	}).pipe(
-		Effect.catch(() => Effect.succeed(request)),
-		Effect.runSync
-	);
-
-/**
- * Converts web `Headers` into a plain record for envelope/response helpers.
- */
-const toHeaderRecord = (headers: Headers): Record<string, string> =>
-	Object.fromEntries(headers.entries());
-
-/**
- * Converts a string map into `HeadersInit` for `Request` construction.
- */
-const toHeadersInit = (
-	headers: Readonly<Record<string, string>>
-): HeadersInit => Object.fromEntries(Object.entries(headers));
-
-/**
- * Normalizes an Effect platform request into a web `Request` so the runtime
- * can preserve the fetch-compatible `dsarInstance` handler contract.
- */
-const toWebRequest = (
-	request: HttpServerRequest.HttpServerRequest
-): Effect.Effect<Request> =>
-	Effect.gen(function* buildWebRequest() {
-		if (
-			request.source instanceof Request &&
-			request.source.bodyUsed === false
-		) {
-			return request.source.clone();
-		}
-
-		const { method } = request;
-		const body =
-			method === "GET" || method === "HEAD"
-				? undefined
-				: yield* request.text.pipe(Effect.catch(() => Effect.succeed("")));
-
-		return new Request(request.url, {
-			body,
-			headers: toHeadersInit(request.headers),
-			method,
-		});
-	});
-
-/**
- * Converts a web `Response` into an `HttpServerResponse` for the
- * `@effect/platform` boundary.
- *
- * @param response - The incoming web `Response` to convert.
- * @returns A Promise resolving to an `HttpServerResponse`. When the
- *   content-type is JSON, the body is parsed via `Effect.try`; if
- *   parsing fails the raw text is returned as a fallback.
- */
-const fromWebResponse = async (
-	response: Response
-): Promise<HttpServerResponse.HttpServerResponse> => {
-	const headers = toHeaderRecord(response.headers);
-	const baseOptions = {
-		headers,
-		status: response.status,
-		statusText: response.statusText,
-	};
-
-	if (response.body === null) {
-		return HttpServerResponse.empty(baseOptions);
-	}
-
-	const text = await response.text();
-	if (text.length === 0) {
-		return HttpServerResponse.empty(baseOptions);
-	}
-
-	const contentType = response.headers.get("content-type") ?? "";
-	if (contentType.includes("application/json")) {
-		return Effect.runSync(
-			Effect.try({
-				catch: () => new Error("Invalid JSON in response body"),
-				try: () => JSON.parse(text) as unknown,
-			}).pipe(
-				Effect.flatMap((parsed) =>
-					HttpServerResponse.json(parsed, baseOptions)
-				),
-				Effect.catch(() =>
-					Effect.succeed(HttpServerResponse.text(text, baseOptions))
-				)
-			)
-		);
-	}
-
-	return HttpServerResponse.text(text, baseOptions);
-};
 
 /**
  * Mountable DSAR backend runtime exposing a fetch-compatible handler, router
@@ -165,8 +67,27 @@ const fromWebResponse = async (
 export interface DsarInstance {
 	/**
 	 * Fetch-compatible request handler for mounting in any host runtime.
+	 *
+	 * @example
+	 * ```ts
+	 * export const POST = (request: Request) => instance.handler(request);
+	 * ```
 	 */
 	readonly handler: (request: Request) => Promise<Response>;
+	/**
+	 * Delivers outbound webhook retries that are due now, then resolves.
+	 *
+	 * For serverless hosts: call it from a scheduled job. Claims make it safe
+	 * to run from several places at once. A tenant-bound instance only drains
+	 * its own tenant.
+	 */
+	readonly runWebhookRetries: () => Promise<void>;
+	/**
+	 * Stops the webhook retry worker, if this instance started one, and
+	 * releases the instance's runtime. Persistence passed in through `repos`
+	 * belongs to the caller and stays open.
+	 */
+	readonly dispose: () => Promise<void>;
 	/** Runtime router metadata for integrations and diagnostics. */
 	readonly app: {
 		/**
@@ -206,6 +127,48 @@ export interface DsarInstance {
 }
 
 /**
+ * Refuses tenant configuration that would scope queries to the wrong place.
+ *
+ * The tenant is an isolation boundary, so a mistake here stops the instance
+ * from being built rather than degrading to per-request tenants nobody meant.
+ *
+ * @param options - The instance's tenant options.
+ * @throws {TypeError} When `tenantId` is not a string or `requireTenantId` is
+ *   not a boolean.
+ * @throws {Error} When `tenantId` is empty or padded, or `requireTenantId` is
+ *   set without a `tenantId`.
+ */
+export const assertTenantOptions = (
+	options: Pick<DsarInstanceOptions, "requireTenantId" | "tenantId">
+): void => {
+	// Read as unknown: a JavaScript config can pass anything.
+	const tenantId: unknown = options.tenantId;
+	if (tenantId !== undefined) {
+		if (typeof tenantId !== "string") {
+			throw new TypeError(
+				`[dsar] tenantId must be a string, received ${tenantId === null ? "null" : typeof tenantId}.`
+			);
+		}
+		if (tenantId.trim() === "" || tenantId.trim() !== tenantId) {
+			throw new Error(
+				`[dsar] tenantId ${JSON.stringify(tenantId)} is empty or has surrounding whitespace.`
+			);
+		}
+	}
+	const requireTenantId: unknown = options.requireTenantId;
+	if (requireTenantId !== undefined && typeof requireTenantId !== "boolean") {
+		throw new TypeError(
+			`[dsar] requireTenantId must be a boolean, received ${requireTenantId === null ? "null" : typeof requireTenantId}.`
+		);
+	}
+	if (requireTenantId === true && tenantId === undefined) {
+		throw new Error(
+			"[dsar] requireTenantId is set but tenantId is missing. Refusing to build an instance that would take its tenant from each request."
+		);
+	}
+};
+
+/**
  * Creates a mountable backend runtime with basePath-aware routing and
  * normalised error handling around Effect-based handlers.
  *
@@ -218,10 +181,15 @@ export interface DsarInstance {
  *   others are optional.
  * @param [options.adapters] - Optional adapter overrides for notifications,
  *   storage, and inbound integrations.
+ * @param [options.tenantId] - Binds the instance to one tenant.
+ * @param [options.observability] - Request logging through evlog.
+ * @param [options.trustedOrigins] - Origins allowed to call from a browser.
  * @returns A {@link DsarInstance} with a fetch-compatible `handler`, router
  *   metadata (`app`), an OpenAPI spec, and the resolved dependency `context`.
  */
 export const dsarInstance = (options: DsarInstanceOptions): DsarInstance => {
+	assertTenantOptions(options);
+	const { tenantId } = options;
 	const basePath = normalizeBasePath(options.basePath);
 	const coreModule = makeCoreModule({
 		config: options.config,
@@ -233,140 +201,124 @@ export const dsarInstance = (options: DsarInstanceOptions): DsarInstance => {
 	const { repos } = coreModule;
 	const httpApi = makeDsarHttpApi(basePath);
 	const spec = OpenApi.fromApi(httpApi);
-	const specUrlPath = `${basePath === "/" ? "" : basePath}/spec.json`;
-	const policyPacksRuntime = ManagedRuntime.make(
-		PolicyPacksLive.pipe(Layer.orDie)
-	);
+	const specUrlPath = `${basePath}/spec.json`;
+	const runtime = ManagedRuntime.make(PolicyPacksLive.pipe(Layer.orDie));
+	const rateLimited = backendErrorCatalogByCode.REQUEST_RATE_LIMITED;
 
-	const dispatchRequest = async (request: Request): Promise<Response> => {
-		try {
-			const traceRequest = toTraceRequest(request);
-			const url = new URL(request.url);
-			const pathname = stripBasePath(url.pathname, basePath);
-			if (!pathname) {
-				return await toErrorResponse(
-					new RouteNotFoundError({
-						method: request.method,
-						path: url.pathname,
-					}),
-					traceRequest
-				);
+	const runRoute = async ({
+		log,
+		params,
+		request,
+		requestId,
+		route,
+	}: RouteDispatchInput): Promise<Response> => {
+		if (route.publicIntake === true) {
+			const limited = await enforceIntakeIpRateLimit({
+				config,
+				request,
+				requestId,
+				route: { method: route.method, path: route.path },
+			});
+			if (limited) {
+				return limited;
 			}
-
-			if (pathname === "/spec.json") {
-				return new Response(JSON.stringify(spec), {
-					headers: {
-						"content-type": "application/json",
-					},
-					status: 200,
-				});
-			}
-
-			if (pathname === "/docs") {
-				return new Response(renderDocsHtml(specUrlPath), {
-					headers: {
-						"content-type": "text/html; charset=utf-8",
-					},
-					status: 200,
-				});
-			}
-
-			const matched = findRoute(coreRoutes, request.method, pathname);
-			if (!matched) {
-				return await toErrorResponse(
-					new RouteNotFoundError({
-						method: request.method,
-						path: pathname,
-					}),
-					traceRequest
-				);
-			}
-
-			const requestId = makeRequestId();
-			if (matched.route.publicIntake === true) {
-				const limited = await enforceIntakeIpRateLimit({
-					config,
-					request,
-					requestId,
-					route: {
-						method: matched.route.method,
-						path: matched.route.path,
-					},
-				});
-				if (limited) {
-					return limited;
-				}
-			}
-
-			const requestContext =
-				matched.route.protected === true
-					? {
-							...(await resolveRequestContext(request, config.auth)),
-							requestId,
-						}
-					: {
-							requestId,
-						};
-
-			const services = buildRuntimeServices(
-				coreModule,
-				adapterModule,
-				requestContext
-			);
-
-			const exitResult = await policyPacksRuntime.runPromiseExit(
-				matched.route
-					.handler({
-						params: matched.params,
-						request,
-					})
-					.pipe(Effect.provideService(RuntimeServicesTag, services))
-			);
-			if (Exit.isFailure(exitResult)) {
-				const { cause } = exitResult;
-				if (Cause.hasDies(cause)) {
-					backendLogger.error("[@dsar/backend] defect", {
-						cause: Cause.pretty(cause),
-					});
-				}
-				const errorResult = Cause.findError(cause);
-				const error =
-					errorResult._tag === "Success"
-						? errorResult.success
-						: new InternalRuntimeError({
-								message: "Unexpected runtime defect.",
-							});
-				return await toErrorResponse(error, traceRequest);
-			}
-			return exitResult.value;
-		} catch (error) {
-			return await toErrorResponse(error, toTraceRequest(request));
 		}
+
+		const requestContext: RuntimeRequestContext =
+			route.protected === true
+				? {
+						...(await resolveRequestContext(request, config.auth, tenantId)),
+						requestId,
+					}
+				: { requestId, tenantId };
+		log.set({
+			dsar: {
+				principalKind: requestContext.actor?.principalKind,
+				tenantId: requestContext.tenantId,
+			},
+		});
+
+		const services = buildRuntimeServices(
+			coreModule,
+			adapterModule,
+			requestContext
+		);
+		const exit = await runtime.runPromiseExit(
+			route
+				.handler({ params, request })
+				.pipe(Effect.provideService(RuntimeServicesTag, services))
+		);
+		if (Exit.isSuccess(exit)) {
+			return exit.value;
+		}
+		const { cause } = exit;
+		const failure = Cause.findError(cause);
+		if (failure._tag === "Success") {
+			return toErrorResponse(failure.success, request, log);
+		}
+		// Sanitized like any 5xx error: a defect can carry provider or request
+		// data in extra properties.
+		log.set({ defect: sanitizeErrorForLog(Cause.squash(cause)) });
+		return toErrorResponse(
+			new InternalRuntimeError({ message: "Unexpected runtime defect." }),
+			request,
+			log
+		);
 	};
 
-	const platformApp = Effect.gen(function* runPlatformApp() {
-		const serverRequest = yield* HttpServerRequest.HttpServerRequest;
-		const sourceRequest = yield* toWebRequest(serverRequest);
-		const webResponse = yield* Effect.promise(() =>
-			dispatchRequest(sourceRequest)
-		);
-		return yield* Effect.promise(() => fromWebResponse(webResponse));
+	const dispatch = async ({
+		log,
+		params,
+		request,
+		requestId,
+		route,
+	}: RouteDispatchInput): Promise<Response> => {
+		const response = await runRoute({ log, params, request, requestId, route });
+		// Rate limits answer with a ready-made 429 rather than a typed failure,
+		// so record the catalog entry here to match every other failure.
+		if (response.status === rateLimited.status) {
+			log.set({
+				error: {
+					code: rateLimited.code,
+					id: rateLimited.id,
+					status: rateLimited.status,
+				},
+			});
+		}
+		return response;
+	};
+
+	const app = createApp({
+		basePath,
+		dispatch,
+		docsHtml: renderDocsHtml(specUrlPath),
+		observability: options.observability,
+		renderError: (error, request, log) => toErrorResponse(error, request, log),
+		routes: coreRoutes,
+		spec,
+		tenantId,
+		trustedOrigins: options.trustedOrigins,
 	});
 
-	const platformHandler = HttpEffect.toWebHandler(platformApp);
-	const handler = (request: Request): Promise<Response> =>
-		platformHandler(request);
-
-	if (options.runWebhookRetryWorker === true) {
-		const workerServices = buildRuntimeServices(coreModule, adapterModule, {
-			requestId: "webhook-retry-worker",
-		});
-		Effect.runFork(
-			runWebhookRetryWorker().pipe(
-				Effect.provideService(RuntimeServicesTag, workerServices)
+	const backgroundServices = buildRuntimeServices(coreModule, adapterModule, {
+		requestId: "webhook-retry-worker",
+		tenantId,
+	});
+	const runWebhookRetries = (): Promise<void> =>
+		runtime.runPromise(
+			deliverDueWebhookRetries(tenantId === undefined ? {} : { tenantId }).pipe(
+				Effect.provideService(RuntimeServicesTag, backgroundServices)
 			)
 		);
-	}
+
+	const worker =
+		options.runWebhookRetryWorker === true
+			? runtime.runFork(
+					runWebhookRetryWorker(
+						tenantId === undefined ? {} : { tenantId }
+					).pipe(Effect.provideService(RuntimeServicesTag, backgroundServices))
+				)
+			: undefined;
 
 	return {
 		app: {
@@ -382,6 +334,13 @@ export const dsarInstance = (options: DsarInstanceOptions): DsarInstance => {
 			config,
 			repos,
 		},
-		handler,
+		dispose: async () => {
+			if (worker) {
+				await Effect.runPromise(Fiber.interrupt(worker));
+			}
+			await runtime.dispose();
+		},
+		handler: async (request) => await app.fetch(request),
+		runWebhookRetries,
 	};
 };

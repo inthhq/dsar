@@ -5,7 +5,10 @@ import { backendErrorCatalogByCode } from "../../types/error-codes";
 import { RequestValidationError } from "../../types/errors";
 import { RuntimeServicesTag } from "../../types/runtime";
 import { jsonResponse } from "../helpers";
-import { captureInboundRequest } from "../inbound-capture";
+import {
+	captureInboundRequest,
+	requireInstanceTenant,
+} from "../inbound-capture";
 import type { RouteDefinition } from "../types";
 import { mapSlackInboundReceiveError, parseSlackPayload } from "./shared";
 
@@ -55,6 +58,7 @@ export const slackWebhookRoute: RouteDefinition = {
 			if (slackPayload.kind === "url_verification") {
 				return jsonResponse({ challenge: slackPayload.challenge }, 200);
 			}
+			yield* requireInstanceTenant(slackPayload.route.tenantId);
 			const limited = yield* Effect.promise(() =>
 				enforceIntakeTenantRateLimit({
 					request,
