@@ -20,6 +20,7 @@ bunx turbo run dev --filter=./examples/kitchen-sink
 ```
 
 - `examples/kitchen-sink` shows the runtime-side auth wiring.
+- `examples/nextjs-deletion-webhook` is a Next.js App Router handler for signed outbound webhooks. It deletes a demo user on `request_fulfilled`, not on capture.
 
 ## Auth Model
 
