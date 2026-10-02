@@ -1921,6 +1921,16 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           },
                         ],
                       },
+                      "rawContextRef": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                          },
+                          {
+                            "type": "null",
+                          },
+                        ],
+                      },
                       "rawText": {
                         "type": "string",
                       },
@@ -1945,6 +1955,16 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           },
                         ],
                       },
+                      "type": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                          },
+                          {
+                            "type": "null",
+                          },
+                        ],
+                      },
                     },
                     "required": [
                       "channel",
@@ -1953,12 +1973,41 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     ],
                     "type": "object",
                   },
+                  "isComplex": {
+                    "anyOf": [
+                      {
+                        "type": "boolean",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
                   "jurisdiction": {
                     "type": "string",
                   },
                   "receivedAt": {
                     "anyOf": [
                       {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+                  "requestType": {
+                    "anyOf": [
+                      {
+                        "enum": [
+                          "access",
+                          "delete",
+                          "correct",
+                          "portability",
+                          "restriction",
+                          "objection",
+                          "other",
+                        ],
                         "type": "string",
                       },
                       {
@@ -2014,6 +2063,16 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "type",
                         ],
                         "type": "object",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+                  "requiresVerification": {
+                    "anyOf": [
+                      {
+                        "type": "boolean",
                       },
                       {
                         "type": "null",
@@ -2205,6 +2264,16 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           },
                         ],
                       },
+                      "rawContextRef": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                          },
+                          {
+                            "type": "null",
+                          },
+                        ],
+                      },
                       "rawText": {
                         "type": "string",
                       },
@@ -2229,6 +2298,16 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           },
                         ],
                       },
+                      "type": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                          },
+                          {
+                            "type": "null",
+                          },
+                        ],
+                      },
                     },
                     "required": [
                       "channel",
@@ -2237,12 +2316,41 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     ],
                     "type": "object",
                   },
+                  "isComplex": {
+                    "anyOf": [
+                      {
+                        "type": "boolean",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
                   "jurisdiction": {
                     "type": "string",
                   },
                   "receivedAt": {
                     "anyOf": [
                       {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+                  "requestType": {
+                    "anyOf": [
+                      {
+                        "enum": [
+                          "access",
+                          "delete",
+                          "correct",
+                          "portability",
+                          "restriction",
+                          "objection",
+                          "other",
+                        ],
                         "type": "string",
                       },
                       {
@@ -2298,6 +2406,16 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "type",
                         ],
                         "type": "object",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+                  "requiresVerification": {
+                    "anyOf": [
+                      {
+                        "type": "boolean",
                       },
                       {
                         "type": "null",

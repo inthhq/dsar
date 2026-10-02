@@ -15,7 +15,6 @@ import {
 import type { MappedError } from "./shared";
 import {
 	asRecordField,
-	asString,
 	asStringArray,
 	asStringField,
 	getErrorMessage,
@@ -64,21 +63,6 @@ const mapForbidden = (error: unknown): MappedError | undefined => {
 	return undefined;
 };
 
-const resolveValidationCode = (
-	error: Readonly<Record<string, unknown>>
-): MappedError["code"] => {
-	const reasonCode = asString(error.reasonCode);
-	if (reasonCode) {
-		return toCatalogCode(reasonCode);
-	}
-	const details = asRecordField(error, "details");
-	const reasonFromDetails = details ? asString(details.reasonCode) : undefined;
-	if (reasonFromDetails) {
-		return toCatalogCode(reasonFromDetails);
-	}
-	return "REQUEST_VALIDATION_FAILED";
-};
-
 const mapValidation = (error: unknown): MappedError | undefined => {
 	if (
 		!(error instanceof RequestValidationError) &&
@@ -87,18 +71,21 @@ const mapValidation = (error: unknown): MappedError | undefined => {
 		return undefined;
 	}
 	const errorRecord = asRecord(error);
-	const trace =
-		errorRecord && "details" in errorRecord
-			? asRecord(errorRecord.details)
-			: undefined;
-	const code = errorRecord
-		? resolveValidationCode(errorRecord)
-		: "REQUEST_VALIDATION_FAILED";
+	const details =
+		error instanceof RequestValidationError
+			? error.details
+			: asRecordField(errorRecord ?? {}, "details");
+	const requested = toCatalogCode(
+		getStringField(error, "reasonCode", "REQUEST_VALIDATION_FAILED")
+	);
+	const catalog = resolveBackendErrorCatalogEntry(requested);
+	const code =
+		catalog.status >= 500 ? "REQUEST_VALIDATION_FAILED" : catalog.code;
 	return {
 		code,
 		message: getErrorMessage(error, "Validation failed."),
 		status: resolveBackendErrorCatalogEntry(code).status,
-		trace,
+		trace: details,
 	};
 };
 

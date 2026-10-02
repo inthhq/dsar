@@ -18,6 +18,28 @@ describe("storage-vercel-blob mappers", () => {
 		);
 	});
 
+	it("sanitises path-traversal segments in generated keys", () => {
+		const key = buildVercelBlobArtifactKey(
+			{
+				artifactId: "../passwd",
+				category: "../secret",
+				fileName: "../escape.pdf",
+				manifestId: "..",
+				requestId: "../..",
+			},
+			"../artifacts"
+		);
+		expect(key.split("/").includes("..")).toBe(false);
+		expect(key.split("/").includes(".")).toBe(false);
+		expect(key).toBe("..-artifacts/..-../_/..-secret/raw/full/..-escape.pdf");
+	});
+
+	it("returns an explicit key override without sanitising it", () => {
+		expect(
+			buildVercelBlobArtifactKey({ key: "../explicit/path" }, "artifacts")
+		).toBe("../explicit/path");
+	});
+
 	it("maps blob head output into normalized metadata", () => {
 		const metadata = mapBlobHeadToMetadata({
 			head: {

@@ -5,6 +5,7 @@ import type {
 	DeliveryPackage,
 	FulfillmentManifest,
 	Requestor,
+	RequestType,
 	VerificationCase,
 } from "@dsar/schema";
 
@@ -27,6 +28,12 @@ export interface IntakePayload {
 	readonly requestor?: Requestor;
 	/** Optional authority evidence context for represented requests. */
 	readonly authority?: Authority;
+	/** Optional DSAR right discriminator used during policy evaluation. */
+	readonly requestType?: RequestType;
+	/** Optional flag that policy evaluation treats as requiring verification. */
+	readonly requiresVerification?: boolean;
+	/** Optional flag that policy evaluation treats as a complex request. */
+	readonly isComplex?: boolean;
 }
 
 /**

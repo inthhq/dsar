@@ -422,10 +422,8 @@ describe(dsarInstance, () => {
 			401,
 			"AUTH_ACTOR_CONTEXT_MISSING",
 		]);
-		expect([400, 500]).toContain(badPayload.status);
-		expect(["REQUEST_VALIDATION_FAILED", "INTERNAL_RUNTIME_ERROR"]).toContain(
-			badPayloadBody.error.code
-		);
+		expect(badPayload.status).toBe(400);
+		expect(badPayloadBody.error.code).toBe("REQUEST_VALIDATION_FAILED");
 		expect([
 			{
 				docsUrl: notFoundBody.error.docsUrl,
@@ -2044,6 +2042,7 @@ describe(dsarInstance, () => {
 					body: JSON.stringify({
 						intakeSource: {
 							channel: "api",
+							rawText: "please provide my data",
 							receivedAt: "2026-01-01T00:00:00.000Z",
 							type: "api",
 						},
