@@ -64,15 +64,19 @@ export const logMappedError = (
 	// Method and path only. evlog writes the console line with the host's
 	// redaction, which may be off, so request bodies, query strings, and
 	// headers never go on the event.
-	const details = {
-		cause: sanitizeErrorForLog(input.error),
+	const sanitized = sanitizeErrorForLog(input.error);
+	// A fresh Error rather than the original: evlog serializes extra
+	// properties such as `data` or `cause`, which can carry request payloads.
+	const logged = new Error(String(sanitized.message));
+	logged.name = typeof sanitized.name === "string" ? sanitized.name : "Error";
+	if (typeof sanitized.stack === "string") {
+		logged.stack = sanitized.stack;
+	}
+	log.error(logged, {
+		cause: sanitized,
 		request: {
 			method: input.requestTrace?.method,
 			pathname: input.requestTrace?.pathname,
 		},
-	};
-	log.error(
-		input.error instanceof Error ? input.error : new Error(String(input.error)),
-		details
-	);
+	});
 };
