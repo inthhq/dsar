@@ -65,6 +65,33 @@ export interface InboundCaptureInput {
 }
 
 /**
+ * Refuses an inbound route that targets another tenant on a tenant-bound
+ * instance, whatever the adapter's routing says.
+ *
+ * Inbound handlers call this before tenant-scoped rate limiting, so a
+ * rejected payload cannot spend another tenant's intake budget.
+ *
+ * @param routeTenantId - Tenant the adapter routed the event to.
+ * @returns An Effect that fails with {@link ForbiddenRequestError} on mismatch.
+ */
+export const requireInstanceTenant = (
+	routeTenantId: string
+): Effect.Effect<void, ForbiddenRequestError, RuntimeServicesTag> =>
+	Effect.gen(function* requireInstanceTenantProgram() {
+		const { requestContext } = yield* Effect.service(RuntimeServicesTag);
+		if (
+			requestContext.tenantId !== undefined &&
+			requestContext.tenantId !== routeTenantId
+		) {
+			return yield* Effect.fail(
+				new ForbiddenRequestError({
+					message: "Inbound route targets a different tenant.",
+				})
+			);
+		}
+	});
+
+/**
  * Captures an inbound adapter event into the request lifecycle service.
  *
  * @param input - Canonical inbound capture input resolved by an adapter.
@@ -78,19 +105,7 @@ export const captureInboundRequest = (
 	RuntimeServicesTag
 > =>
 	Effect.gen(function* captureInboundRequestProgram() {
-		// A tenant-bound instance only captures into its own tenant, whatever
-		// the adapter's routing says.
-		const { requestContext } = yield* Effect.service(RuntimeServicesTag);
-		if (
-			requestContext.tenantId !== undefined &&
-			requestContext.tenantId !== input.route.tenantId
-		) {
-			return yield* Effect.fail(
-				new ForbiddenRequestError({
-					message: "Inbound route targets a different tenant.",
-				})
-			);
-		}
+		yield* requireInstanceTenant(input.route.tenantId);
 		if (input.intent?.isDsar === false) {
 			return accepted({
 				reason: input.intent.reason ?? "non-dsar",

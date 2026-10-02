@@ -5,7 +5,10 @@ import { enforceIntakeTenantRateLimit } from "../../rate-limit";
 import { backendErrorCatalogByCode } from "../../types/error-codes";
 import { RequestValidationError } from "../../types/errors";
 import { RuntimeServicesTag } from "../../types/runtime";
-import { captureInboundRequest } from "../inbound-capture";
+import {
+	captureInboundRequest,
+	requireInstanceTenant,
+} from "../inbound-capture";
 import type { RouteDefinition } from "../types";
 import { parseInboundPayload } from "./shared";
 
@@ -64,6 +67,7 @@ export const resendWebhookRoute: RouteDefinition = {
 					})
 				);
 			const inboundPayload = parseInboundPayload(received.payload);
+			yield* requireInstanceTenant(inboundPayload.route.tenantId);
 			const limited = yield* Effect.promise(() =>
 				enforceIntakeTenantRateLimit({
 					request,

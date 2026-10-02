@@ -48,6 +48,7 @@ import {
 	deliverDueWebhookRetries,
 	runWebhookRetryWorker,
 } from "./services/notifications/retry";
+import { backendErrorCatalogByCode } from "./types/error-codes";
 import { InternalRuntimeError } from "./types/errors";
 import type {
 	DsarInstanceOptions,
@@ -201,14 +202,16 @@ export const dsarInstance = (options: DsarInstanceOptions): DsarInstance => {
 	const spec = OpenApi.fromApi(httpApi);
 	const specUrlPath = `${basePath}/spec.json`;
 	const runtime = ManagedRuntime.make(PolicyPacksLive.pipe(Layer.orDie));
+	const rateLimited = backendErrorCatalogByCode.REQUEST_RATE_LIMITED;
 
-	const dispatch = async ({
+	const runRoute = async ({
 		log,
 		params,
 		request,
 		requestId,
 		route,
 	}: RouteDispatchInput): Promise<Response> => {
+		log.set({ dsar: { tenantId } });
 		if (route.publicIntake === true) {
 			const limited = await enforceIntakeIpRateLimit({
 				config,
@@ -259,6 +262,28 @@ export const dsarInstance = (options: DsarInstanceOptions): DsarInstance => {
 			request,
 			log
 		);
+	};
+
+	const dispatch = async ({
+		log,
+		params,
+		request,
+		requestId,
+		route,
+	}: RouteDispatchInput): Promise<Response> => {
+		const response = await runRoute({ log, params, request, requestId, route });
+		// Rate limits answer with a ready-made 429 rather than a typed failure,
+		// so record the catalog entry here to match every other failure.
+		if (response.status === rateLimited.status) {
+			log.set({
+				error: {
+					code: rateLimited.code,
+					id: rateLimited.id,
+					status: rateLimited.status,
+				},
+			});
+		}
+		return response;
 	};
 
 	const app = createApp({

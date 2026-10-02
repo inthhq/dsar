@@ -13,6 +13,7 @@ import type {
 	ErrorEnvelope,
 	InboundAdapterContract,
 	NotificationAdapterContract,
+	RateLimitStore,
 	StorageAdapterContract,
 } from "../src";
 import { assertTenantOptions, dsarInstance, isOriginTrusted } from "../src";
@@ -685,8 +686,21 @@ describe("tenant-bound background work", () => {
 				}),
 			validateConfig: () => Effect.void,
 		};
+		const consumedKeys: string[] = [];
+		const store: RateLimitStore = {
+			consume: (input) => {
+				consumedKeys.push(input.key);
+				return {
+					allowed: true,
+					limit: input.limit,
+					remaining: input.limit - 1,
+					resetAtMs: input.nowMs + input.windowMs,
+				};
+			},
+		};
 		const instance = dsarInstance({
 			adapters: { inbound },
+			config: { rateLimit: { store } },
 			observability: { level: "silent" },
 			repos: { persistence },
 			tenantId: "tenant-other",
@@ -713,5 +727,42 @@ describe("tenant-bound background work", () => {
 		expect(await Effect.runPromise(persistence.requests.list())).toHaveLength(
 			0
 		);
+		// The rejected payload must not spend the targeted tenant's budget.
+		expect(consumedKeys.some((key) => key.includes("tenant-default"))).toBe(
+			false
+		);
+	});
+
+	it("records rate-limit rejections like other failures", async () => {
+		const recorder = recordEvents();
+		const store: RateLimitStore = {
+			consume: (input) => ({
+				allowed: false,
+				limit: input.limit,
+				remaining: 0,
+				resetAtMs: input.nowMs + input.windowMs,
+			}),
+		};
+		const instance = dsarInstance({
+			config: { rateLimit: { store } },
+			observability: { drain: recorder.drain, level: "warn" },
+			repos: { persistence: makeMemoryPersistence() },
+			tenantId: "tenant-default",
+		});
+
+		const response = await instance.handler(
+			new Request("https://example.test/webhooks/inbound/resend", {
+				body: "{}",
+				headers: { "content-type": "application/json" },
+				method: "POST",
+			})
+		);
+
+		expect(response.status).toBe(429);
+		await vi.waitFor(() => expect(recorder.events).toHaveLength(1));
+		expect(recorder.events[0]).toMatchObject({
+			dsar: { tenantId: "tenant-default" },
+			error: { code: "REQUEST_RATE_LIMITED", status: 429 },
+		});
 	});
 });
