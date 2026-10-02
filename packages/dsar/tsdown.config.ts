@@ -50,6 +50,7 @@ export default defineConfig({
 		"auth-unkey": "src/auth-unkey.ts",
 		backend: "src/backend.ts",
 		bin: "src/bin.ts",
+		chat: "src/chat.ts",
 		cli: "src/cli.ts",
 		core: "src/core.ts",
 		"inbound-resend": "src/inbound-resend.ts",

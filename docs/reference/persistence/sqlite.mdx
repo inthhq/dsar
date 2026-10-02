@@ -15,7 +15,11 @@ group: reference-persistence
 | npm             | `npm install dsar effect @effect/sql-sqlite-node` |
 | pnpm            | `pnpm add dsar effect @effect/sql-sqlite-node`    |
 | yarn            | `yarn add dsar effect @effect/sql-sqlite-node`    |
-| bun             | `bun add dsar effect @effect/sql-sqlite-node`     |
+| bun             | `bun add dsar effect @effect/sql-sqlite-bun`      |
+
+The driver follows the runtime: Node.js loads `@effect/sql-sqlite-node` and
+Bun loads `@effect/sql-sqlite-bun`. Install the one for the runtime you deploy
+on.
 
 ## Quickstart
 

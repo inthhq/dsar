@@ -13,3 +13,7 @@ Libraries an adapter needs are optional peer dependencies. Install the ones
 for the subpaths you import, for example `@effect/sql-pg` for
 `dsar/persistence-pg`, `@aws-sdk/client-s3` for `dsar/storage-s3`, or `react`
 for `dsar/react`. `effect` is a required peer.
+
+The Chat SDK state adapter, `makePersistenceStateAdapter`, moves from the root
+`dsar` entry to `dsar/chat`, so the root entry typechecks without `chat`
+installed.

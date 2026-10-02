@@ -12,8 +12,3 @@ export type {
 	ResolvedCoreClientConfig,
 	SelfHostedCoreClientConfig,
 } from "./types";
-export { makePersistenceStateAdapter } from "./chat";
-export type {
-	PersistenceStateAdapterOptions,
-	PersistenceStateAdapterTenantResolution,
-} from "./chat";

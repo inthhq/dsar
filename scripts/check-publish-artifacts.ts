@@ -9,6 +9,8 @@
  * - a `workspace:` or `catalog:` specifier left in the packed manifest
  * - an export target missing from the tarball
  * - a React export that does not start with "use client"
+ * - an export that loads without optional peers but whose declarations import
+ *   one, which fails typechecking for consumers who never installed it
  * - an export that cannot be imported, unless the missing module is one of
  *   that package's optional peers (adapter subpaths need their own SDKs)
  * - a `dsar` binary that does not start
@@ -48,6 +50,17 @@ interface PackageManifest {
 
 const repository = path.resolve(import.meta.dirname, "..");
 const packageDirectory = path.join(repository, "packages/dsar");
+/**
+ * Optional peers an export may name in its declarations even though its code
+ * loads without them: the export exists for users of that peer.
+ */
+const declarationPeers: Readonly<Record<string, readonly string[]>> = {
+	"./chat": ["chat"],
+	"./node-sdk/webhooks/express": ["express"],
+	"./node-sdk/webhooks/hono": ["hono"],
+	"./node-sdk/webhooks/next": ["next"],
+};
+
 /** Exports whose module must be a React client module. */
 const clientExports = ["./react"] as const;
 const dependencyFields = [
@@ -142,6 +155,51 @@ const assertClientExports = (
 			fail(`Export "${subpath}" (${file}) does not start with "use client".`);
 		}
 	}
+};
+
+const bareImports = /(?:from|import)\s*\(?\s*["']([^"'.][^"']*)["']/gu;
+const relativeImports = /(?:from|import)\s*\(?\s*["'](\.\.?\/[^"']+)["']/gu;
+
+const packageNameOf = (specifier: string): string =>
+	specifier.startsWith("@")
+		? specifier.split("/").slice(0, 2).join("/")
+		: (specifier.split("/")[0] ?? specifier);
+
+/**
+ * Lists the packages an export's declarations import, following relative
+ * imports into shared declaration chunks.
+ */
+const declarationImports = (
+	installed: string,
+	typesFile: string
+): ReadonlySet<string> => {
+	const packages = new Set<string>();
+	const seen = new Set<string>();
+	const pending = [path.join(installed, typesFile)];
+	for (let file = pending.pop(); file !== undefined; file = pending.pop()) {
+		if (seen.has(file) || !existsSync(file)) {
+			continue;
+		}
+		seen.add(file);
+		const source = readFileSync(file, "utf8");
+		for (const [, specifier] of source.matchAll(bareImports)) {
+			if (specifier && !specifier.startsWith("node:")) {
+				packages.add(packageNameOf(specifier));
+			}
+		}
+		for (const [, relative] of source.matchAll(relativeImports)) {
+			if (relative) {
+				// Declarations import sibling chunks by their JavaScript name.
+				pending.push(
+					path
+						.resolve(path.dirname(file), relative)
+						.replace(/\.mjs$/u, ".d.mts")
+						.replace(/(?<!\.d)\.js$/u, ".d.ts")
+				);
+			}
+		}
+	}
+	return packages;
 };
 
 const optionalPeers = (manifest: PackageManifest): ReadonlySet<string> =>
@@ -243,11 +301,28 @@ const main = (): void => {
 			env
 		)) {
 			if (missing === null) {
+				const subpath =
+					specifier === manifest.name
+						? "."
+						: `./${specifier.slice(manifest.name.length + 1)}`;
+				const target = manifest.exports?.[subpath];
+				const typesFile =
+					typeof target === "string" ? undefined : target?.types;
+				for (const imported of typesFile
+					? declarationImports(installed, typesFile)
+					: []) {
+					if (
+						peers.has(imported) &&
+						!declarationPeers[subpath]?.includes(imported)
+					) {
+						fail(
+							`"${specifier}" loads without optional peers, but its declarations import "${imported}". Consumers without it cannot typecheck.`
+						);
+					}
+				}
 				continue;
 			}
-			const peer = missing.startsWith("@")
-				? missing.split("/").slice(0, 2).join("/")
-				: (missing.split("/")[0] ?? missing);
+			const peer = packageNameOf(missing);
 			if (!peers.has(peer)) {
 				fail(
 					`import("${specifier}") needs "${missing}", which is not a dependency or optional peer of ${manifest.name}.`

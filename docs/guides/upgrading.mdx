@@ -72,6 +72,11 @@ subpaths you import. For example, `dsar/persistence-pg` needs `@effect/sql-pg`,
 `dsar/storage-s3` needs `@aws-sdk/client-s3`, and `dsar/react` needs `react`.
 `effect` is a required peer.
 
+**Chat SDK state adapter moved to `dsar/chat`.** `makePersistenceStateAdapter`
+and its option types are no longer exported from the root `dsar` entry.
+Import them from `dsar/chat` and install `chat`. The root entry no longer
+needs `chat` to typecheck.
+
 **Chat SDK persistence.** SQL-backed Chat SDK state now needs migration
 `0003-chat-runtime-lists-and-queues` (`chat_state_list_keys`,
 `chat_state_lists`, `chat_state_queues`). Runtimes that already apply ordered

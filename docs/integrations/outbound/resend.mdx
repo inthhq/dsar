@@ -10,6 +10,12 @@ group: integrations-outbound
 
 ## Package setup
 
+Install `dsar` with `effect` and the Resend SDK and Chat SDK adapter it uses:
+
+```sh
+bun add dsar effect resend @resend/chat-sdk-adapter chat
+```
+
 ```ts
 import { dsarInstance } from "dsar/backend";
 import { makeOutboundResendAdapter } from "dsar/outbound-resend";

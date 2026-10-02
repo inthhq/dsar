@@ -29,6 +29,10 @@
 			"types": "./dist/core.d.mts",
 			"import": "./dist/core.mjs"
 		},
+		"./chat": {
+			"types": "./dist/chat.d.mts",
+			"import": "./dist/chat.mjs"
+		},
 		"./cli": {
 			"types": "./dist/cli.d.mts",
 			"import": "./dist/cli.mjs"
