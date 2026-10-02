@@ -71,6 +71,7 @@ before changing that statement or the catalog.
 - `packages/core`: application-facing client modes and the Chat SDK state
   adapter.
 - `packages/node-sdk`: typed HTTP client and framework-neutral webhook receiver.
+- `packages/react`: React provider, hosted inth.app transport, subject and operator widgets.
 - `packages/cli`: command definitions, interactive flows, and API parity tests.
 - `packages/internals/schema`: canonical domain schemas and shared runtime
   contracts.

@@ -5,6 +5,8 @@ import { makeSlackInboundAdapter } from "dsar/inbound-slack";
 import { makeOutboundResendAdapter } from "dsar/outbound-resend";
 import { makeFilesystemStorageAdapter } from "dsar/storage-filesystem";
 
+import { localUiIdentityFromOrigin } from "./local-ui";
+
 const getNumber = (value: string | undefined, fallback: number): number => {
 	const parsed = Number(value);
 	return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
@@ -110,6 +112,14 @@ const buildAuthConfig = (): RuntimeAuthConfig => ({
 	...(maybeUnkeyBearerResolver
 		? { resolveBearerToken: maybeUnkeyBearerResolver }
 		: {}),
+	resolveTrustedRequestIdentity: ({ request }: { request: Request }) => {
+		if (process.env.NODE_ENV === "production") {
+			return;
+		}
+		return localUiIdentityFromOrigin(
+			request.headers.get("origin") ?? undefined
+		);
+	},
 	staticBearerTokens,
 });
 

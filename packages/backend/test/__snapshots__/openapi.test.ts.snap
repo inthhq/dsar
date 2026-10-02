@@ -2116,6 +2116,49 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                       },
                     ],
                   },
+                  "subject": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "email": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                              },
+                              {
+                                "type": "null",
+                              },
+                            ],
+                          },
+                          "externalRef": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                              },
+                              {
+                                "type": "null",
+                              },
+                            ],
+                          },
+                          "subjectId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                              },
+                              {
+                                "type": "null",
+                              },
+                            ],
+                          },
+                        },
+                        "type": "object",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
                 },
                 "required": [
                   "intakeSource",
@@ -2453,6 +2496,49 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "anyOf": [
                       {
                         "type": "boolean",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+                  "subject": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "email": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                              },
+                              {
+                                "type": "null",
+                              },
+                            ],
+                          },
+                          "externalRef": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                              },
+                              {
+                                "type": "null",
+                              },
+                            ],
+                          },
+                          "subjectId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                              },
+                              {
+                                "type": "null",
+                              },
+                            ],
+                          },
+                        },
+                        "type": "object",
                       },
                       {
                         "type": "null",

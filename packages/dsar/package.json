@@ -96,6 +96,10 @@
 		"./auth-unkey": {
 			"types": "./dist/auth-unkey.d.mts",
 			"import": "./dist/auth-unkey.mjs"
+		},
+		"./react": {
+			"types": "./dist/react.d.mts",
+			"import": "./dist/react.mjs"
 		}
 	},
 	"scripts": {
@@ -113,6 +117,7 @@
 		"@dsar/outbound-resend": "workspace:*",
 		"@dsar/persistence-pg": "workspace:*",
 		"@dsar/persistence-sqlite": "workspace:*",
+		"@dsar/react": "workspace:*",
 		"@dsar/redis": "workspace:*",
 		"@dsar/storage-filesystem": "workspace:*",
 		"@dsar/storage-s3": "workspace:*",
