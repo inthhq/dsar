@@ -42,7 +42,9 @@
 		"@dsar/policy-engine": "workspace:*",
 		"@dsar/policy-packs": "workspace:*",
 		"@dsar/schema": "workspace:*",
-		"effect": "catalog:effect"
+		"effect": "catalog:effect",
+		"evlog": "2.29.0",
+		"hono": "4.13.12"
 	},
 	"devDependencies": {
 		"@dsar/typescript-config": "workspace:*",

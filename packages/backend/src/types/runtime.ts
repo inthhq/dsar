@@ -8,6 +8,7 @@ import type {
 	NotificationAdapterContract,
 	StorageAdapterContract,
 } from "../adapters";
+import type { ObservabilityOptions } from "../observability/evlog";
 import type { RuntimeRateLimitConfig } from "../rate-limit";
 
 /**
@@ -283,7 +284,38 @@ export interface DsarInstanceOptions {
 	readonly adapters?: Partial<RuntimeAdapters>;
 	/**
 	 * When true, fork the durable webhook retry worker beside the HTTP handler.
+	 * Use it on a long-lived server and call `dispose()` on shutdown. On
+	 * serverless hosts, call `runWebhookRetries()` from a scheduled job instead.
 	 * Tests leave this unset so Vitest does not leak a poll loop.
 	 */
 	readonly runWebhookRetryWorker?: boolean;
+	/**
+	 * Binds the instance to one tenant.
+	 *
+	 * Credentials scoped to another tenant are refused with a 403, and
+	 * credentials without a tenant act for this one. Inbound adapters cannot
+	 * capture into another tenant. Unset, each request's tenant comes from its
+	 * verified identity. Set it wherever one instance serves one project, such
+	 * as a gateway that builds an instance per project.
+	 */
+	readonly tenantId?: string;
+	/**
+	 * Refuse to build an instance without a `tenantId`.
+	 *
+	 * Set it where a missing `tenantId` would be a bug, for example a failed
+	 * project lookup in a multi-tenant host.
+	 *
+	 * @defaultValue false
+	 */
+	readonly requireTenantId?: boolean;
+	/**
+	 * Origins allowed to call the backend from a browser. Entries are exact
+	 * origins, `https://*.example.com` for subdomains, or `*`.
+	 */
+	readonly trustedOrigins?: readonly string[];
+	/**
+	 * Request logging through evlog: one wide event per request. Defaults to
+	 * logging failures (4xx and 5xx) only, with PII redaction on.
+	 */
+	readonly observability?: ObservabilityOptions;
 }

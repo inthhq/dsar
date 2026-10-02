@@ -1,4 +1,7 @@
-import { UnauthorizedRequestError } from "../types/errors";
+import {
+	ForbiddenRequestError,
+	UnauthorizedRequestError,
+} from "../types/errors";
 import type {
 	AuthenticatedRequestIdentity,
 	RuntimeAuthConfig,
@@ -69,12 +72,15 @@ const toPrincipalKind = (
  *   inspected for DSAR bearer credentials.
  * @param auth - Optional runtime authentication configuration used to resolve
  *   static or dynamic bearer token identities.
+ * @param instanceTenantId - Tenant the instance is bound to, if any. An
+ *   identity without a tenant acts for it; one with another tenant is refused.
  * @returns A promise resolving to the authenticated actor plus tenant/workspace
  *   scoping fields for the request context.
  */
 export const resolveRequestContext = async (
 	request: Request,
-	auth: RuntimeAuthConfig | undefined
+	auth: RuntimeAuthConfig | undefined,
+	instanceTenantId?: string
 ): Promise<
 	Pick<RuntimeRequestContext, "actor" | "tenantId" | "workspaceId">
 > => {
@@ -86,10 +92,16 @@ export const resolveRequestContext = async (
 			message: "Missing DSAR credentials or trusted caller context.",
 		});
 	}
-	if (!identity.tenantId) {
+	const tenantId = identity.tenantId || instanceTenantId;
+	if (!tenantId) {
 		throw new UnauthorizedRequestError({
 			message:
 				"Authenticated bearer identity is missing tenantId. Ensure the configured identity includes tenantId before accessing protected routes.",
+		});
+	}
+	if (instanceTenantId !== undefined && tenantId !== instanceTenantId) {
+		throw new ForbiddenRequestError({
+			message: "Credentials are scoped to a different tenant.",
 		});
 	}
 	return {
@@ -99,7 +111,7 @@ export const resolveRequestContext = async (
 			principalKind: toPrincipalKind(identity),
 			role: identity.role ?? "member",
 		},
-		tenantId: identity.tenantId,
+		tenantId,
 		workspaceId: identity.workspaceId ?? undefined,
 	};
 };

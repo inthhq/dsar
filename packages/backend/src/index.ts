@@ -3,7 +3,8 @@ export {
 	approvePolicyUpgrade,
 	proposePolicyUpgrade,
 } from "./routes/policies/handlers";
-export { dsarInstance } from "./core";
+export { assertTenantOptions, dsarInstance } from "./core";
+export { isOriginTrusted } from "./http/app";
 export {
 	deliverDueWebhookRetries,
 	runWebhookRetryWorker,
@@ -24,6 +25,10 @@ export type {
 	ProposeUpgradeRequest,
 } from "./routes/policies/handlers";
 export type { DsarInstance } from "./core";
+export type {
+	ObservabilityLevel,
+	ObservabilityOptions,
+} from "./observability/evlog";
 export type {
 	AdapterContractBase,
 	AdapterDiagnostics,

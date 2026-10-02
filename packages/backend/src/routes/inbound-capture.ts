@@ -1,8 +1,9 @@
 import * as Effect from "effect/Effect";
 
 import { captureRequestLifecycle } from "../lifecycle/service";
+import { ForbiddenRequestError } from "../types/errors";
 import type { RequestValidationError } from "../types/errors";
-import type { RuntimeServicesTag } from "../types/runtime";
+import { RuntimeServicesTag } from "../types/runtime";
 import { accepted } from "./helpers";
 
 /**
@@ -71,8 +72,25 @@ export interface InboundCaptureInput {
  */
 export const captureInboundRequest = (
 	input: InboundCaptureInput
-): Effect.Effect<Response, RequestValidationError, RuntimeServicesTag> =>
+): Effect.Effect<
+	Response,
+	ForbiddenRequestError | RequestValidationError,
+	RuntimeServicesTag
+> =>
 	Effect.gen(function* captureInboundRequestProgram() {
+		// A tenant-bound instance only captures into its own tenant, whatever
+		// the adapter's routing says.
+		const { requestContext } = yield* Effect.service(RuntimeServicesTag);
+		if (
+			requestContext.tenantId !== undefined &&
+			requestContext.tenantId !== input.route.tenantId
+		) {
+			return yield* Effect.fail(
+				new ForbiddenRequestError({
+					message: "Inbound route targets a different tenant.",
+				})
+			);
+		}
 		if (input.intent?.isDsar === false) {
 			return accepted({
 				reason: input.intent.reason ?? "non-dsar",
