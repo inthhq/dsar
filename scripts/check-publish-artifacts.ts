@@ -8,6 +8,7 @@
  *
  * - a `workspace:` or `catalog:` specifier left in the packed manifest
  * - an export target missing from the tarball
+ * - a React export that does not start with "use client"
  * - an export that cannot be imported, unless the missing module is one of
  *   that package's optional peers (adapter subpaths need their own SDKs)
  * - a `dsar` binary that does not start
@@ -19,6 +20,7 @@ import {
 	existsSync,
 	mkdtempSync,
 	readdirSync,
+	readFileSync,
 	rmSync,
 	writeFileSync,
 } from "node:fs";
@@ -33,7 +35,8 @@ interface ExportTarget {
 
 interface PackageManifest {
 	readonly bin?: Readonly<Record<string, string>>;
-	readonly exports?: Readonly<Record<string, ExportTarget>>;
+	/** Script entries map to import and types; assets map to a file path. */
+	readonly exports?: Readonly<Record<string, ExportTarget | string>>;
 	readonly name: string;
 	readonly peerDependencies?: Readonly<Record<string, string>>;
 	readonly peerDependenciesMeta?: Readonly<
@@ -45,6 +48,8 @@ interface PackageManifest {
 
 const repository = path.resolve(import.meta.dirname, "..");
 const packageDirectory = path.join(repository, "packages/dsar");
+/** Exports whose module must be a React client module. */
+const clientExports = ["./react"] as const;
 const dependencyFields = [
 	"dependencies",
 	"optionalDependencies",
@@ -108,10 +113,33 @@ const assertExportTargets = (
 	installed: string
 ): void => {
 	for (const [subpath, target] of Object.entries(manifest.exports ?? {})) {
-		for (const file of [target.import, target.types]) {
+		const files =
+			typeof target === "string" ? [target] : [target.import, target.types];
+		for (const file of files) {
 			if (file && !existsSync(path.join(installed, file))) {
 				fail(`Export "${subpath}" points at ${file}, which is not packed.`);
 			}
+		}
+	}
+};
+
+/**
+ * Bundling drops module-level directives. A React export without a leading
+ * "use client" fails in a Next.js server component tree.
+ */
+const assertClientExports = (
+	manifest: PackageManifest,
+	installed: string
+): void => {
+	for (const subpath of clientExports) {
+		const target = manifest.exports?.[subpath];
+		const file = typeof target === "string" ? target : target?.import;
+		if (!file) {
+			fail(`Client export "${subpath}" is missing.`);
+		}
+		const source = readFileSync(path.join(installed, file ?? ""), "utf8");
+		if (!/^["']use client["'];?/u.test(source)) {
+			fail(`Export "${subpath}" (${file}) does not start with "use client".`);
 		}
 	}
 };
@@ -200,11 +228,14 @@ const main = (): void => {
 
 		const installed = path.join(project, "node_modules", manifest.name);
 		assertExportTargets(manifest, installed);
+		assertClientExports(manifest, installed);
 
 		const peers = optionalPeers(manifest);
-		const specifiers = Object.keys(manifest.exports ?? {}).map((subpath) =>
-			specifierFor(manifest.name, subpath)
-		);
+		// Asset exports such as stylesheets are checked for presence above;
+		// Node cannot import them.
+		const specifiers = Object.entries(manifest.exports ?? {})
+			.filter(([, target]) => typeof target !== "string")
+			.map(([subpath]) => specifierFor(manifest.name, subpath));
 		const skipped: string[] = [];
 		for (const [specifier, missing] of importExports(
 			project,

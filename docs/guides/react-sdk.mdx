@@ -8,6 +8,14 @@ group: guides
 
 `dsar/react` is the UI kit. It does not own login. That matches the [auth model](../architecture/auth-model.md): the host authenticates, DSAR sees a projected identity.
 
+Install `dsar`, `effect`, and `react`, then load the stylesheet once, for example in your root layout:
+
+```ts
+import "dsar/react/styles.css";
+```
+
+The components are client components, so a Next.js server component can render them directly.
+
 ## Hosted (inth.com)
 
 ```tsx

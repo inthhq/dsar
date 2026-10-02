@@ -47,11 +47,17 @@ typecheck against DSAR public types, move onto TypeScript 7. HTTP-only callers
 that never compile those types can skip this.
 
 **Effect 4.** Keep `effect`, `@effect/platform-*`, `@effect/sql-*`, and
-`@effect/vitest` on `4.0.0`. Mixing Effect 3 or an Effect 4 beta with this
-runtime will fail typecheck or fail at the layer boundary. Effect 4.0.0 moved
-the beta's `effect/unstable/*` modules: if the host imports them, change
-`effect/unstable/sql` to `effect/sql`, `effect/unstable/http` to `effect/http`,
-and `effect/unstable/httpapi` to `effect/http-api`.
+`@effect/vitest` on the `4.x` line (`@effect/vitest` 4 needs Vitest 5).
+Mixing Effect 3 or an Effect 4 beta with this runtime will fail typecheck or
+fail at the layer boundary. Effect 4.0.0 moved the beta's `effect/unstable/*`
+modules. If the host imports them:
+
+- `effect/unstable/sql` becomes `effect/sql`
+- `effect/unstable/http` becomes `effect/http`
+- `effect/unstable/httpapi` becomes `effect/http-api`
+- `effect/unstable/cli` becomes `effect/cli`, where the prompt constructors
+  are renamed: `Prompt.confirm` to `Prompt.Confirm`, `Prompt.select` to
+  `Prompt.Select`, and `Prompt.text` to `Prompt.String`
 
 **Removed `dsar/adapter-c15t`.** The umbrella package no longer exports
 `dsar/adapter-c15t`, and the private `@dsar/adapter-c15t` workspace package is

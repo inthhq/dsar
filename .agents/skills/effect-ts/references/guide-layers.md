@@ -746,7 +746,7 @@ When Effect already provides a module for a capability, prefer the Effect-native
 
 Examples:
 
-- prefer `effect/sql` modules over directly coupling business services to native SQL driver APIs
+- prefer `effect/unstable/sql` modules over directly coupling business services to native SQL driver APIs
 - prefer Effect HTTP modules over direct ad hoc request clients when the project is already using Effect HTTP abstractions
 
 Why:

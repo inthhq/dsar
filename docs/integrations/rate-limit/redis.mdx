@@ -17,8 +17,8 @@ would not share counters.
 bun add dsar effect ioredis
 ```
 
-`ioredis` is a peer dependency so host applications control the Redis client
-version and connection setup.
+`dsar` does not install `ioredis`. You create the client and pass it in, so
+your app controls the Redis client version and connection setup.
 
 ## Runtime Wiring
 

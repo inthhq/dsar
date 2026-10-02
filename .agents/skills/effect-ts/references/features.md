@@ -169,7 +169,7 @@ Package path: `packages/effect`
 - `Tool` - `packages/effect/src/unstable/ai/Tool.ts` - Tool definition and management. Use: expose callable tools.
 - `Toolkit` - `packages/effect/src/unstable/ai/Toolkit.ts` - Collection of tools. Use: bundle tool implementations.
 
-### `effect/cli`
+### `effect/unstable/cli`
 
 - `Argument` - `packages/effect/src/unstable/cli/Argument.ts` - CLI argument definitions. Use: positional arguments.
 - `CliError` - `packages/effect/src/unstable/cli/CliError.ts` - CLI error types. Use: report parse failures.
@@ -254,7 +254,7 @@ Package path: `packages/effect`
 - `SqlEventLogServerEncrypted` - `packages/effect/src/unstable/eventlog/SqlEventLogServerEncrypted.ts` - SQL-backed encrypted event server. Use: secure persisted logs.
 - `SqlEventLogServerUnencrypted` - `packages/effect/src/unstable/eventlog/SqlEventLogServerUnencrypted.ts` - SQL-backed plain event server. Use: simple persisted logs.
 
-### `effect/http`
+### `effect/unstable/http`
 
 - `Cookies` - `packages/effect/src/unstable/http/Cookies.ts` - HTTP cookie helpers. Use: parse and set cookies.
 - `Etag` - `packages/effect/src/unstable/http/Etag.ts` - ETag utilities. Use: cache validation headers.
@@ -285,7 +285,7 @@ Package path: `packages/effect`
 - `Url` - `packages/effect/src/unstable/http/Url.ts` - URL utilities. Use: parse and build URLs.
 - `UrlParams` - `packages/effect/src/unstable/http/UrlParams.ts` - URL parameter helpers. Use: encode query strings.
 
-### `effect/http-api`
+### `effect/unstable/httpapi`
 
 - `HttpApi` - `packages/effect/src/unstable/httpapi/HttpApi.ts` - Typed HTTP API description. Use: define an API contract.
 - `HttpApiBuilder` - `packages/effect/src/unstable/httpapi/HttpApiBuilder.ts` - Build servers from `HttpApi`. Use: implement typed endpoints.
@@ -363,7 +363,7 @@ Package path: `packages/effect`
 - `Socket` - `packages/effect/src/unstable/socket/Socket.ts` - Socket abstractions. Use: connect stream transports.
 - `SocketServer` - `packages/effect/src/unstable/socket/SocketServer.ts` - Socket server helpers. Use: accept socket clients.
 
-### `effect/sql`
+### `effect/unstable/sql`
 
 - `Migrator` - `packages/effect/src/unstable/sql/Migrator.ts` - SQL migration helpers. Use: run schema migrations.
 - `SqlClient` - `packages/effect/src/unstable/sql/SqlClient.ts` - SQL client API. Use: execute queries.

@@ -48,7 +48,7 @@ Commands matching 'requests':
   requests audit verify :id  - Verify audit trail."
 `;
 
-exports[`CLI help output > matches command help snapshot for 'audit_export' 1`] = `
+exports[`CLI help output > matches command help snapshot for audit_export 1`] = `
 "DSAR CLI
 
 Usage:
@@ -65,7 +65,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'audit_list' 1`] = `
+exports[`CLI help output > matches command help snapshot for audit_list 1`] = `
 "DSAR CLI
 
 Usage:
@@ -82,7 +82,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'audit_tail' 1`] = `
+exports[`CLI help output > matches command help snapshot for audit_tail 1`] = `
 "DSAR CLI
 
 Usage:
@@ -103,7 +103,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'doctor_runtime' 1`] = `
+exports[`CLI help output > matches command help snapshot for doctor_runtime 1`] = `
 "DSAR CLI
 
 Usage:
@@ -120,7 +120,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'init_runtime' 1`] = `
+exports[`CLI help output > matches command help snapshot for init_runtime 1`] = `
 "DSAR CLI
 
 Usage:
@@ -137,7 +137,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'policies_custom_activate' 1`] = `
+exports[`CLI help output > matches command help snapshot for policies_custom_activate 1`] = `
 "DSAR CLI
 
 Usage:
@@ -154,7 +154,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'policies_custom_deactivate' 1`] = `
+exports[`CLI help output > matches command help snapshot for policies_custom_deactivate 1`] = `
 "DSAR CLI
 
 Usage:
@@ -171,7 +171,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'policies_custom_register' 1`] = `
+exports[`CLI help output > matches command help snapshot for policies_custom_register 1`] = `
 "DSAR CLI
 
 Usage:
@@ -188,7 +188,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'policies_list' 1`] = `
+exports[`CLI help output > matches command help snapshot for policies_list 1`] = `
 "DSAR CLI
 
 Usage:
@@ -205,7 +205,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'policies_upgrades_apply' 1`] = `
+exports[`CLI help output > matches command help snapshot for policies_upgrades_apply 1`] = `
 "DSAR CLI
 
 Usage:
@@ -222,7 +222,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'policies_upgrades_approve' 1`] = `
+exports[`CLI help output > matches command help snapshot for policies_upgrades_approve 1`] = `
 "DSAR CLI
 
 Usage:
@@ -239,7 +239,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'policies_upgrades_propose' 1`] = `
+exports[`CLI help output > matches command help snapshot for policies_upgrades_propose 1`] = `
 "DSAR CLI
 
 Usage:
@@ -256,7 +256,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_acknowledgements_create' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_acknowledgements_create 1`] = `
 "DSAR CLI
 
 Usage:
@@ -273,7 +273,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_appeals_create' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_appeals_create 1`] = `
 "DSAR CLI
 
 Usage:
@@ -290,7 +290,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_appeals_decide' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_appeals_decide 1`] = `
 "DSAR CLI
 
 Usage:
@@ -307,7 +307,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_appeals_list' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_appeals_list 1`] = `
 "DSAR CLI
 
 Usage:
@@ -324,7 +324,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_artifacts_download' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_artifacts_download 1`] = `
 "DSAR CLI
 
 Usage:
@@ -341,7 +341,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_audit_export' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_audit_export 1`] = `
 "DSAR CLI
 
 Usage:
@@ -358,7 +358,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_audit_verify' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_audit_verify 1`] = `
 "DSAR CLI
 
 Usage:
@@ -375,7 +375,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_authority_approve' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_authority_approve 1`] = `
 "DSAR CLI
 
 Usage:
@@ -392,7 +392,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_authority_reject' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_authority_reject 1`] = `
 "DSAR CLI
 
 Usage:
@@ -409,7 +409,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_authority_submit' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_authority_submit 1`] = `
 "DSAR CLI
 
 Usage:
@@ -426,7 +426,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_capture' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_capture 1`] = `
 "DSAR CLI
 
 Usage:
@@ -443,7 +443,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_clarifications_receive' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_clarifications_receive 1`] = `
 "DSAR CLI
 
 Usage:
@@ -460,7 +460,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_clarifications_request' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_clarifications_request 1`] = `
 "DSAR CLI
 
 Usage:
@@ -477,7 +477,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_clock_explain' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_clock_explain 1`] = `
 "DSAR CLI
 
 Usage:
@@ -494,7 +494,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_closures_create' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_closures_create 1`] = `
 "DSAR CLI
 
 Usage:
@@ -511,7 +511,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_create' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_create 1`] = `
 "DSAR CLI
 
 Usage:
@@ -528,7 +528,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_delivery_address_verify' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_delivery_address_verify 1`] = `
 "DSAR CLI
 
 Usage:
@@ -545,7 +545,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_delivery_logs' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_delivery_logs 1`] = `
 "DSAR CLI
 
 Usage:
@@ -562,7 +562,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_delivery_prepare' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_delivery_prepare 1`] = `
 "DSAR CLI
 
 Usage:
@@ -579,7 +579,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_delivery_step_up_challenge' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_delivery_step_up_challenge 1`] = `
 "DSAR CLI
 
 Usage:
@@ -596,7 +596,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_delivery_step_up_complete' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_delivery_step_up_complete 1`] = `
 "DSAR CLI
 
 Usage:
@@ -613,7 +613,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_extensions_create' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_extensions_create 1`] = `
 "DSAR CLI
 
 Usage:
@@ -630,7 +630,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_fulfilment' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_fulfilment 1`] = `
 "DSAR CLI
 
 Usage:
@@ -647,7 +647,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_fulfilment_callback' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_fulfilment_callback 1`] = `
 "DSAR CLI
 
 Usage:
@@ -664,7 +664,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_get' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_get 1`] = `
 "DSAR CLI
 
 Usage:
@@ -681,7 +681,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_list' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_list 1`] = `
 "DSAR CLI
 
 Usage:
@@ -698,7 +698,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_manifest_artifact_download' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_manifest_artifact_download 1`] = `
 "DSAR CLI
 
 Usage:
@@ -715,7 +715,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_manifest_artifact_replace' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_manifest_artifact_replace 1`] = `
 "DSAR CLI
 
 Usage:
@@ -732,7 +732,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_manifest_artifact_upload' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_manifest_artifact_upload 1`] = `
 "DSAR CLI
 
 Usage:
@@ -749,7 +749,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_manifest_get' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_manifest_get 1`] = `
 "DSAR CLI
 
 Usage:
@@ -766,7 +766,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_manifest_validate' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_manifest_validate 1`] = `
 "DSAR CLI
 
 Usage:
@@ -783,7 +783,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_notifications_list' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_notifications_list 1`] = `
 "DSAR CLI
 
 Usage:
@@ -800,7 +800,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_notifications_replay' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_notifications_replay 1`] = `
 "DSAR CLI
 
 Usage:
@@ -817,7 +817,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_refusals_create' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_refusals_create 1`] = `
 "DSAR CLI
 
 Usage:
@@ -834,7 +834,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_requestor_set' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_requestor_set 1`] = `
 "DSAR CLI
 
 Usage:
@@ -851,7 +851,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_timeline' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_timeline 1`] = `
 "DSAR CLI
 
 Usage:
@@ -868,7 +868,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_verification_approve' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_verification_approve 1`] = `
 "DSAR CLI
 
 Usage:
@@ -885,7 +885,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_verification_case' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_verification_case 1`] = `
 "DSAR CLI
 
 Usage:
@@ -902,7 +902,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_verification_evidence' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_verification_evidence 1`] = `
 "DSAR CLI
 
 Usage:
@@ -919,7 +919,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_verification_evidence_upload' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_verification_evidence_upload 1`] = `
 "DSAR CLI
 
 Usage:
@@ -936,7 +936,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_verification_reject' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_verification_reject 1`] = `
 "DSAR CLI
 
 Usage:
@@ -953,7 +953,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'requests_verification_request' 1`] = `
+exports[`CLI help output > matches command help snapshot for requests_verification_request 1`] = `
 "DSAR CLI
 
 Usage:
@@ -970,7 +970,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'status_health' 1`] = `
+exports[`CLI help output > matches command help snapshot for status_health 1`] = `
 "DSAR CLI
 
 Usage:
@@ -987,7 +987,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'subjects_get_profile' 1`] = `
+exports[`CLI help output > matches command help snapshot for subjects_get_profile 1`] = `
 "DSAR CLI
 
 Usage:
@@ -1004,7 +1004,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'tenants_retention_get' 1`] = `
+exports[`CLI help output > matches command help snapshot for tenants_retention_get 1`] = `
 "DSAR CLI
 
 Usage:
@@ -1021,7 +1021,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'tenants_retention_put' 1`] = `
+exports[`CLI help output > matches command help snapshot for tenants_retention_put 1`] = `
 "DSAR CLI
 
 Usage:
@@ -1038,7 +1038,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'webhooks_dispatches_list' 1`] = `
+exports[`CLI help output > matches command help snapshot for webhooks_dispatches_list 1`] = `
 "DSAR CLI
 
 Usage:
@@ -1063,7 +1063,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'webhooks_dispatches_replay' 1`] = `
+exports[`CLI help output > matches command help snapshot for webhooks_dispatches_replay 1`] = `
 "DSAR CLI
 
 Usage:
@@ -1083,7 +1083,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'webhooks_dispatches_replay_bulk' 1`] = `
+exports[`CLI help output > matches command help snapshot for webhooks_dispatches_replay_bulk 1`] = `
 "DSAR CLI
 
 Usage:
@@ -1108,7 +1108,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'webhooks_dlq_list' 1`] = `
+exports[`CLI help output > matches command help snapshot for webhooks_dlq_list 1`] = `
 "DSAR CLI
 
 Usage:
@@ -1132,7 +1132,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'webhooks_dlq_replay' 1`] = `
+exports[`CLI help output > matches command help snapshot for webhooks_dlq_replay 1`] = `
 "DSAR CLI
 
 Usage:
@@ -1152,7 +1152,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'webhooks_dlq_replay_bulk' 1`] = `
+exports[`CLI help output > matches command help snapshot for webhooks_dlq_replay_bulk 1`] = `
 "DSAR CLI
 
 Usage:
@@ -1176,7 +1176,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'webhooks_endpoint_rotate_key' 1`] = `
+exports[`CLI help output > matches command help snapshot for webhooks_endpoint_rotate_key 1`] = `
 "DSAR CLI
 
 Usage:
@@ -1193,7 +1193,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'webhooks_inbound_resend' 1`] = `
+exports[`CLI help output > matches command help snapshot for webhooks_inbound_resend 1`] = `
 "DSAR CLI
 
 Usage:
@@ -1210,7 +1210,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'webhooks_inbound_slack' 1`] = `
+exports[`CLI help output > matches command help snapshot for webhooks_inbound_slack 1`] = `
 "DSAR CLI
 
 Usage:
@@ -1227,7 +1227,7 @@ Global flags:
   --json '<payload>'       JSON body payload for POST/PUT commands"
 `;
 
-exports[`CLI help output > matches command help snapshot for 'webhooks_tail' 1`] = `
+exports[`CLI help output > matches command help snapshot for webhooks_tail 1`] = `
 "DSAR CLI
 
 Usage:

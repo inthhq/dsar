@@ -53,6 +53,10 @@
 			"types": "./dist/node-sdk-webhooks-next.d.mts",
 			"import": "./dist/node-sdk-webhooks-next.mjs"
 		},
+		"./persistence": {
+			"types": "./dist/persistence.d.mts",
+			"import": "./dist/persistence.mjs"
+		},
 		"./persistence-pg": {
 			"types": "./dist/persistence-pg.d.mts",
 			"import": "./dist/persistence-pg.mjs"
@@ -100,14 +104,15 @@
 		"./react": {
 			"types": "./dist/react.d.mts",
 			"import": "./dist/react.mjs"
-		}
+		},
+		"./react/styles.css": "./dist/react/styles.css"
 	},
 	"scripts": {
 		"build": "tsdown",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@effect/platform-node": "catalog:effect",
+		"@effect/platform-node": "^4.0.0",
 		"defu": "6.1.7",
 		"dotenv": "17.4.2"
 	},
@@ -120,6 +125,7 @@
 		"@dsar/inbound-slack": "workspace:*",
 		"@dsar/node-sdk": "workspace:*",
 		"@dsar/outbound-resend": "workspace:*",
+		"@dsar/persistence": "workspace:*",
 		"@dsar/persistence-pg": "workspace:*",
 		"@dsar/persistence-sqlite": "workspace:*",
 		"@dsar/react": "workspace:*",
@@ -136,14 +142,14 @@
 	"peerDependencies": {
 		"@aws-sdk/client-s3": "^3.1093.0",
 		"@chat-adapter/slack": "^4.34.0",
-		"@effect/sql-pg": "catalog:effect",
-		"@effect/sql-sqlite-bun": "catalog:effect",
-		"@effect/sql-sqlite-node": "catalog:effect",
+		"@effect/sql-pg": "^4.0.0",
+		"@effect/sql-sqlite-bun": "^4.0.0",
+		"@effect/sql-sqlite-node": "^4.0.0",
 		"@resend/chat-sdk-adapter": "^0.2.2",
 		"@unkey/api": "^2.5.0",
 		"@vercel/blob": "^2.6.1",
 		"chat": "^4.34.0",
-		"effect": "catalog:effect",
+		"effect": "^4.0.0",
 		"express": "^4.0.0 || ^5.0.0",
 		"hono": "^1.0.0 || ^2.0.0 || ^3.0.0 || ^4.0.0",
 		"next": "^13.4.0 || ^14.0.0 || ^15.0.0 || ^16.0.0",

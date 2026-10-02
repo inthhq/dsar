@@ -20,9 +20,22 @@ const runtimeImports = Object.keys({
 	...manifest.peerDependencies,
 });
 
+/** Entries that export React components and must stay client modules. */
+const clientEntries = new Set(["react.mjs"]);
+
 export default defineConfig({
-	attw: { enabled: "ci-only", profile: "esm-only" },
+	attw: {
+		enabled: "ci-only",
+		// Stylesheets have no types to resolve.
+		excludeEntrypoints: [/\.css$/u],
+		profile: "esm-only",
+	},
+	// Bundling drops module-level directives, so `dsar/react` would lose the
+	// "use client" its components need in a Next.js server component tree.
+	banner: ({ fileName }) =>
+		clientEntries.has(fileName) ? { js: '"use client";' } : undefined,
 	clean: true,
+	copy: [{ from: "../react/styles.css", to: "dist/react" }],
 	deps: {
 		alwaysBundle: [/^@dsar\//],
 		// Workspace sources resolve to local files, so nothing from node_modules
@@ -48,6 +61,7 @@ export default defineConfig({
 		"node-sdk-webhooks-hono": "src/node-sdk-webhooks-hono.ts",
 		"node-sdk-webhooks-next": "src/node-sdk-webhooks-next.ts",
 		"outbound-resend": "src/outbound-resend.ts",
+		persistence: "src/persistence.ts",
 		"persistence-pg": "src/persistence-pg.ts",
 		"persistence-sqlite": "src/persistence-sqlite.ts",
 		react: "src/react.ts",

@@ -20,7 +20,7 @@ DSAR uses persistence drivers to store request state, audit events, policy assig
 The persistence layer is tenant-scoped — every database operation runs within a tenant context. The `withTenant` helper scopes Effect programs to a specific tenant:
 
 ```ts
-import { Persistence, withTenant } from "@dsar/persistence";
+import { Persistence, withTenant } from "dsar/persistence";
 import { Effect } from "effect";
 
 const program = Persistence.pipe(

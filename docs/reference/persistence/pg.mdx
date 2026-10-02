@@ -42,7 +42,7 @@ For Effect-based applications, use the layer API for dependency injection:
 
 ```ts
 import { Effect } from "effect";
-import { Persistence, withTenant } from "@dsar/persistence";
+import { Persistence, withTenant } from "dsar/persistence";
 import { makePgPersistenceLayer } from "dsar/persistence-pg";
 
 const program = Persistence.pipe(

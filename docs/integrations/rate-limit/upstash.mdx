@@ -17,8 +17,8 @@ client is preferred.
 bun add dsar effect @upstash/redis
 ```
 
-`@upstash/redis` is a peer dependency so host applications control the client
-version and environment variable setup.
+`dsar` does not install `@upstash/redis`. You create the client and pass it
+in, so your app controls the client version and environment variable setup.
 
 ## Runtime Wiring
 
