@@ -423,6 +423,18 @@ describe("cross-origin requests", () => {
 		);
 	});
 
+	it("lets trusted browsers read the download filename and retry delay", async () => {
+		const response = await instance.handler(
+			new Request("https://example.test/status", {
+				headers: { origin: "https://app.example.com" },
+			})
+		);
+
+		expect(response.headers.get("access-control-expose-headers")).toBe(
+			"content-disposition, retry-after"
+		);
+	});
+
 	it("answers any origin with a literal * and no credentials", async () => {
 		const open = dsarInstance({
 			...TEST_RUNTIME_AUTH,
@@ -450,6 +462,52 @@ describe("cross-origin requests", () => {
 		);
 		expect(isOriginTrusted("https://notinth.app", ["https://*.inth.app"])).toBe(
 			false
+		);
+	});
+});
+
+describe("defects", () => {
+	it("logs a defect without the error's extra properties", async () => {
+		const recorder = recordEvents();
+		const storage = makeMemoryStorage();
+		const instance = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			adapters: {
+				storage: {
+					...storage,
+					putObject: () =>
+						Effect.die(
+							Object.assign(new Error("Storage provider crashed."), {
+								data: { email: "jane@example.com" },
+							})
+						),
+				},
+			},
+			observability: { drain: recorder.drain, level: "warn" },
+			repos: { persistence: makeMemoryPersistence() },
+		});
+
+		const response = await instance.handler(
+			new Request(
+				"https://example.test/requests/req-defect/manifest/artifact/upload",
+				{
+					body: new Uint8Array([1, 2, 3]),
+					headers: {
+						...TEST_ADMIN_HEADERS,
+						"content-type": "application/octet-stream",
+					},
+					method: "POST",
+				}
+			)
+		);
+
+		expect(response.status).toBe(500);
+		await vi.waitFor(() => expect(recorder.events).toHaveLength(1));
+		expect(recorder.events[0]).toMatchObject({
+			defect: { message: "Storage provider crashed." },
+		});
+		expect(JSON.stringify(recorder.events[0])).not.toContain(
+			"jane@example.com"
 		);
 	});
 });

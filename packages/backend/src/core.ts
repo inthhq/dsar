@@ -41,6 +41,7 @@ import {
 import { resolveRequestContext } from "./middleware/auth-context";
 import { normalizeBasePath } from "./middleware/base-path";
 import { toErrorResponse } from "./middleware/errors";
+import { sanitizeErrorForLog } from "./middleware/errors/shared";
 import { enforceIntakeIpRateLimit } from "./rate-limit";
 import { coreRoutes } from "./routes";
 import type { RouteDefinition } from "./routes/types";
@@ -255,7 +256,9 @@ export const dsarInstance = (options: DsarInstanceOptions): DsarInstance => {
 		if (failure._tag === "Success") {
 			return toErrorResponse(failure.success, request, log);
 		}
-		log.set({ defect: Cause.pretty(cause) });
+		// Sanitized like any 5xx error: a defect can carry provider or request
+		// data in extra properties.
+		log.set({ defect: sanitizeErrorForLog(Cause.squash(cause)) });
 		return toErrorResponse(
 			new InternalRuntimeError({ message: "Unexpected runtime defect." }),
 			request,

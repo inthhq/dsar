@@ -40,6 +40,9 @@ const CORS_ALLOW_HEADERS = [
 	"x-request-id",
 ].join(", ");
 
+/** Response headers browsers may read cross-origin. */
+const CORS_EXPOSE_HEADERS = ["content-disposition", "retry-after"].join(", ");
+
 const matchesNamedOrigin = (origin: string, trusted: string): boolean => {
 	if (trusted === origin) {
 		return true;
@@ -219,6 +222,9 @@ export const createApp = (options: CreateAppOptions): Hono => {
 		// After the route: handlers return their own Response, so headers set
 		// before it would be dropped.
 		applyCors();
+		if (grant) {
+			c.header("Access-Control-Expose-Headers", CORS_EXPOSE_HEADERS);
+		}
 	});
 
 	scoped.get("/spec.json", (c) => {
