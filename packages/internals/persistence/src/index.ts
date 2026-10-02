@@ -14,6 +14,7 @@ export type {
 	WebhookSigningSecretEncryptionOptions,
 } from "./services/persistence";
 export type { PersistenceDriver, PersistenceDriverKind } from "./sql/driver";
+export { isDueNotificationDeliveryAttempt } from "./services/persistence/shared";
 export { TenantContext, withTenant } from "./tenant/context";
 export type {
 	AuditEventCursor,
@@ -33,6 +34,7 @@ export type {
 	CreateVerificationEvidenceInput,
 	CreateNotificationDeliveryAttemptInput,
 	CreateNotificationEventInput,
+	ListDueNotificationDeliveryAttemptsInput,
 	EnsureWebhookEndpointInput,
 	FulfillmentArtifactRecord,
 	JsonValue,
@@ -56,6 +58,7 @@ export type {
 	RotateWebhookSigningKeyResult,
 	TenantScope,
 	UpdateFulfillmentArtifactInput,
+	UpdateNotificationDeliveryAttemptInput,
 	UpdateRequestInput,
 	UpsertRetentionPolicyInput,
 	VerificationEvidenceRecord,

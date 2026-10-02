@@ -19,6 +19,12 @@ import {
 	migrationName as migration0003Name,
 	revertMigration0003,
 } from "../../migrations/0003-chat-runtime-lists-and-queues";
+import {
+	applyMigration0004,
+	migrationId as migration0004Id,
+	migrationName as migration0004Name,
+	revertMigration0004,
+} from "../../migrations/0004-notification-retry-schedule";
 import type { Sql } from "./shared";
 
 /**
@@ -86,6 +92,12 @@ const migrations = [
 		id: migration0003Id,
 		name: migration0003Name,
 		up: applyMigration0003,
+	},
+	{
+		down: revertMigration0004,
+		id: migration0004Id,
+		name: migration0004Name,
+		up: applyMigration0004,
 	},
 ] as const satisfies readonly PersistenceMigration[];
 

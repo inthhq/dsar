@@ -176,7 +176,7 @@ const seedWebhookDispatch = async (
 		readonly eventId: string;
 		readonly id: string;
 		readonly requestId?: string;
-		readonly status?: "pending" | "delivered" | "failed" | "skipped";
+		readonly status?: "pending" | "delivered" | "failed" | "skipped" | "dead";
 	}
 ): Promise<void> => {
 	const requestId = input.requestId ?? `req-${input.id}`;
@@ -890,9 +890,9 @@ describe(dsarInstance, () => {
 		};
 		expect(idempotentResponse.status).toBe(202);
 		expect(idempotentBody.data).toMatchObject({
-			alreadyReplayed: 2,
+			alreadyReplayed: 0,
 			replayed: 0,
-			total: 2,
+			total: 0,
 		});
 		expect(sent).toHaveLength(2);
 	});

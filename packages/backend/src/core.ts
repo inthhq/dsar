@@ -25,6 +25,7 @@ import { enforceIntakeIpRateLimit } from "./rate-limit";
 import { coreRoutes } from "./routes";
 import { matchRoute } from "./routes/helpers";
 import type { RouteDefinition } from "./routes/types";
+import { runWebhookRetryWorker } from "./services/notifications/retry";
 import { InternalRuntimeError, RouteNotFoundError } from "./types/errors";
 import type {
 	DsarInstanceOptions,
@@ -355,6 +356,17 @@ export const dsarInstance = (options: DsarInstanceOptions): DsarInstance => {
 	const platformHandler = HttpEffect.toWebHandler(platformApp);
 	const handler = (request: Request): Promise<Response> =>
 		platformHandler(request);
+
+	if (options.runWebhookRetryWorker === true) {
+		const workerServices = buildRuntimeServices(coreModule, adapterModule, {
+			requestId: "webhook-retry-worker",
+		});
+		Effect.runFork(
+			runWebhookRetryWorker().pipe(
+				Effect.provideService(RuntimeServicesTag, workerServices)
+			)
+		);
+	}
 
 	return {
 		app: {

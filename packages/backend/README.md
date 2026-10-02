@@ -63,6 +63,7 @@ const persistence = await Effect.runPromise(
 
 const runtime = dsarInstance({
 	repos: runtimeReposFromPersistence(persistence),
+	runWebhookRetryWorker: true,
 });
 ```
 

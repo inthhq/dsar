@@ -50,7 +50,8 @@ export type WebhookDispatchStatus =
 	| "pending"
 	| "delivered"
 	| "failed"
-	| "skipped";
+	| "skipped"
+	| "dead";
 
 /** Query filters accepted by outbound webhook dispatch listing. */
 export interface WebhookDispatchListQuery {

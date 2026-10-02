@@ -186,7 +186,8 @@ export const parseNotificationDeliveryStatus = (
 		case "pending":
 		case "delivered":
 		case "failed":
-		case "skipped": {
+		case "skipped":
+		case "dead": {
 			return Effect.succeed(value);
 		}
 		default: {
@@ -202,6 +203,44 @@ export const parseNotificationDeliveryStatus = (
 			);
 		}
 	}
+};
+
+/**
+ * Returns true when a delivery job is eligible for the retry worker.
+ *
+ * @param attempt - Persisted delivery attempt or job row.
+ * @param input - Comparison clock and optional channel filter.
+ * @returns Whether the row is due and unclaimed.
+ */
+export const isDueNotificationDeliveryAttempt = (
+	attempt: Pick<
+		NotificationDeliveryAttemptRecord,
+		"channel" | "claimExpiresAt" | "nextAttemptAt" | "status"
+	>,
+	input: {
+		readonly now: string;
+		readonly channel?: string;
+	}
+): boolean => {
+	if (input.channel !== undefined && attempt.channel !== input.channel) {
+		return false;
+	}
+	if (attempt.status !== "pending" && attempt.status !== "failed") {
+		return false;
+	}
+	if (attempt.nextAttemptAt === undefined) {
+		return false;
+	}
+	if (attempt.nextAttemptAt > input.now) {
+		return false;
+	}
+	if (
+		attempt.claimExpiresAt !== undefined &&
+		attempt.claimExpiresAt > input.now
+	) {
+		return false;
+	}
+	return true;
 };
 
 const DEFAULT_LIMIT = 50;

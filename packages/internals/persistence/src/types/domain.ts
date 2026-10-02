@@ -673,10 +673,14 @@ export type NotificationDeliveryStatus =
 	| "pending"
 	| "delivered"
 	| "failed"
-	| "skipped";
+	| "skipped"
+	| "dead";
 
 /**
- * Immutable delivery-attempt event record associated with a notification event.
+ * Delivery-attempt record associated with a notification event.
+ *
+ * Webhook jobs reuse one row across retries. `id` stays the dispatch identity;
+ * `attempt` and `status` move as the worker claims and completes work.
  *
  * @public
  */
@@ -703,10 +707,16 @@ export interface NotificationDeliveryAttemptRecord {
 	readonly error?: string;
 	/** Timestamp when this record was created. */
 	readonly createdAt: string;
+	/** When this job is next eligible for the retry worker. */
+	readonly nextAttemptAt?: string;
+	/** When a worker last claimed this job for an in-flight send. */
+	readonly claimedAt?: string;
+	/** When a crashed worker's claim expires and another worker may retry. */
+	readonly claimExpiresAt?: string;
 }
 
 /**
- * Input payload for immutable notification delivery attempt append operations.
+ * Input payload for notification delivery attempt append operations.
  *
  * @public
  */
@@ -731,6 +741,50 @@ export interface CreateNotificationDeliveryAttemptInput {
 	readonly error?: string;
 	/** Timestamp when this record was created. */
 	readonly createdAt: string;
+	/** When this job is next eligible for the retry worker. */
+	readonly nextAttemptAt?: string;
+	/** When a worker last claimed this job for an in-flight send. */
+	readonly claimedAt?: string;
+	/** When a crashed worker's claim expires and another worker may retry. */
+	readonly claimExpiresAt?: string;
+}
+
+/**
+ * Patch payload for updating a notification delivery job in place.
+ *
+ * @public
+ */
+export interface UpdateNotificationDeliveryAttemptInput {
+	/** Attempt number in the retry sequence. */
+	readonly attempt?: number;
+	/** Target destination endpoint/address for this attempt. */
+	readonly destination?: string;
+	/** Delivery outcome status recorded for this attempt. */
+	readonly status?: NotificationDeliveryStatus;
+	/** Provider response code returned for this attempt. */
+	readonly responseCode?: number;
+	/** Failure reason returned by the provider or runtime. */
+	readonly error?: string | null;
+	/** When this job is next eligible for the retry worker. */
+	readonly nextAttemptAt?: string | null;
+	/** When a worker last claimed this job for an in-flight send. */
+	readonly claimedAt?: string | null;
+	/** When a crashed worker's claim expires and another worker may retry. */
+	readonly claimExpiresAt?: string | null;
+}
+
+/**
+ * Filter contract for due retry-job lookup.
+ *
+ * @public
+ */
+export interface ListDueNotificationDeliveryAttemptsInput {
+	/** Clock time used to compare `next_attempt_at` and claim expiry. */
+	readonly now: string;
+	/** Optional channel filter, for example `webhook`. */
+	readonly channel?: string;
+	/** Maximum rows to claim or inspect in one worker tick. */
+	readonly limit?: number;
 }
 
 /**
@@ -1486,7 +1540,7 @@ export interface NotificationEventsRepository {
 }
 
 /**
- * Immutable notification delivery-attempt repository contract requiring tenant scope.
+ * Notification delivery-attempt repository contract requiring tenant scope.
  *
  * @public
  */
@@ -1558,6 +1612,66 @@ export interface NotificationDeliveryAttemptsRepository {
 		notificationEventId: string
 	) => Effect.Effect<
 		readonly NotificationDeliveryAttemptRecord[],
+		PersistenceError | SqlError,
+		TenantContext
+	>;
+	/**
+	 * Lists due webhook/email jobs for the current tenant.
+	 *
+	 * Due means `pending` or `failed`, `next_attempt_at <= now`, and no unexpired
+	 * claim. Requires {@link TenantContext}.
+	 *
+	 * @param input - Clock, optional channel filter, and page size.
+	 * @returns Due {@link NotificationDeliveryAttemptRecord} entries.
+	 */
+	readonly listDue: (
+		input: ListDueNotificationDeliveryAttemptsInput
+	) => Effect.Effect<
+		readonly NotificationDeliveryAttemptRecord[],
+		PersistenceError | SqlError,
+		TenantContext
+	>;
+	/**
+	 * Lists tenant ids that currently have due retry jobs.
+	 *
+	 * This is the retry worker's scheduler scan. Each returned tenant must then
+	 * be processed through {@link TenantContext} / `withTenant`.
+	 *
+	 * @param input - Clock used to compare `next_attempt_at` and claim expiry.
+	 * @returns Distinct tenant identifiers with due work.
+	 */
+	readonly listDueTenantIds: (input: {
+		readonly now: string;
+	}) => Effect.Effect<readonly string[], PersistenceError | SqlError>;
+	/**
+	 * Claims a due job for an in-flight send. Returns `null` when another worker
+	 * won the race or the row is no longer due.
+	 *
+	 * @param input - Job id, claim timestamps, and comparison clock.
+	 * @returns The claimed row, or `null` if the claim was not acquired.
+	 */
+	readonly claimDue: (input: {
+		readonly id: string;
+		readonly now: string;
+		readonly claimedAt: string;
+		readonly claimExpiresAt: string;
+	}) => Effect.Effect<
+		NotificationDeliveryAttemptRecord | null,
+		PersistenceError | SqlError,
+		TenantContext
+	>;
+	/**
+	 * Updates a delivery job in place after a send or schedule change.
+	 *
+	 * @param id - Delivery attempt identifier to update.
+	 * @param input - Fields to patch.
+	 * @returns The updated {@link NotificationDeliveryAttemptRecord}.
+	 */
+	readonly update: (
+		id: string,
+		input: UpdateNotificationDeliveryAttemptInput
+	) => Effect.Effect<
+		NotificationDeliveryAttemptRecord,
 		PersistenceError | SqlError,
 		TenantContext
 	>;

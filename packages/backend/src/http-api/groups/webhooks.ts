@@ -39,7 +39,13 @@ const WebhookDispatchSchema = Schema.Struct({
 	replayable: Schema.Boolean,
 	requestId: Schema.String,
 	responseCode: Schema.optional(Schema.Number),
-	status: Schema.Literals(["pending", "delivered", "failed", "skipped"]),
+	status: Schema.Literals([
+		"pending",
+		"delivered",
+		"failed",
+		"skipped",
+		"dead",
+	]),
 });
 
 const WebhookDispatchListResponseSchema = Schema.Struct({

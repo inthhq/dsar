@@ -674,6 +674,49 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 						]);
 						return record;
 					}),
+				claimDue: (input: Record<string, unknown>) =>
+					Effect.gen(function* claimDue() {
+						const id = String(input.id ?? "");
+						const now = String(input.now ?? "");
+						const arr = yield* Ref.get(notificationAttemptsRef);
+						const index = arr.findIndex((attempt) => {
+							if (attempt.id !== id) {
+								return false;
+							}
+							if (attempt.status !== "pending" && attempt.status !== "failed") {
+								return false;
+							}
+							if (typeof attempt.nextAttemptAt !== "string") {
+								return false;
+							}
+							if (attempt.nextAttemptAt > now) {
+								return false;
+							}
+							if (
+								typeof attempt.claimExpiresAt === "string" &&
+								attempt.claimExpiresAt > now
+							) {
+								return false;
+							}
+							return true;
+						});
+						if (index === -1) {
+							return null;
+						}
+						const current = arr[index];
+						if (!current) {
+							return null;
+						}
+						const claimed = {
+							...current,
+							claimExpiresAt: input.claimExpiresAt,
+							claimedAt: input.claimedAt,
+						};
+						const next = [...arr];
+						next[index] = claimed;
+						yield* Ref.set(notificationAttemptsRef, next);
+						return claimed;
+					}),
 				count: (input?: Record<string, unknown>) =>
 					Ref.get(notificationAttemptsRef).pipe(
 						Effect.map(
@@ -716,6 +759,90 @@ export const makeMinimalPersistence = (): Effect.Effect<MinimalPersistence> =>
 							)
 						)
 					),
+				listDue: (input?: Record<string, unknown>) =>
+					Ref.get(notificationAttemptsRef).pipe(
+						Effect.map((arr) => {
+							const now = String(input?.now ?? "");
+							const channel =
+								typeof input?.channel === "string" ? input.channel : undefined;
+							const limit = boundedLimit(input?.limit);
+							return arr
+								.filter((attempt) => {
+									if (channel && attempt.channel !== channel) {
+										return false;
+									}
+									if (
+										attempt.status !== "pending" &&
+										attempt.status !== "failed"
+									) {
+										return false;
+									}
+									if (typeof attempt.nextAttemptAt !== "string") {
+										return false;
+									}
+									if (attempt.nextAttemptAt > now) {
+										return false;
+									}
+									if (
+										typeof attempt.claimExpiresAt === "string" &&
+										attempt.claimExpiresAt > now
+									) {
+										return false;
+									}
+									return true;
+								})
+								.slice(0, limit);
+						})
+					),
+				listDueTenantIds: (input?: Record<string, unknown>) =>
+					Ref.get(notificationAttemptsRef).pipe(
+						Effect.map((arr) => {
+							const now = String(input?.now ?? "");
+							const tenantIds = new Set<string>();
+							for (const attempt of arr) {
+								if (
+									(attempt.status === "pending" ||
+										attempt.status === "failed") &&
+									typeof attempt.nextAttemptAt === "string" &&
+									attempt.nextAttemptAt <= now &&
+									(typeof attempt.claimExpiresAt !== "string" ||
+										attempt.claimExpiresAt <= now)
+								) {
+									tenantIds.add(String(attempt.tenantId ?? DEFAULT_TENANT_ID));
+								}
+							}
+							return [...tenantIds].toSorted();
+						})
+					),
+				update: (id: string, input: Record<string, unknown>) =>
+					Effect.gen(function* updateAttempt() {
+						const arr = yield* Ref.get(notificationAttemptsRef);
+						const index = arr.findIndex((attempt) => attempt.id === id);
+						if (index === -1) {
+							return yield* Effect.fail(new Error(`Missing ${id}`));
+						}
+						const current = arr[index] ?? {};
+						const defined: Record<string, unknown> = { ...current };
+						for (const [key, value] of Object.entries(input)) {
+							if (value === null) {
+								if (key === "error") {
+									defined.error = undefined;
+								} else if (key === "nextAttemptAt") {
+									defined.nextAttemptAt = undefined;
+								} else if (key === "claimedAt") {
+									defined.claimedAt = undefined;
+								} else if (key === "claimExpiresAt") {
+									defined.claimExpiresAt = undefined;
+								}
+							} else if (value !== undefined) {
+								defined[key] = value;
+							}
+						}
+						const next = [...arr];
+						next[index] = defined;
+						yield* Ref.set(notificationAttemptsRef, next);
+						return defined;
+					}),
 			},
 			notificationEvents: {
 				append: (input: Record<string, unknown>) =>

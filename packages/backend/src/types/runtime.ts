@@ -117,10 +117,15 @@ export interface RuntimeConfig {
 		readonly signingSecret: string;
 		/** Marks the webhook config as resolved for the active tenant scope. */
 		readonly tenantScoped?: boolean;
-		/** Maximum attempts before webhook delivery is marked failed. */
+		/** Maximum attempts before webhook delivery is marked dead. */
 		readonly retryMaxAttempts: number;
-		/** Delay between webhook retry attempts to reduce burst pressure. */
+		/** Delay between in-process email retries. Webhook jobs use `retryScheduleMs`. */
 		readonly retryDelayMs: number;
+		/**
+		 * Durable webhook backoff delays in milliseconds after each failed
+		 * attempt. Defaults to 1m, 5m, 30m, 2h, 6h, 24h.
+		 */
+		readonly retryScheduleMs?: readonly number[];
 		/** Per-attempt timeout to prevent hanging delivery workers. */
 		readonly timeoutMs: number;
 		/** When true, suppresses built-in email delivery in favor of webhooks only. */
@@ -245,4 +250,9 @@ export interface DsarInstanceOptions {
 		Partial<Omit<RuntimeRepos, "persistence">>;
 	/** Adapter overrides for custom host wiring. */
 	readonly adapters?: Partial<RuntimeAdapters>;
+	/**
+	 * When true, fork the durable webhook retry worker beside the HTTP handler.
+	 * Tests leave this unset so Vitest does not leak a poll loop.
+	 */
+	readonly runWebhookRetryWorker?: boolean;
 }

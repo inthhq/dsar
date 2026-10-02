@@ -352,12 +352,12 @@ export const toVerificationMethod = (
  * @returns Aggregate notification event status.
  */
 export const resolveNotificationStatus = (
-	statuses: readonly ("pending" | "delivered" | "failed" | "skipped")[]
+	statuses: readonly ("pending" | "delivered" | "failed" | "skipped" | "dead")[]
 ): "generated" | "delivered" | "failed" | "skipped" => {
 	if (statuses.includes("delivered")) {
 		return "delivered";
 	}
-	if (statuses.includes("failed")) {
+	if (statuses.includes("failed") || statuses.includes("dead")) {
 		return "failed";
 	}
 	if (statuses.includes("skipped")) {

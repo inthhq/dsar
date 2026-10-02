@@ -497,6 +497,85 @@ describe(Persistence, () => {
 		});
 	});
 
+	it("lists and claims due notification delivery jobs within a tenant", async () => {
+		const dbPath = sqliteFile("notification-retry-due");
+
+		const result = await runForTenant(
+			dbPath,
+			"tenant-a",
+			Effect.gen(function* createDueNotificationJobs() {
+				const persistence = yield* Effect.service(Persistence);
+				yield* persistence.requests.create({
+					...baseRequest,
+					id: "req-retry-1",
+				});
+				yield* persistence.notificationEvents.append({
+					correlationId: "corr-retry-1",
+					createdAt: "2026-01-01T00:00:00.000Z",
+					eventType: "request_captured",
+					id: "ne-retry-1",
+					idempotencyKey: "idem-retry-1",
+					locale: "en-GB",
+					payload: { requestId: "req-retry-1" },
+					policyVersion: "uk-v1",
+					requestId: "req-retry-1",
+				});
+				yield* persistence.notificationDeliveryAttempts.append({
+					attempt: 1,
+					channel: "webhook",
+					createdAt: "2026-01-01T00:00:00.000Z",
+					destination: "https://tenant.example/webhook",
+					id: "nda-due",
+					nextAttemptAt: "2026-01-01T00:01:00.000Z",
+					notificationEventId: "ne-retry-1",
+					requestId: "req-retry-1",
+					status: "failed",
+				});
+				yield* persistence.notificationDeliveryAttempts.append({
+					attempt: 1,
+					channel: "webhook",
+					createdAt: "2026-01-01T00:00:00.000Z",
+					destination: "https://tenant.example/webhook",
+					id: "nda-future",
+					nextAttemptAt: "2026-01-01T00:10:00.000Z",
+					notificationEventId: "ne-retry-1",
+					requestId: "req-retry-1",
+					status: "failed",
+				});
+				const now = "2026-01-01T00:02:00.000Z";
+				const due = yield* persistence.notificationDeliveryAttempts.listDue({
+					channel: "webhook",
+					now,
+				});
+				const tenantIds =
+					yield* persistence.notificationDeliveryAttempts.listDueTenantIds({
+						now,
+					});
+				const claimed =
+					yield* persistence.notificationDeliveryAttempts.claimDue({
+						claimExpiresAt: "2026-01-01T00:03:00.000Z",
+						claimedAt: now,
+						id: "nda-due",
+						now,
+					});
+				const lostRace =
+					yield* persistence.notificationDeliveryAttempts.claimDue({
+						claimExpiresAt: "2026-01-01T00:03:00.000Z",
+						claimedAt: now,
+						id: "nda-due",
+						now,
+					});
+				return { claimed, due, lostRace, tenantIds };
+			})
+		);
+
+		expect(result.due.map((attempt) => attempt.id)).toStrictEqual(["nda-due"]);
+		expect(result.tenantIds).toStrictEqual(["tenant-a"]);
+		expect(result.claimed?.id).toBe("nda-due");
+		expect(result.claimed?.claimedAt).toBe("2026-01-01T00:02:00.000Z");
+		expect(result.lostRace).toBeNull();
+	});
+
 	it("persists webhook endpoint signing-key rotation with tenant isolation", async () => {
 		const dbPath = sqliteFile("webhook-rotation");
 		const seeded = await runForTenant(

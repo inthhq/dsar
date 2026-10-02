@@ -1,3 +1,4 @@
+import { isDueNotificationDeliveryAttempt } from "@dsar/persistence";
 import type {
 	CreateAuditEventInput,
 	CreateClockSegmentInput,
@@ -7,7 +8,10 @@ import type {
 	CreateRequestInput,
 	CreateRequestTimelineEventInput,
 	CreateVerificationEvidenceInput,
+	NotificationDeliveryAttemptRecord,
 	PersistenceService,
+	RequestTimelineEventRecord,
+	UpdateNotificationDeliveryAttemptInput,
 	UpdateRequestInput,
 	WebhookEndpointRecord,
 	WebhookSigningKeyRecord,
@@ -18,6 +22,7 @@ import { pipe } from "effect/Function";
 
 import { makeAdapterRegistry } from "../../src/adapters";
 import { deriveLifecycleNotificationDrafts } from "../../src/events/contracts";
+import { deliverDueWebhookRetries } from "../../src/services/notifications/retry";
 import {
 	emitNotificationEvent,
 	makeNotificationDraft,
@@ -49,19 +54,8 @@ const getFetchHeaders = (
 
 const makeMemoryPersistence = (): {
 	readonly persistence: PersistenceService;
-	readonly getAttempts: () => readonly {
-		readonly id: string;
-		readonly tenantId: string;
-		readonly notificationEventId: string;
-		readonly requestId: string;
-		readonly channel: string;
-		readonly destination: string;
-		readonly attempt: number;
-		readonly status: "pending" | "delivered" | "failed" | "skipped";
-		readonly responseCode?: number;
-		readonly error?: string;
-		readonly createdAt: string;
-	}[];
+	readonly getAttempts: () => readonly NotificationDeliveryAttemptRecord[];
+	readonly getTimeline: () => readonly RequestTimelineEventRecord[];
 } => {
 	const notificationEvents: {
 		readonly id: string;
@@ -77,25 +71,39 @@ const makeMemoryPersistence = (): {
 	}[] = [];
 	const webhookEndpoints = new Map<string, WebhookEndpointRecord>();
 	const webhookSigningKeys: WebhookSigningKeyRecord[] = [];
-	const attempts: {
-		readonly id: string;
-		readonly tenantId: string;
-		readonly notificationEventId: string;
-		readonly requestId: string;
-		readonly channel: string;
-		readonly destination: string;
-		readonly attempt: number;
-		readonly status: "pending" | "delivered" | "failed" | "skipped";
-		readonly responseCode?: number;
-		readonly error?: string;
-		readonly createdAt: string;
-	}[] = [];
+	const attempts: NotificationDeliveryAttemptRecord[] = [];
+	const timeline: RequestTimelineEventRecord[] = [];
+
+	const patchAttempt = (
+		current: NotificationDeliveryAttemptRecord,
+		input: UpdateNotificationDeliveryAttemptInput
+	): NotificationDeliveryAttemptRecord => ({
+		...current,
+		attempt: input.attempt ?? current.attempt,
+		claimExpiresAt:
+			input.claimExpiresAt === null
+				? undefined
+				: (input.claimExpiresAt ?? current.claimExpiresAt),
+		claimedAt:
+			input.claimedAt === null
+				? undefined
+				: (input.claimedAt ?? current.claimedAt),
+		destination: input.destination ?? current.destination,
+		error: input.error === null ? undefined : (input.error ?? current.error),
+		nextAttemptAt:
+			input.nextAttemptAt === null
+				? undefined
+				: (input.nextAttemptAt ?? current.nextAttemptAt),
+		responseCode: input.responseCode ?? current.responseCode,
+		status: input.status ?? current.status,
+	});
 
 	const failNotImplemented = (name: string) =>
 		Effect.fail(new Error(`not implemented in test persistence: ${name}`));
 
 	return {
 		getAttempts: () => attempts,
+		getTimeline: () => timeline,
 		persistence: {
 			auditEvents: {
 				append: (_input: CreateAuditEventInput) =>
@@ -131,6 +139,43 @@ const makeMemoryPersistence = (): {
 					attempts.push(record);
 					return Effect.succeed(record);
 				},
+				claimDue: (input) => {
+					const index = attempts.findIndex(
+						(attempt) =>
+							attempt.id === input.id &&
+							isDueNotificationDeliveryAttempt(attempt, input)
+					);
+					if (index === -1) {
+						return Effect.succeed(null);
+					}
+					const current = attempts[index];
+					if (!current) {
+						return Effect.succeed(null);
+					}
+					const claimed = {
+						...current,
+						claimExpiresAt: input.claimExpiresAt,
+						claimedAt: input.claimedAt,
+					};
+					attempts[index] = claimed;
+					return Effect.succeed(claimed);
+				},
+				count: (input) =>
+					Effect.succeed(
+						attempts.filter((attempt) => {
+							if (input?.channel && attempt.channel !== input.channel) {
+								return false;
+							}
+							if (
+								input?.status &&
+								input.status.length > 0 &&
+								!input.status.includes(attempt.status)
+							) {
+								return false;
+							}
+							return true;
+						}).length
+					),
 				getById: (id: string) =>
 					Effect.fromNullishOr(
 						attempts.find((attempt) => attempt.id === id)
@@ -161,6 +206,34 @@ const makeMemoryPersistence = (): {
 							(attempt) => attempt.notificationEventId === notificationEventId
 						)
 					),
+				listDue: (input) =>
+					Effect.succeed(
+						attempts.filter((attempt) =>
+							isDueNotificationDeliveryAttempt(attempt, input)
+						)
+					),
+				listDueTenantIds: (input) =>
+					Effect.succeed([
+						...new Set(
+							attempts
+								.filter((attempt) =>
+									isDueNotificationDeliveryAttempt(attempt, input)
+								)
+								.map((attempt) => attempt.tenantId)
+						),
+					]),
+				update: (id, input) => {
+					const index = attempts.findIndex((attempt) => attempt.id === id);
+					const current = index === -1 ? undefined : attempts[index];
+					if (!current) {
+						return Effect.fail(
+							new Error(`missing notification attempt in test: ${id}`)
+						);
+					}
+					const updated = patchAttempt(current, input);
+					attempts[index] = updated;
+					return Effect.succeed(updated);
+				},
 			},
 			notificationEvents: {
 				append: (input: CreateNotificationEventInput) => {
@@ -219,9 +292,15 @@ const makeMemoryPersistence = (): {
 				upsert: () => failNotImplemented("retentionPolicies.upsert"),
 			},
 			timeline: {
-				append: (_input: CreateRequestTimelineEventInput) =>
-					failNotImplemented("timeline.append"),
-				listByRequestId: () => Effect.succeed([]),
+				append: (input: CreateRequestTimelineEventInput) => {
+					const record = { ...input, tenantId: "tenant-default" };
+					timeline.push(record);
+					return Effect.succeed(record);
+				},
+				listByRequestId: (requestId: string) =>
+					Effect.succeed(
+						timeline.filter((event) => event.requestId === requestId)
+					),
 			},
 			verificationEvidence: {
 				create: (_input: CreateVerificationEvidenceInput) =>
@@ -366,6 +445,7 @@ const makeServices = (input: {
 	readonly dispatch: RuntimeServices["adapters"]["notifications"];
 	readonly retryMaxAttempts: number;
 	readonly retryDelayMs: number;
+	readonly retryScheduleMs?: readonly number[];
 	readonly adapterKey?: string;
 	readonly omitChannelMetadata?: boolean;
 	readonly webhookEnabled?: boolean;
@@ -419,6 +499,7 @@ const makeServices = (input: {
 						disableBuiltInEmail: input.disableBuiltInEmail,
 						retryDelayMs: input.retryDelayMs,
 						retryMaxAttempts: input.retryMaxAttempts,
+						retryScheduleMs: input.retryScheduleMs,
 						signingSecret: "test-secret",
 						timeoutMs: 1000,
 						url: "https://tenant.example/webhook",
@@ -475,77 +556,55 @@ describe("notification retry/backoff behavior", () => {
 		).toStrictEqual(["delivered"]);
 	});
 
-	it("retries failed webhook dispatches using configured backoff", async () => {
-		const { vi } = await import("vitest");
-		vi.useFakeTimers();
-		try {
-			const memory = makeMemoryPersistence();
-			const retryDelayMs = 1000;
-			let callCount = 0;
-			const attemptTimes: number[] = [];
-			const outcomes = [
-				{ error: "temporary failure", status: "failed" as const },
-				{ error: "temporary failure", status: "failed" as const },
-				{ responseCode: 202, status: "delivered" as const },
-			] as const;
-			const dispatch = {
-				send: () =>
-					Effect.sync(() => {
-						attemptTimes.push(Date.now());
-						callCount += 1;
-						return outcomes[callCount - 1] as (typeof outcomes)[number];
+	it("writes a pending webhook job before the first send and schedules retries", async () => {
+		const memory = makeMemoryPersistence();
+		let callCount = 0;
+		const dispatch = {
+			send: () =>
+				Effect.sync(() => {
+					callCount += 1;
+					return { error: "temporary failure", status: "failed" as const };
+				}),
+		};
+		const services = makeServices({
+			dispatch,
+			persistence: memory.persistence,
+			retryDelayMs: 1000,
+			retryMaxAttempts: 3,
+			retryScheduleMs: [60_000, 300_000],
+		});
+
+		const result = await Effect.runPromise(
+			pipe(
+				emitNotificationEvent({
+					draft: makeNotificationDraft({
+						eventType: "clock_due_changed",
+						payload: { dueAt: "2026-03-01T00:00:00.000Z" },
+						requestId: "req-1",
 					}),
-			};
-			const services = makeServices({
-				dispatch,
-				persistence: memory.persistence,
-				retryDelayMs,
-				retryMaxAttempts: 3,
-			});
-			const notificationPromise = Effect.runPromise(
-				pipe(
-					emitNotificationEvent({
-						draft: makeNotificationDraft({
-							eventType: "clock_due_changed",
-							payload: { dueAt: "2026-03-01T00:00:00.000Z" },
-							requestId: "req-1",
-						}),
-						idempotencyKey: "idem-1",
-						tenantId: "tenant-default",
-					}),
-					Effect.provideService(RuntimeServicesTag, services)
-				)
-			);
-			await vi.advanceTimersByTimeAsync(1);
-			expect(callCount).toBe(1);
-			await vi.advanceTimersByTimeAsync(998);
-			expect(callCount).toBe(1);
-			await vi.advanceTimersByTimeAsync(1);
-			expect(callCount).toBe(2);
-			await vi.advanceTimersByTimeAsync(1000);
-			const result = await notificationPromise;
-			expect(result.status).toBe("generated");
-			expect(callCount).toBe(3);
-			expect(attemptTimes).toHaveLength(3);
-			expect(typeof attemptTimes[0]).toBe("number");
-			expect(typeof attemptTimes[1]).toBe("number");
-			const firstAttemptAt = attemptTimes[0] as number;
-			const secondAttemptAt = attemptTimes[1] as number;
-			expect(secondAttemptAt - firstAttemptAt).toBeGreaterThanOrEqual(
-				retryDelayMs
-			);
-			expect(
-				memory
-					.getAttempts()
-					.filter((attempt) => attempt.channel === "webhook")
-					.map((attempt) => attempt.status)
-			).toStrictEqual(["failed", "failed", "delivered"]);
-		} finally {
-			vi.useRealTimers();
-		}
+					idempotencyKey: "idem-1",
+					tenantId: "tenant-default",
+				}),
+				Effect.provideService(RuntimeServicesTag, services)
+			)
+		);
+		expect(result.status).toBe("generated");
+		expect(callCount).toBe(1);
+		const webhookJobs = memory
+			.getAttempts()
+			.filter((attempt) => attempt.channel === "webhook");
+		expect(webhookJobs).toHaveLength(1);
+		expect(webhookJobs[0]?.status).toBe("failed");
+		expect(webhookJobs[0]?.attempt).toBe(1);
+		expect(webhookJobs[0]?.nextAttemptAt).toBeDefined();
+		expect(
+			memory
+				.getTimeline()
+				.filter((event) => event.eventType === "webhook_delivery_attempted")
+		).toHaveLength(1);
 	});
 
-	it("stops retrying after max attempts", async () => {
+	it("stops retrying after max attempts and marks the job dead", async () => {
 		const memory = makeMemoryPersistence();
 		let callCount = 0;
 		const dispatch = {
@@ -560,6 +619,7 @@ describe("notification retry/backoff behavior", () => {
 			persistence: memory.persistence,
 			retryDelayMs: 1,
 			retryMaxAttempts: 2,
+			retryScheduleMs: [0],
 		});
 
 		await Effect.runPromise(
@@ -576,13 +636,19 @@ describe("notification retry/backoff behavior", () => {
 				Effect.provideService(RuntimeServicesTag, services)
 			)
 		);
+		expect(callCount).toBe(1);
+		await Effect.runPromise(
+			deliverDueWebhookRetries({ tenantId: "tenant-default" }).pipe(
+				Effect.provideService(RuntimeServicesTag, services)
+			)
+		);
 		expect(callCount).toBe(2);
 		expect(
 			memory
 				.getAttempts()
 				.filter((attempt) => attempt.channel === "webhook")
 				.map((attempt) => attempt.status)
-		).toStrictEqual(["failed", "failed"]);
+		).toStrictEqual(["dead"]);
 	});
 
 	it("sends built-in email when webhook is disabled", async () => {

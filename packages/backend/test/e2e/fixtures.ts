@@ -1,4 +1,7 @@
-import { PersistenceEntityNotFoundError } from "@dsar/persistence";
+import {
+	isDueNotificationDeliveryAttempt,
+	PersistenceEntityNotFoundError,
+} from "@dsar/persistence";
 import type {
 	AuditEventRecord,
 	ChatStateRecord,
@@ -22,6 +25,7 @@ import type {
 	RequestRecord,
 	RequestTimelineEventRecord,
 	UpdateFulfillmentArtifactInput,
+	UpdateNotificationDeliveryAttemptInput,
 	UpdateRequestInput,
 	UpsertRetentionPolicyInput,
 	RetentionPolicyRecord,
@@ -109,6 +113,30 @@ const matchesNotificationAttemptFilter = (
 	}
 	return true;
 };
+
+const patchNotificationAttempt = (
+	current: NotificationDeliveryAttemptRecord,
+	input: UpdateNotificationDeliveryAttemptInput
+): NotificationDeliveryAttemptRecord => ({
+	...current,
+	attempt: input.attempt ?? current.attempt,
+	claimExpiresAt:
+		input.claimExpiresAt === null
+			? undefined
+			: (input.claimExpiresAt ?? current.claimExpiresAt),
+	claimedAt:
+		input.claimedAt === null
+			? undefined
+			: (input.claimedAt ?? current.claimedAt),
+	destination: input.destination ?? current.destination,
+	error: input.error === null ? undefined : (input.error ?? current.error),
+	nextAttemptAt:
+		input.nextAttemptAt === null
+			? undefined
+			: (input.nextAttemptAt ?? current.nextAttemptAt),
+	responseCode: input.responseCode ?? current.responseCode,
+	status: input.status ?? current.status,
+});
 
 export const BASE_JSON_BODY = {
 	challengeId: "challenge-1",
@@ -427,6 +455,27 @@ export const makeMemoryPersistence = (): PersistenceService => {
 				notificationAttempts.push(record);
 				return Effect.succeed(record);
 			},
+			claimDue: (input) => {
+				const index = notificationAttempts.findIndex(
+					(attempt) =>
+						attempt.id === input.id &&
+						isDueNotificationDeliveryAttempt(attempt, input)
+				);
+				if (index === -1) {
+					return Effect.succeed(null);
+				}
+				const current = notificationAttempts[index];
+				if (!current) {
+					return Effect.succeed(null);
+				}
+				const claimed: NotificationDeliveryAttemptRecord = {
+					...current,
+					claimExpiresAt: input.claimExpiresAt,
+					claimedAt: input.claimedAt,
+				};
+				notificationAttempts[index] = claimed;
+				return Effect.succeed(claimed);
+			},
 			count: (input?: ListNotificationDeliveryAttemptsInput) =>
 				Effect.succeed(
 					notificationAttempts.filter((attempt) =>
@@ -468,6 +517,48 @@ export const makeMemoryPersistence = (): PersistenceService => {
 						(attempt) => attempt.notificationEventId === notificationEventId
 					)
 				),
+			listDue: (input) =>
+				Effect.succeed(
+					notificationAttempts
+						.filter((attempt) =>
+							isDueNotificationDeliveryAttempt(attempt, input)
+						)
+						.toSorted((left, right) =>
+							(left.nextAttemptAt ?? "").localeCompare(
+								right.nextAttemptAt ?? ""
+							)
+						)
+						.slice(0, Math.max(1, Math.min(500, Math.trunc(input.limit ?? 50))))
+				),
+			listDueTenantIds: (input) =>
+				Effect.succeed(
+					[
+						...new Set(
+							notificationAttempts
+								.filter((attempt) =>
+									isDueNotificationDeliveryAttempt(attempt, input)
+								)
+								.map((attempt) => attempt.tenantId)
+						),
+					].toSorted()
+				),
+			update: (id, input) => {
+				const index = notificationAttempts.findIndex(
+					(attempt) => attempt.id === id
+				);
+				const current = index === -1 ? undefined : notificationAttempts[index];
+				if (!current) {
+					return Effect.fail(
+						new PersistenceEntityNotFoundError({
+							entity: "notification_delivery_attempts",
+							id,
+						})
+					);
+				}
+				const updated = patchNotificationAttempt(current, input);
+				notificationAttempts[index] = updated;
+				return Effect.succeed(updated);
+			},
 		},
 		notificationEvents: {
 			append: (input: CreateNotificationEventInput) => {
