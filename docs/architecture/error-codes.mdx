@@ -16,26 +16,26 @@ DSAR uses package-owned error catalogs with globally unique identifiers.
 
 | package                     | id prefix     | fallback code example                   |
 | --------------------------- | ------------- | --------------------------------------- |
-| `@dsar/backend`             | `DSAR-BE-*`   | `INTERNAL_UNCATALOGED_ERROR`            |
-| `@dsar/node-sdk`            | `DSAR-SDK-*`  | `SDK_UNCATALOGED_ERROR`                 |
-| `@dsar/cli`                 | `DSAR-CLI-*`  | `CLI_UNCATALOGED_ERROR`                 |
-| `@dsar/core`                | `DSAR-CORE-*` | `CORE_UNCATALOGED_ERROR`                |
+| `dsar/backend`             | `DSAR-BE-*`   | `INTERNAL_UNCATALOGED_ERROR`            |
+| `dsar/node-sdk`            | `DSAR-SDK-*`  | `SDK_UNCATALOGED_ERROR`                 |
+| `dsar/cli`                 | `DSAR-CLI-*`  | `CLI_UNCATALOGED_ERROR`                 |
+| `dsar/core`                | `DSAR-CORE-*` | `CORE_UNCATALOGED_ERROR`                |
 | `@dsar/policy-engine`       | `DSAR-PE-*`   | `POLICY_ENGINE_UNCATALOGED_ERROR`       |
 | `@dsar/policy-packs`        | `DSAR-PP-*`   | `POLICY_PACKS_UNCATALOGED_ERROR`        |
 | `@dsar/persistence`         | `DSAR-PS-*`   | `PERSISTENCE_UNCATALOGED_ERROR`         |
-| `@dsar/persistence-pg`      | `DSAR-PG-*`   | `PERSISTENCE_PG_UNCATALOGED_ERROR`      |
-| `@dsar/persistence-sqlite`  | `DSAR-SQL-*`  | `PERSISTENCE_SQLITE_UNCATALOGED_ERROR`  |
-| `@dsar/storage-s3`          | `DSAR-S3-*`   | `STORAGE_S3_UNCATALOGED_ERROR`          |
-| `@dsar/storage-filesystem`  | `DSAR-FS-*`   | `STORAGE_FILESYSTEM_UNCATALOGED_ERROR`  |
-| `@dsar/storage-vercel-blob` | `DSAR-VB-*`   | `STORAGE_VERCEL_BLOB_UNCATALOGED_ERROR` |
-| `@dsar/inbound-resend`      | `DSAR-IN-*`   | `INBOUND_RESEND_UNCATALOGED_ERROR`      |
-| `@dsar/outbound-resend`     | `DSAR-OUT-*`  | `OUTBOUND_RESEND_UNCATALOGED_ERROR`     |
+| `dsar/persistence-pg`      | `DSAR-PG-*`   | `PERSISTENCE_PG_UNCATALOGED_ERROR`      |
+| `dsar/persistence-sqlite`  | `DSAR-SQL-*`  | `PERSISTENCE_SQLITE_UNCATALOGED_ERROR`  |
+| `dsar/storage-s3`          | `DSAR-S3-*`   | `STORAGE_S3_UNCATALOGED_ERROR`          |
+| `dsar/storage-filesystem`  | `DSAR-FS-*`   | `STORAGE_FILESYSTEM_UNCATALOGED_ERROR`  |
+| `dsar/storage-vercel-blob` | `DSAR-VB-*`   | `STORAGE_VERCEL_BLOB_UNCATALOGED_ERROR` |
+| `dsar/inbound-resend`      | `DSAR-IN-*`   | `INBOUND_RESEND_UNCATALOGED_ERROR`      |
+| `dsar/outbound-resend`     | `DSAR-OUT-*`  | `OUTBOUND_RESEND_UNCATALOGED_ERROR`     |
 | `@dsar/guards`              | `DSAR-GRD-*`  | `GUARDS_UNCATALOGED_ERROR`              |
 | `@dsar/schema`              | `DSAR-SCH-*`  | `SCHEMA_UNCATALOGED_ERROR`              |
 
 ## Backend Catalog
 
-The canonical backend catalog is emitted by `@dsar/backend` from
+The canonical backend catalog is emitted by `dsar/backend` from
 `packages/backend/src/types/error-codes.ts`.
 
 ## Backend Envelope fields

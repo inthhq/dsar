@@ -1,27 +1,27 @@
 ---
 title: "Filesystem Storage"
-description: "@dsar/storage-filesystem stores DSAR fulfilment artifacts on the local filesystem. Ideal for development, testing, and single-server deployments."
+description: "dsar/storage-filesystem stores DSAR fulfilment artifacts on the local filesystem. Ideal for development, testing, and single-server deployments."
 group: reference-storage
 ---
 
 <include src="../../_shared/alpha-warning.mdx" />
 
-`@dsar/storage-filesystem` stores DSAR fulfilment artifacts on the local filesystem. Ideal for development, testing, and single-server deployments.
+`dsar/storage-filesystem` stores DSAR fulfilment artifacts on the local filesystem. Ideal for development, testing, and single-server deployments.
 
 ## Installation
 
 | Package manager | Command                                |
 | :-------------- | :------------------------------------- |
-| npm             | `npm install @dsar/storage-filesystem` |
-| pnpm            | `pnpm add @dsar/storage-filesystem`    |
-| yarn            | `yarn add @dsar/storage-filesystem`    |
-| bun             | `bun add @dsar/storage-filesystem`     |
+| npm             | `npm install dsar effect` |
+| pnpm            | `pnpm add dsar effect`    |
+| yarn            | `yarn add dsar effect`    |
+| bun             | `bun add dsar effect`     |
 
 ## Setup
 
 ```ts
-import { dsarInstance } from "@dsar/backend";
-import { makeFilesystemStorageAdapter } from "@dsar/storage-filesystem";
+import { dsarInstance } from "dsar/backend";
+import { makeFilesystemStorageAdapter } from "dsar/storage-filesystem";
 
 const runtime = dsarInstance({
 	adapters: {

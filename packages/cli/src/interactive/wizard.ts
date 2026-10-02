@@ -1,5 +1,5 @@
 /* oxlint-disable max-statements */
-import { Prompt } from "effect/unstable/cli";
+import { Prompt } from "effect/cli";
 
 import {
 	collectFormFlags,
@@ -18,7 +18,7 @@ export { resolvePromptSelectionValue };
 
 const promptForDomain = () =>
 	runPrompt(
-		Prompt.select({
+		Prompt.Select({
 			choices: domainChoices,
 			message: "Choose a command domain:",
 		})
@@ -26,7 +26,7 @@ const promptForDomain = () =>
 
 const promptForAction = (preview: string) =>
 	runPrompt(
-		Prompt.select({
+		Prompt.Select({
 			choices: [
 				{ title: "Execute", value: "execute" },
 				{ title: "Edit", value: "edit" },

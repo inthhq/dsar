@@ -15,8 +15,8 @@ and product embedding patterns.
 | ------------------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------ |
 | `examples/kitchen-sink`              | Full local runtime with SQLite, filesystem artifacts, and walkthrough scripts | Start here when you want broad lifecycle coverage fast |
 | `examples/nextjs-deletion-webhook`   | Next.js App Router receiver for signed outbound DSAR webhooks                 | Copy this when you need to erase a local row on fulfil |
-| `examples/dashboard`                 | Operator queue using `@dsar/react` against kitchen-sink                       | Local operator UI                                      |
-| `examples/subject-portal`            | Subject portal using `@dsar/react` against kitchen-sink                       | File and list requests in the browser                  |
+| `examples/dashboard`                 | Operator queue using `dsar/react` against kitchen-sink                       | Local operator UI                                      |
+| `examples/subject-portal`            | Subject portal using `dsar/react` against kitchen-sink                       | File and list requests in the browser                  |
 | `examples/local-storage`             | Runtime wired to filesystem storage                                           | Validate local artifact persistence                    |
 | `examples/vercel-storage`            | Runtime wired to Vercel Blob plus an upload demo                              | Validate Blob-backed artifact storage and demo uploads |
 
@@ -40,7 +40,7 @@ Then use:
 
 ### Self-Hosted Runtime
 
-Embed `@dsar/backend` into your own service, choose a persistence layer, then
+Embed `dsar/backend` into your own service, choose a persistence layer, then
 register storage, inbound, outbound, and auth integrations as needed.
 
 Start with:
@@ -50,7 +50,7 @@ Start with:
 
 ### Server-Side Product Integration
 
-Use `@dsar/node-sdk` or `@dsar/core` from trusted backend code in your product.
+Use `dsar/node-sdk` or `dsar/core` from trusted backend code in your product.
 This is the preferred shape for dashboards, automation, and subject portals.
 
 ### Browser-Facing Portals

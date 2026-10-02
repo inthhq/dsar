@@ -1,18 +1,24 @@
 ---
-title: "Outbound Resend (`@dsar/outbound-resend`)"
-description: "@dsar/outbound-resend provides built-in outbound DSAR notifications using the Resend API."
+title: "Outbound Resend (`dsar/outbound-resend`)"
+description: "dsar/outbound-resend provides built-in outbound DSAR notifications using the Resend API."
 group: integrations-outbound
 ---
 
 <include src="../../_shared/alpha-warning.mdx" />
 
-`@dsar/outbound-resend` provides built-in outbound DSAR notifications using the Resend API.
+`dsar/outbound-resend` provides built-in outbound DSAR notifications using the Resend API.
 
 ## Package setup
 
+Install `dsar` with `effect` and the Resend SDK and Chat SDK adapter it uses:
+
+```sh
+bun add dsar effect resend @resend/chat-sdk-adapter chat
+```
+
 ```ts
-import { dsarInstance } from "@dsar/backend";
-import { makeOutboundResendAdapter } from "@dsar/outbound-resend";
+import { dsarInstance } from "dsar/backend";
+import { makeOutboundResendAdapter } from "dsar/outbound-resend";
 
 const outboundResend = makeOutboundResendAdapter({
 	apiKey: process.env.RESEND_API_KEY ?? "",
@@ -47,7 +53,7 @@ const runtime = dsarInstance({
 Notification generation remains mandatory; delivery channels execute independently:
 
 - Webhook channel (`notificationWebhook`) dispatches signed payloads.
-- Built-in email channel dispatches via `@dsar/outbound-resend` when enabled.
+- Built-in email channel dispatches via `dsar/outbound-resend` when enabled.
 - Delivery outcomes are persisted as `pending`, `delivered`, `failed`, `skipped`, or `dead`.
 
 ## Email enable/disable precedence

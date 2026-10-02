@@ -1,6 +1,6 @@
 import type { Config, Layer } from "effect";
-import type * as SqlClient from "effect/unstable/sql/SqlClient";
-import type { SqlError } from "effect/unstable/sql/SqlError";
+import type * as SqlClient from "effect/sql/SqlClient";
+import type { SqlError } from "effect/sql/SqlError";
 
 /**
  * Supported persistence driver kinds.

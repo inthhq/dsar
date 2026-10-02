@@ -6,7 +6,7 @@ import type {
 	UnmappedJurisdictionError,
 } from "@dsar/policy-packs";
 import * as Data from "effect/Data";
-import type { SqlError } from "effect/unstable/sql/SqlError";
+import type { SqlError } from "effect/sql/SqlError";
 
 import type { BackendErrorCode } from "./error-codes";
 

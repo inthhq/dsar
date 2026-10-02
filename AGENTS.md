@@ -58,14 +58,16 @@ bun run prepare:effect
 
 This clones or updates `Effect-TS/effect` on `main` into `.repos/effect`. Use
 that checkout as the API and migration source of truth when installed package
-types are not enough. At the July 2026 refresh, Effect 4 is still published as
-`4.0.0-beta.101`, not a GA `4.0.0`; verify npm metadata and upstream `main`
-before changing that statement or the catalog.
+types are not enough. The catalog is on the Effect `4.0.0` GA line, released
+on 2026-10-01. Unstable modules from the beta (`effect/unstable/sql`,
+`effect/unstable/http`, `effect/unstable/httpapi`, `effect/unstable/cli`) now
+live at `effect/sql`, `effect/http`, `effect/http-api`, and `effect/cli`.
 
 ## Workspace map
 
-- `packages/dsar`: public umbrella package and subpath exports; built with
-  tsdown.
+- `packages/dsar`: the only published package. tsdown bundles the private
+  `@dsar/*` workspaces into its subpath exports; third-party libraries are
+  dependencies or optional peers.
 - `packages/backend`: Effect HTTP API, lifecycle orchestration, auth,
   middleware, OpenAPI, and runtime assembly.
 - `packages/core`: application-facing client modes and the Chat SDK state
@@ -156,7 +158,8 @@ before changing that statement or the catalog.
 | Migration registry | a new monotonic migration file, up/down coverage, clean install, previous-version upgrade, concurrency metadata tests |
 | Adapter contract | adapter registry, conformance tests, package peer dependencies, integration docs |
 | Error catalog | exported IDs, response mapping, contract tests, matching error MDX |
-| Public export | source entrypoint, `packages/dsar` subpath export, tsdown output, publint/ATTW |
+| Public export | source entrypoint, `packages/dsar` subpath export, tsdown output, publint/ATTW, `bun run check:publish-artifacts` |
+| Third-party import in a workspace | `packages/dsar` `dependencies` or optional `peerDependencies`; tsdown `onlyImport` fails the build otherwise |
 | CLI command | command schema, runtime handler, help/interactive flow, SDK parity and E2E matrix |
 | Docs navigation | `docs/docs.config.ts`, the relevant `meta.json`, internal links, Leadtype lint |
 
@@ -254,9 +257,11 @@ snapshot rewrite.
 - Build output, coverage, `.turbo`, `.repos/effect`, and release-generated
   `packages/dsar/docs`, `packages/dsar/AGENTS.md`, and
   `packages/dsar/SKILL.md` are not source changes.
-- Add a Changeset for user-visible package behavior, public API, runtime
-  requirement, or dependency compatibility changes. Keep unrelated package
-  changes out of the same Changeset.
+- Add a Tegami release note under `.tegami/` for user-visible behavior, public
+  API, runtime requirement, or dependency compatibility changes. Keep unrelated
+  changes in separate notes. `.tegami/README.md` covers the format, release
+  channels, and publishing checks. Do not edit `packages/dsar/CHANGELOG.md` or
+  `.tegami/publish-lock.yaml`; Tegami generates them.
 
 ## Git hygiene
 

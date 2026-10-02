@@ -26,7 +26,7 @@ const isValidIsoDate = Schema.makeFilter(
 export const IsoTimestampSchema = Schema.String.pipe(
 	Schema.check(
 		Schema.isPattern(
-			/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/
+			/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/u
 		),
 		isValidIsoDate
 	)

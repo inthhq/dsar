@@ -1,0 +1,17 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"//": "Declaration build for the published dsar package. It lives in packages/ because tsdown's tsgo generator uses the tsconfig directory as rootDir, and the bundled workspace sources sit in sibling folders.",
+	"extends": "./internals/typescript-config/base.json",
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		"lib": ["es2023", "DOM", "DOM.Iterable"]
+	},
+	"include": ["*/src", "internals/*/src"],
+	"exclude": [
+		"node_modules",
+		"dist",
+		"*/src/**/*.test.ts",
+		"*/src/**/*.test.tsx",
+		"internals/*/src/**/*.test.ts"
+	]
+}

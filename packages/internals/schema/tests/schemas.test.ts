@@ -1,7 +1,9 @@
 import {
 	ErrorEnvelopeSchema,
 	FulfillmentManifestSchema,
+	IsoTimestampSchema,
 	LifecycleTransitionSchema,
+	PolicyPackVersionSchema,
 	RequestSchema,
 	VerificationCaseSchema,
 } from "@dsar/schema";
@@ -85,5 +87,16 @@ describe("schema contracts", () => {
 		});
 
 		expect(Exit.isSuccess(result)).toBeTruthy();
+	});
+
+	// Effect only exports a regex to JSON Schema when it has the `u` flag.
+	// Without it the OpenAPI contract silently loses these constraints.
+	it.each([
+		["IsoTimestampSchema", IsoTimestampSchema],
+		["PolicyPackVersionSchema", PolicyPackVersionSchema],
+	])("publishes the %s pattern in JSON Schema", (_name, schema) => {
+		const { schema: jsonSchema } = Schema.toJsonSchemaDocument(schema);
+
+		expect(jsonSchema).toHaveProperty("pattern");
 	});
 });

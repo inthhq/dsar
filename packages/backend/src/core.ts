@@ -2,12 +2,12 @@ import { PolicyPacksLive } from "@dsar/policy-packs";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
+import * as OpenApi from "effect/http-api/OpenApi";
+import * as HttpEffect from "effect/http/HttpEffect";
+import * as HttpServerRequest from "effect/http/HttpServerRequest";
+import * as HttpServerResponse from "effect/http/HttpServerResponse";
 import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
-import * as HttpEffect from "effect/unstable/http/HttpEffect";
-import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
-import * as OpenApi from "effect/unstable/httpapi/OpenApi";
 
 import { makeDsarHttpApi, renderDocsHtml } from "./http-api";
 import {

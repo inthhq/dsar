@@ -9,21 +9,24 @@ group: reference-developer
 DSAR exposes several public surfaces depending on whether you are hosting the
 runtime, calling it, or abstracting over multiple environments.
 
-## Choose the Right Package
+## Choose the Right Entry Point
 
-| Package          | Use when                                                                            | Notes                                                                                   |
-| ---------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `@dsar/backend`  | You want to host DSAR as an HTTP runtime inside your own service                    | Exposes `dsarInstance()` plus generated `/spec.json` and `/docs`                        |
-| `@dsar/node-sdk` | You want typed server-side access to the DSAR HTTP API                              | Supports per-request headers, retries, timeouts, idempotency, and binary upload helpers |
-| `@dsar/cli`      | You want terminal access, scripts, or parity checks against the HTTP surface        | Maps closely to backend endpoints                                                       |
-| `@dsar/core`     | You want one stable application-facing client contract across multiple environments | Switches behavior by mode                                                               |
+Everything ships in the `dsar` package. Install it with `effect`, then import
+the subpath you need:
 
-## `@dsar/backend`
+| Import          | Use when                                                                            | Notes                                                                                   |
+| --------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `dsar/backend`  | You want to host DSAR as an HTTP runtime inside your own service                    | Exposes `dsarInstance()` plus generated `/spec.json` and `/docs`                        |
+| `dsar/node-sdk` | You want typed server-side access to the DSAR HTTP API                              | Supports per-request headers, retries, timeouts, idempotency, and binary upload helpers |
+| `dsar/cli`      | You want terminal access, scripts, or parity checks against the HTTP surface        | Maps closely to backend endpoints                                                       |
+| `dsar/core`     | You want one stable application-facing client contract across multiple environments | Switches behavior by mode                                                               |
 
-Use `@dsar/backend` when DSAR is part of your own application or deployment.
+## `dsar/backend`
+
+Use `dsar/backend` when DSAR is part of your own application or deployment.
 
 ```ts
-import { dsarInstance } from "@dsar/backend";
+import { dsarInstance } from "dsar/backend";
 
 const runtime = dsarInstance({ basePath: "/api/v1" });
 ```
@@ -34,12 +37,12 @@ Related docs:
 - [API Contract Surface](../../architecture/api-contract-surface.md)
 - [Integration Guides](../../integrations/index.md)
 
-## `@dsar/node-sdk`
+## `dsar/node-sdk`
 
 Use the Node SDK from trusted server-side code:
 
 ```ts
-import { createNodeSdk } from "@dsar/node-sdk";
+import { createNodeSdk } from "dsar/node-sdk";
 
 const client = createNodeSdk({
 	baseUrl: "https://api.example.com/api/v1",
@@ -63,7 +66,7 @@ Use the framework adapter subpath for your server. Each middleware verifies the
 `x-dsar-signature` header before it decodes and dispatches the event.
 
 ```ts
-import { nextWebhookMiddleware } from "@dsar/node-sdk/webhooks/next";
+import { nextWebhookMiddleware } from "dsar/node-sdk/webhooks/next";
 
 const signingSecret = process.env.DSAR_WEBHOOK_SECRET;
 if (!signingSecret) {
@@ -81,14 +84,14 @@ export const POST = nextWebhookMiddleware({
 ```
 
 The Express, Hono, and Next.js adapters are exported from
-`@dsar/node-sdk/webhooks/express`, `@dsar/node-sdk/webhooks/hono`, and
-`@dsar/node-sdk/webhooks/next`. Their `*WebhookHandler` and
+`dsar/node-sdk/webhooks/express`, `dsar/node-sdk/webhooks/hono`, and
+`dsar/node-sdk/webhooks/next`. Their `*WebhookHandler` and
 `*WebhookMiddleware` names are aliases. When using Express, configure
 `express.raw({ type: "application/json" })` so signature verification receives
 the original request bytes.
 
 For framework-neutral dispatch, call `client.webhooks.receiver(options)` or
-`createWebhookReceiver(options)` from `@dsar/node-sdk/webhooks`. Both accept the
+`createWebhookReceiver(options)` from `dsar/node-sdk/webhooks`. Both accept the
 same `handlers` map, and the returned receiver also supports `.on(eventType,
 handler)` registration.
 
@@ -96,10 +99,10 @@ The receiver and framework adapters take exactly one `signingSecret`. After
 `client.webhooks.rotateKey`, dispatch signs with the new primary immediately, so
 a single-secret receiver returns 401 until you deploy the new secret. During the
 grace window, verify with `verifyWebhook({ body, signature, keyId, secrets })`
-from `@dsar/node-sdk/webhooks`, passing every active secret and the
+from `dsar/node-sdk/webhooks`, passing every active secret and the
 `x-dsar-signature-key-id` header.
 
-## `@dsar/cli`
+## `dsar/cli`
 
 Use the CLI for operational access and parity with the HTTP contract.
 
@@ -115,9 +118,9 @@ Related docs:
 - [DSAR CLI](./cli.md)
 - [API Reference](../api)
 
-## `@dsar/core` Modes
+## `dsar/core` Modes
 
-`@dsar/core` lets application code depend on a stable interface while choosing a
+`dsar/core` lets application code depend on a stable interface while choosing a
 runtime mode:
 
 - `managed`: HTTP-backed client for a hosted DSAR deployment
@@ -126,7 +129,7 @@ runtime mode:
 - `offline`: use fixtures without a backend dependency
 
 ```ts
-import { buildCoreClient } from "@dsar/core";
+import { buildCoreClient } from "dsar/core";
 
 const client = buildCoreClient({
 	mode: "managed",

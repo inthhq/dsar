@@ -25,7 +25,7 @@ export went away.
 
 - Node.js 24 is required (`engines.node` is `>=24 <25`).
 - Application code compiles with TypeScript 7.
-- Runtime Effect packages are `4.0.0-beta.101`.
+- Runtime Effect packages are `4.0.0`.
 - `dsar/adapter-c15t` is gone. Use a supported inbound adapter or leave inbound
   unconfigured.
 - The persistence-backed Chat SDK state adapter now stores transcript lists,
@@ -47,20 +47,35 @@ typecheck against DSAR public types, move onto TypeScript 7. HTTP-only callers
 that never compile those types can skip this.
 
 **Effect 4.** Keep `effect`, `@effect/platform-*`, `@effect/sql-*`, and
-`@effect/vitest` on `4.0.0-beta.101`. Mixing Effect 3 with this runtime will
-fail typecheck or fail at the layer boundary.
+`@effect/vitest` on the `4.x` line (`@effect/vitest` 4 needs Vitest 5).
+Mixing Effect 3 or an Effect 4 beta with this runtime will fail typecheck or
+fail at the layer boundary. Effect 4.0.0 moved the beta's `effect/unstable/*`
+modules. If the host imports them:
+
+- `effect/unstable/sql` becomes `effect/sql`
+- `effect/unstable/http` becomes `effect/http`
+- `effect/unstable/httpapi` becomes `effect/http-api`
+- `effect/unstable/cli` becomes `effect/cli`, where the prompt constructors
+  are renamed: `Prompt.confirm` to `Prompt.Confirm`, `Prompt.select` to
+  `Prompt.Select`, and `Prompt.text` to `Prompt.String`
 
 **Removed `dsar/adapter-c15t`.** The umbrella package no longer exports
 `dsar/adapter-c15t`, and the private `@dsar/adapter-c15t` workspace package is
 not in this repo. Published `0.0.5` already omitted that subpath. `0.0.4` still
 had it. Delete any remaining `dsar/adapter-c15t` import.
 
-**npm tarballs still ship `workspace:*` and `catalog:effect`.** `npm install
-dsar@0.0.5` fails with `EUNSUPPORTEDPROTOCOL catalog:effect`. The pending
-`1.0.0` Version Packages PR still writes those specifiers into
-`packages/dsar/package.json`. Do not treat `npm install dsar@1.0.0` as a
-working path until a publish resolves workspace and catalog protocol strings.
-Until then, install from this git repo.
+**Adapter libraries are optional peers.** `dsar@0.0.5` listed internal
+`@dsar/*` packages that were never published, so `npm install dsar@0.0.5`
+failed. `1.0.0` bundles that code into `dsar` itself. Third-party libraries an
+adapter needs are optional peer dependencies: install the ones for the
+subpaths you import. For example, `dsar/persistence-pg` needs `@effect/sql-pg`,
+`dsar/storage-s3` needs `@aws-sdk/client-s3`, and `dsar/react` needs `react`.
+`effect` is a required peer.
+
+**Chat SDK state adapter moved to `dsar/chat`.** `makePersistenceStateAdapter`
+and its option types are no longer exported from the root `dsar` entry.
+Import them from `dsar/chat` and install `chat`. The root entry no longer
+needs `chat` to typecheck.
 
 **Chat SDK persistence.** SQL-backed Chat SDK state now needs migration
 `0003-chat-runtime-lists-and-queues` (`chat_state_list_keys`,
@@ -71,18 +86,17 @@ to run `0003` before serving Chat SDK traffic.
 ## Migration steps
 
 1. Install Node.js 24. Confirm with `node --version`.
-2. Do not `npm install dsar@0.0.5` or `dsar@1.0.0` until a release rewrites
-   `workspace:*` and `catalog:effect` in the published tarball. Use this git
-   repo, or wait for that publish.
-3. If the host imports Effect types or constructs DSAR layers, set `effect` and
-   matching `@effect/*` packages to `4.0.0-beta.101`.
+2. Install `dsar@1.0.0` and `effect@4.0.0`, plus the optional peers for the
+   adapter subpaths you import.
+3. If the host imports Effect types or constructs DSAR layers, set matching
+   `@effect/*` packages to `4.0.0`.
 4. If the host typechecks DSAR types, set `typescript` to `7.0.2` (or another
    TypeScript 7 release).
 5. Search the host for `adapter-c15t` and `dsar/adapter-c15t`. Remove those
    imports. Wire inbound through `dsar/inbound-resend` or `dsar/inbound-slack`,
    or omit inbound adapters until you have a supported channel.
-6. If you persist Chat SDK state with `@dsar/persistence-sqlite` or
-   `@dsar/persistence-pg`, boot the runtime once so migration `0003` applies, or
+6. If you persist Chat SDK state with `dsar/persistence-sqlite` or
+   `dsar/persistence-pg`, boot the runtime once so migration `0003` applies, or
    run your usual migrator through the ordered registry.
 7. If you use `makeUnkeyBearerResolver`, thrown `verifyKey` failures now return
    no identity and DSAR answers `401`. Attach `onVerifyError` when you need to

@@ -1,21 +1,21 @@
 ---
 title: "Inbound Slack"
-description: "@dsar/inbound-slack accepts Slack webhook deliveries and maps them into canonical DSAR request capture input. Supports messages, slash commands, shortcuts, block actions, and modal submissions."
+description: "dsar/inbound-slack accepts Slack webhook deliveries and maps them into canonical DSAR request capture input. Supports messages, slash commands, shortcuts, block actions, and modal submissions."
 group: integrations-inbound
 ---
 
 <include src="../../_shared/alpha-warning.mdx" />
 
-`@dsar/inbound-slack` accepts Slack webhook deliveries and maps them into canonical DSAR request capture input. Supports messages, slash commands, shortcuts, block actions, and modal submissions.
+`dsar/inbound-slack` accepts Slack webhook deliveries and maps them into canonical DSAR request capture input. Supports messages, slash commands, shortcuts, block actions, and modal submissions.
 
 ## Installation
 
 | Package manager | Command                           |
 | :-------------- | :-------------------------------- |
-| npm             | `npm install @dsar/inbound-slack` |
-| pnpm            | `pnpm add @dsar/inbound-slack`    |
-| yarn            | `yarn add @dsar/inbound-slack`    |
-| bun             | `bun add @dsar/inbound-slack`     |
+| npm             | `npm install dsar effect chat @chat-adapter/slack` |
+| pnpm            | `pnpm add dsar effect chat @chat-adapter/slack`    |
+| yarn            | `yarn add dsar effect chat @chat-adapter/slack`    |
+| bun             | `bun add dsar effect chat @chat-adapter/slack`     |
 
 ## Setup
 
@@ -28,8 +28,8 @@ group: integrations-inbound
 ## Quickstart
 
 ```ts
-import { dsarInstance } from "@dsar/backend";
-import { makeSlackInboundAdapter } from "@dsar/inbound-slack";
+import { dsarInstance } from "dsar/backend";
+import { makeSlackInboundAdapter } from "dsar/inbound-slack";
 
 const inbound = makeSlackInboundAdapter({
 	signingSecret: process.env.SLACK_SIGNING_SECRET!,

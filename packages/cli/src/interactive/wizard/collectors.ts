@@ -1,5 +1,5 @@
 /* oxlint-disable max-statements */
-import { Prompt } from "effect/unstable/cli";
+import { Prompt } from "effect/cli";
 
 import { allCommands } from "../../commands/registry";
 import type { CommandDefinition } from "../../types";
@@ -63,7 +63,7 @@ export const selectCommandAndParams = async (
 		return null;
 	}
 	const result = await runPrompt(
-		Prompt.select({
+		Prompt.Select({
 			choices: commands,
 			message: "Select a command:",
 		}).pipe(
@@ -116,7 +116,7 @@ export const collectFormFlags = async (
 	for (const field of form.fields) {
 		if (field.kind === "confirm") {
 			const confirmed = await runPrompt(
-				Prompt.confirm({
+				Prompt.Confirm({
 					initial: field.defaultValue === "true",
 					message: field.label,
 				})
@@ -133,7 +133,7 @@ export const collectFormFlags = async (
 				continue;
 			}
 			const selection = await runPrompt(
-				Prompt.select({
+				Prompt.Select({
 					choices: options.map((option) => ({
 						title: option.label,
 						value: option.value,
@@ -195,7 +195,7 @@ export const collectGlobalFlags = async (
 		return null;
 	}
 	const output = await runPrompt(
-		Prompt.select({
+		Prompt.Select({
 			choices: [
 				{ title: "Text", value: "text" },
 				{ title: "JSON", value: "json" },

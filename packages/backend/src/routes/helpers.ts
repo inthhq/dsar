@@ -138,7 +138,7 @@ export const decodeJsonBody = <S extends Schema.Top>(
 			if (Schema.isSchemaError(error)) {
 				return new RequestValidationError({
 					details: formatSchemaIssues(error),
-					message: error.issue.toString(),
+					message: error.message,
 					reasonCode: "REQUEST_VALIDATION_FAILED",
 				});
 			}

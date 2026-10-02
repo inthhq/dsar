@@ -1,5 +1,5 @@
-import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
-import * as OpenApi from "effect/unstable/httpapi/OpenApi";
+import * as HttpApiSchema from "effect/http-api/HttpApiSchema";
+import * as OpenApi from "effect/http-api/OpenApi";
 
 interface AnnotatableEndpoint<Self> {
 	readonly annotateMerge: (

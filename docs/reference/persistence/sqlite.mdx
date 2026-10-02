@@ -1,29 +1,33 @@
 ---
 title: "SQLite"
-description: "@dsar/persistence-sqlite provides a SQLite driver for DSAR persistence. Supports Bun and Node runtimes with in-memory default for fast local development and testing."
+description: "dsar/persistence-sqlite provides a SQLite driver for DSAR persistence. Supports Bun and Node runtimes with in-memory default for fast local development and testing."
 group: reference-persistence
 ---
 
 <include src="../../_shared/alpha-warning.mdx" />
 
-`@dsar/persistence-sqlite` provides a SQLite driver for DSAR persistence. Supports Bun and Node runtimes with in-memory default for fast local development and testing.
+`dsar/persistence-sqlite` provides a SQLite driver for DSAR persistence. Supports Bun and Node runtimes with in-memory default for fast local development and testing.
 
 ## Installation
 
 | Package manager | Command                                |
 | :-------------- | :------------------------------------- |
-| npm             | `npm install @dsar/persistence-sqlite` |
-| pnpm            | `pnpm add @dsar/persistence-sqlite`    |
-| yarn            | `yarn add @dsar/persistence-sqlite`    |
-| bun             | `bun add @dsar/persistence-sqlite`     |
+| npm             | `npm install dsar effect @effect/sql-sqlite-node` |
+| pnpm            | `pnpm add dsar effect @effect/sql-sqlite-node`    |
+| yarn            | `yarn add dsar effect @effect/sql-sqlite-node`    |
+| bun             | `bun add dsar effect @effect/sql-sqlite-bun`      |
+
+The driver follows the runtime: Node.js loads `@effect/sql-sqlite-node` and
+Bun loads `@effect/sql-sqlite-bun`. Install the one for the runtime you deploy
+on.
 
 ## Quickstart
 
 ### Standalone Service
 
 ```ts
-import { makeSqlitePersistenceService } from "@dsar/persistence-sqlite";
-import { dsarInstance, runtimeReposFromPersistence } from "@dsar/backend";
+import { makeSqlitePersistenceService } from "dsar/persistence-sqlite";
+import { dsarInstance, runtimeReposFromPersistence } from "dsar/backend";
 
 // In-memory (default) — great for development and testing
 const persistence = await makeSqlitePersistenceService();
@@ -42,8 +46,8 @@ const runtime = dsarInstance({
 
 ```ts
 import { Effect } from "effect";
-import { Persistence, withTenant } from "@dsar/persistence";
-import { makeSqlitePersistenceLayer } from "@dsar/persistence-sqlite";
+import { Persistence, withTenant } from "dsar/persistence";
+import { makeSqlitePersistenceLayer } from "dsar/persistence-sqlite";
 
 const program = Persistence.pipe(
 	Effect.flatMap((persistence) => persistence.requests.list()),

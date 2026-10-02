@@ -1,21 +1,21 @@
 ---
 title: "Postgres"
-description: "@dsar/persistence-pg provides a Postgres driver for DSAR persistence with advisory-lock migration protection, connection pooling, and full domain record support."
+description: "dsar/persistence-pg provides a Postgres driver for DSAR persistence with advisory-lock migration protection, connection pooling, and full domain record support."
 group: reference-persistence
 ---
 
 <include src="../../_shared/alpha-warning.mdx" />
 
-`@dsar/persistence-pg` provides a Postgres driver for DSAR persistence with advisory-lock migration protection, connection pooling, and full domain record support.
+`dsar/persistence-pg` provides a Postgres driver for DSAR persistence with advisory-lock migration protection, connection pooling, and full domain record support.
 
 ## Installation
 
 | Package manager | Command                            |
 | :-------------- | :--------------------------------- |
-| npm             | `npm install @dsar/persistence-pg` |
-| pnpm            | `pnpm add @dsar/persistence-pg`    |
-| yarn            | `yarn add @dsar/persistence-pg`    |
-| bun             | `bun add @dsar/persistence-pg`     |
+| npm             | `npm install dsar effect @effect/sql-pg` |
+| pnpm            | `pnpm add dsar effect @effect/sql-pg`    |
+| yarn            | `yarn add dsar effect @effect/sql-pg`    |
+| bun             | `bun add dsar effect @effect/sql-pg`     |
 
 ## Quickstart
 
@@ -24,8 +24,8 @@ group: reference-persistence
 The simplest way to get started — creates a persistence service you can pass directly to the backend:
 
 ```ts
-import { makePgPersistenceService } from "@dsar/persistence-pg";
-import { dsarInstance, runtimeReposFromPersistence } from "@dsar/backend";
+import { makePgPersistenceService } from "dsar/persistence-pg";
+import { dsarInstance, runtimeReposFromPersistence } from "dsar/backend";
 
 const persistence = await makePgPersistenceService({
 	connectionUrl: "postgres://user:pass@localhost:5432/dsar",
@@ -42,8 +42,8 @@ For Effect-based applications, use the layer API for dependency injection:
 
 ```ts
 import { Effect } from "effect";
-import { Persistence, withTenant } from "@dsar/persistence";
-import { makePgPersistenceLayer } from "@dsar/persistence-pg";
+import { Persistence, withTenant } from "dsar/persistence";
+import { makePgPersistenceLayer } from "dsar/persistence-pg";
 
 const program = Persistence.pipe(
 	Effect.flatMap((persistence) => persistence.requests.list()),

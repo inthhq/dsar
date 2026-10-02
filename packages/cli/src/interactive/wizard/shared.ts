@@ -1,7 +1,7 @@
 /* oxlint-disable max-statements */
 import { NodeServices } from "@effect/platform-node";
+import { Prompt } from "effect/cli";
 import * as Effect from "effect/Effect";
-import { Prompt } from "effect/unstable/cli";
 
 import { allCommands } from "../../commands/registry";
 import { routeParityMap } from "../../parity/route-map";
@@ -138,7 +138,7 @@ export const requiredText = (
 	message: string,
 	defaultValue?: string
 ): Prompt.Prompt<string> =>
-	Prompt.text({
+	Prompt.String({
 		default: defaultValue,
 		message,
 		validate: (value) =>
@@ -165,7 +165,7 @@ export const optionalText = (
 	message: string,
 	defaultValue?: string
 ): Prompt.Prompt<string> =>
-	Prompt.text({
+	Prompt.String({
 		default: defaultValue,
 		message,
 	});

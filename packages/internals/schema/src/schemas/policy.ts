@@ -9,7 +9,7 @@ import { ActorSchema, IsoTimestampSchema } from "./shared";
 export const PolicyPackVersionSchema = Schema.String.pipe(
 	Schema.check(
 		Schema.isPattern(
-			/^\d+\.\d+\.\d+(?:-[\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*)?(?:\+[\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*)?$/
+			/^\d+\.\d+\.\d+(?:-[\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*)?(?:\+[\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*)?$/u
 		)
 	)
 );

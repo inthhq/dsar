@@ -12,15 +12,15 @@ DSAR uses persistence drivers to store request state, audit events, policy assig
 
 | Driver                | Package                    | Best For                                                       |
 | :-------------------- | :------------------------- | :------------------------------------------------------------- |
-| [Postgres](./pg.md)   | `@dsar/persistence-pg`     | Production deployments with advisory-lock migration protection |
-| [SQLite](./sqlite.md) | `@dsar/persistence-sqlite` | Local development, testing, and lightweight deployments        |
+| [Postgres](./pg.md)   | `dsar/persistence-pg`     | Production deployments with advisory-lock migration protection |
+| [SQLite](./sqlite.md) | `dsar/persistence-sqlite` | Local development, testing, and lightweight deployments        |
 
 ## How Persistence Works
 
 The persistence layer is tenant-scoped — every database operation runs within a tenant context. The `withTenant` helper scopes Effect programs to a specific tenant:
 
 ```ts
-import { Persistence, withTenant } from "@dsar/persistence";
+import { Persistence, withTenant } from "dsar/persistence";
 import { Effect } from "effect";
 
 const program = Persistence.pipe(
@@ -53,8 +53,8 @@ The persistence layer manages these record types:
 ## Wiring with the Backend
 
 ```ts
-import { dsarInstance, runtimeReposFromPersistence } from "@dsar/backend";
-import { makeSqlitePersistenceService } from "@dsar/persistence-sqlite";
+import { dsarInstance, runtimeReposFromPersistence } from "dsar/backend";
+import { makeSqlitePersistenceService } from "dsar/persistence-sqlite";
 
 const persistence = await makeSqlitePersistenceService();
 

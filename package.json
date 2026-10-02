@@ -12,17 +12,17 @@
 		"catalogs": {
 			"utils": {
 				"typescript": "7.0.2",
-				"vitest": "4.1.10",
+				"vitest": "5.0.3",
 				"tsdown": "0.22.13"
 			},
 			"effect": {
-				"effect": "4.0.0-beta.101",
-				"@effect/platform-node": "4.0.0-beta.101",
+				"effect": "4.0.0",
+				"@effect/platform-node": "4.0.0",
 				"@effect/language-service": "0.87.0",
-				"@effect/vitest": "4.0.0-beta.101",
-				"@effect/sql-pg": "4.0.0-beta.101",
-				"@effect/sql-sqlite-bun": "4.0.0-beta.101",
-				"@effect/sql-sqlite-node": "4.0.0-beta.101"
+				"@effect/vitest": "4.0.0",
+				"@effect/sql-pg": "4.0.0",
+				"@effect/sql-sqlite-bun": "4.0.0",
+				"@effect/sql-sqlite-node": "4.0.0"
 			},
 			"types": {
 				"@types/node": "24.13.3"
@@ -33,16 +33,14 @@
 	"scripts": {
 		"bench": "PERF=1 turbo run bench",
 		"build": "turbo run build",
-		"changeset": "changeset",
 		"check": "ultracite check && bun run check:docs-alpha-warning && bun run check:docs-lint && bun run check:error-docs && bun run check:tsdoc",
+		"check-types": "turbo run typecheck",
 		"check:docs-alpha-warning": "bun ./scripts/sync-docs-alpha-warning.ts",
 		"check:docs-lint": "bunx leadtype lint --src docs --error-unknown",
 		"check:error-docs": "bun ./scripts/check-error-doc-coverage.ts",
+		"check:publish-artifacts": "bun ./scripts/check-publish-artifacts.ts",
 		"check:tsdoc": "bun ./scripts/check-tsdoc-coverage.ts",
 		"check:workspace": "turbo run check",
-		"check-types": "turbo run typecheck",
-		"ci:publish": "bunx changeset tag && bun publish",
-		"ci:version": "bun changeset version",
 		"dev": "turbo run dev",
 		"docs:sync-alpha-warning": "bun ./scripts/sync-docs-alpha-warning.ts --write",
 		"dsar": "bun ./packages/dsar/src/bin.ts",
@@ -52,16 +50,15 @@
 		"lint": "turbo run lint",
 		"prepare": "lefthook install",
 		"prepare:effect": "./scripts/prepare-effect.sh",
-		"release": "bun run build && rm -rf packages/dsar/docs packages/dsar/AGENTS.md packages/dsar/SKILL.md && bunx leadtype generate --bundle --src . --out packages/dsar --name dsar --enrich-git && changeset publish",
-		"release:canary": "bun run build && rm -rf packages/dsar/docs packages/dsar/AGENTS.md packages/dsar/SKILL.md && bunx leadtype generate --bundle --src . --out packages/dsar --name dsar --enrich-git && changeset publish --tag canary",
+		"release": "bun run tegami publish",
+		"release:docs": "rm -rf packages/dsar/docs packages/dsar/AGENTS.md packages/dsar/SKILL.md && bunx leadtype generate --bundle --src . --out packages/dsar --name dsar --enrich-git",
 		"smoke": "turbo run smoke",
 		"start": "turbo run start",
+		"tegami": "bun ./scripts/tegami.ts",
 		"test": "turbo run test",
+		"test:scripts": "vitest run --config scripts/vitest.config.ts",
 		"typecheck": "turbo run typecheck",
-		"version": "changeset version && bun install",
-		"version:canary": "changeset version --snapshot canary && bun install",
-		"version:prerelease": "changeset pre enter canary",
-		"version:prerelease:exit": "changeset pre exit"
+		"version": "bun run tegami version"
 	},
 	"dependencies": {
 		"readie": "^1.0.0"
@@ -69,21 +66,24 @@
 	"devDependencies": {
 		"@arethetypeswrong/core": "^0.18.5",
 		"@biomejs/biome": "2.5.5",
-		"@changesets/changelog-github": "^0.7.0",
-		"@changesets/cli": "^2.31.1",
 		"@effect/vitest": "catalog:effect",
 		"@types/node": "catalog:types",
+		"@types/semver": "7.8.0",
 		"@typescript/typescript6": "6.0.2",
-		"changeset-conventional-commits": "^1.0.4",
+		"jsonc-parser": "3.3.1",
 		"leadtype": "0.4.2",
 		"lefthook": "2.1.10",
 		"oxfmt": "0.60.0",
 		"oxlint": "1.75.0",
 		"portless": "0.15.4",
 		"publint": "^0.3.22",
+		"semver": "7.8.5",
+		"tegami": "1.5.0",
 		"turbo": "2.10.6",
 		"typescript": "catalog:utils",
-		"ultracite": "7.9.4"
+		"ultracite": "7.9.4",
+		"vitest": "catalog:utils",
+		"yaml": "2.9.1"
 	},
 	"engines": {
 		"node": ">=24 <25"

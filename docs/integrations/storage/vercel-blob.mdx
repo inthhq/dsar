@@ -1,18 +1,18 @@
 ---
 title: "Storage Vercel Blob Adapter Integration"
-description: "This document describes how to register and use @dsar/storage-vercel-blob with backend runtime."
+description: "This document describes how to register and use dsar/storage-vercel-blob with backend runtime."
 group: integrations-storage
 ---
 
 <include src="../../_shared/alpha-warning.mdx" />
 
-This document describes how to register and use `@dsar/storage-vercel-blob` with backend runtime.
+This document describes how to register and use `dsar/storage-vercel-blob` with backend runtime.
 
 ## Runtime Registration
 
 ```ts
-import { dsarInstance } from "@dsar/backend";
-import { makeVercelBlobStorageAdapter } from "@dsar/storage-vercel-blob";
+import { dsarInstance } from "dsar/backend";
+import { makeVercelBlobStorageAdapter } from "dsar/storage-vercel-blob";
 
 const runtime = dsarInstance({
 	adapters: {

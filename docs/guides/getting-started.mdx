@@ -19,7 +19,7 @@ and make your first request through the runtime.
 
 The quickest HTTP surface is kitchen-sink, which is the local self-hosted
 backend. The subject portal and dashboard are UIs that call it. For
-production, point `@dsar/react` at a hosted project on inth.com.
+production, point `dsar/react` at a hosted project on inth.com.
 
 ```sh
 bunx turbo run dev --filter=./examples/kitchen-sink --filter=./examples/subject-portal --filter=./examples/dashboard
@@ -55,7 +55,7 @@ Use `DSAR_API_TOKEN` when your runtime expects machine access credentials.
 ### Node SDK
 
 ```ts
-import { createNodeSdk } from "@dsar/node-sdk";
+import { createNodeSdk } from "dsar/node-sdk";
 
 const client = createNodeSdk({
 	baseUrl: "http://kitchen-sink.localhost:1355/api/v1",
@@ -76,10 +76,10 @@ created.unwrap();
 
 ## Choose the Right Runtime Surface
 
-- `@dsar/backend`: embed the HTTP runtime into your own service
-- `@dsar/node-sdk`: call DSAR from server-side application code
-- `@dsar/cli`: script or explore the HTTP surface from the terminal
-- `@dsar/core`: select `managed`, `self-hosted`, `custom`, or `offline` client
+- `dsar/backend`: embed the HTTP runtime into your own service
+- `dsar/node-sdk`: call DSAR from server-side application code
+- `dsar/cli`: script or explore the HTTP surface from the terminal
+- `dsar/core`: select `managed`, `self-hosted`, `custom`, or `offline` client
   modes behind a stable application-facing contract
 
 See [SDK and Runtime Modes](../reference/developer/sdk-and-runtime.md) for the comparison.

@@ -1,27 +1,27 @@
 ---
 title: "Vercel Blob Storage"
-description: "@dsar/storage-vercel-blob stores DSAR fulfilment artifacts in Vercel's managed blob storage service. Zero infrastructure setup when deploying on Vercel."
+description: "dsar/storage-vercel-blob stores DSAR fulfilment artifacts in Vercel's managed blob storage service. Zero infrastructure setup when deploying on Vercel."
 group: reference-storage
 ---
 
 <include src="../../_shared/alpha-warning.mdx" />
 
-`@dsar/storage-vercel-blob` stores DSAR fulfilment artifacts in Vercel's managed blob storage service. Zero infrastructure setup when deploying on Vercel.
+`dsar/storage-vercel-blob` stores DSAR fulfilment artifacts in Vercel's managed blob storage service. Zero infrastructure setup when deploying on Vercel.
 
 ## Installation
 
 | Package manager | Command                                 |
 | :-------------- | :-------------------------------------- |
-| npm             | `npm install @dsar/storage-vercel-blob` |
-| pnpm            | `pnpm add @dsar/storage-vercel-blob`    |
-| yarn            | `yarn add @dsar/storage-vercel-blob`    |
-| bun             | `bun add @dsar/storage-vercel-blob`     |
+| npm             | `npm install dsar effect @vercel/blob` |
+| pnpm            | `pnpm add dsar effect @vercel/blob`    |
+| yarn            | `yarn add dsar effect @vercel/blob`    |
+| bun             | `bun add dsar effect @vercel/blob`     |
 
 ## Setup
 
 ```ts
-import { dsarInstance } from "@dsar/backend";
-import { makeVercelBlobStorageAdapter } from "@dsar/storage-vercel-blob";
+import { dsarInstance } from "dsar/backend";
+import { makeVercelBlobStorageAdapter } from "dsar/storage-vercel-blob";
 
 const runtime = dsarInstance({
 	adapters: {

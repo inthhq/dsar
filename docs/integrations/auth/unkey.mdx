@@ -1,26 +1,26 @@
 ---
 title: "Unkey Integration"
-description: "@dsar/auth-unkey is an optional helper package for the DSAR bearer-token lane. It does not replace DSAR's authorization or subject-ownership checks."
+description: "dsar/auth-unkey is an optional helper for the DSAR bearer-token lane. It does not replace DSAR's authorization or subject-ownership checks."
 group: integrations-auth
 ---
 
 <include src="../../_shared/alpha-warning.mdx" />
 
-`@dsar/auth-unkey` is an optional helper package for the DSAR bearer-token lane.
+`dsar/auth-unkey` is an optional helper for the DSAR bearer-token lane.
 It does not replace DSAR's authorization or subject-ownership checks.
 
 ## Install
 
 ```sh
-bun add @dsar/auth-unkey
+bun add dsar effect @unkey/api
 ```
 
 ## Runtime Wiring
 
 ```ts
 // @noErrors
-import { dsarInstance } from "@dsar/backend";
-import { makeUnkeyBearerResolver } from "@dsar/auth-unkey";
+import { dsarInstance } from "dsar/backend";
+import { makeUnkeyBearerResolver } from "dsar/auth-unkey";
 
 const runtime = dsarInstance({
 	config: {
@@ -45,7 +45,7 @@ const runtime = dsarInstance({
 		persistence:
 			/* see examples/config/runtime.config.example.ts or
 			   examples/kitchen-sink/runtime.config.ts for end-to-end wiring, or
-			   provide a service matching the @dsar/persistence PersistenceService
+			   provide a service matching the dsar/persistence PersistenceService
 			   contract used by runtimeReposFromPersistence(...) */,
 	},
 });

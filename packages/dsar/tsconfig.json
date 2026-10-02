@@ -1,3 +1,6 @@
 {
-	"extends": "@dsar/typescript-config/node.json"
+	"extends": "@dsar/typescript-config/node.json",
+	"compilerOptions": {
+		"jsx": "react-jsx"
+	}
 }
