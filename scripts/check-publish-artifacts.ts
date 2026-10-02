@@ -177,8 +177,13 @@ const declarationImports = (
 	const seen = new Set<string>();
 	const pending = [path.join(installed, typesFile)];
 	for (let file = pending.pop(); file !== undefined; file = pending.pop()) {
-		if (seen.has(file) || !existsSync(file)) {
+		if (seen.has(file)) {
 			continue;
+		}
+		if (!existsSync(file)) {
+			fail(
+				`${path.relative(installed, file)} is imported by a declaration but is not packed.`
+			);
 		}
 		seen.add(file);
 		const source = readFileSync(file, "utf8");
