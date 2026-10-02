@@ -53,7 +53,7 @@ export const OPTIONS = dsar.handler;
 | `basePath` | Mount prefix, for example `/api/dsar`. |
 | `tenantId` | Binds the instance to one tenant. See [Tenant binding](#tenant-binding). |
 | `requireTenantId` | Refuses to build an instance without `tenantId`. |
-| `trustedOrigins` | Origins allowed to call from a browser: exact origins, `https://*.example.com`, or `*`. |
+| `trustedOrigins` | Origins allowed to call from a browser: exact origins, `https://*.example.com`, or `*` (no credentials). |
 | `observability` | Request logging through evlog. See [Request logging](#request-logging). |
 | `runWebhookRetryWorker` | Starts a background retry loop. Long-lived servers only. |
 
@@ -86,77 +86,52 @@ to stay alive between them.
   Vercel Cron route. Each call delivers the retries that are due and returns.
   A tenant-bound instance drains only its own tenant.
 - Long-lived servers can pass `runWebhookRetryWorker: true` instead and call
-  `dispose()` on shutdown to stop the loop.
+  `dispose()` on shutdown to stop the loop. A tenant-bound instance's worker
+  also drains only its own tenant.
 
 Running both, or several instances at once, is safe: a claim stops two
 deliveries of the same attempt.
 
 ## Request logging
 
-Each request produces one evlog wide event. By default the instance logs
-failed and rejected requests (4xx and 5xx) and nothing else, with redaction of
-email addresses, IP addresses, JWTs, and bearer tokens on.
+Each request produces one evlog wide event.
+
+By default DSAR leaves evlog's process-wide configuration to the host: it does
+not call `initLogger`, so the host's drains, plugins, sampling, and service
+name stay in place. It grades each event `warn` (4xx) or `error` (5xx) and
+force-keeps failed and rejected requests through the host's sampling.
+
+Set `level` only where nothing else configures evlog. `"error"`, `"warn"`,
+and `"info"` call `initLogger` with matching sampling rates, which replaces
+the process's evlog state. `"warn"` logs failed and rejected requests and
+nothing else.
 
 ```ts
 dsarInstance({
   // ...
   observability: {
-    level: "warn", // "silent" | "error" | "warn" | "info" | "inherit"
-    service: "dsar",
+    service: "dsar", // set on this instance's events only
     drain: (ctx) => sendToYourPipeline(ctx.event),
   },
 });
 ```
 
-Events carry `dsar.route`, `dsar.requestId`, `dsar.tenantId`, and
-`dsar.principalKind`. Failed requests add `error.id`, `error.code`, and
-`error.status`. Server errors also record the sanitized error and request
-trace; client errors do not, because their bodies can hold subject data.
+Redaction of email addresses, IP addresses, JWTs, and bearer tokens is on
+unless `redact: false`. A `drain` receives this instance's events in addition
+to evlog's global output.
 
-`level` and `service` set evlog's process-wide configuration. Use
-`level: "inherit"` when the host configures evlog itself.
+Events carry `dsar.requestId` on every request, including unmatched routes,
+plus `dsar.route`, `dsar.tenantId`, and `dsar.principalKind` on matched
+routes. Failed requests add `error.id`, `error.code`, and `error.status`.
+Server errors also record the sanitized error and request trace; client
+errors do not, because their bodies can hold subject data.
 
-## Route module map and ownership
+## Cross-origin requests
 
-- `packages/backend/src/routes/init.ts` - runtime initialization surface
-- `packages/backend/src/routes/requests.ts` - request lifecycle and capability-upgrade route categories (stubbed in T05)
-- `packages/backend/src/routes/subjects.ts` - subject lookup placeholder surface
-- `packages/backend/src/routes/policies.ts` - policy catalog, upgrade propose/approve/apply, and custom pack register/activate/deactivate
-- `packages/backend/src/routes/status.ts` - health/status surface
+`trustedOrigins` adds CORS headers to preflights and to every response,
+including errors:
 
-Representative capability-upgrade paths mounted in T05:
-
-- `/requests/:id/clock/explain`
-- `/requests/:id/verification/*`
-- `/requests/:id/fulfilment/callback`
-- `/requests/:id/appeals*`
-- `/tenants/:tenantId/retention`
-- `/requests/:id/audit/export`
-
-## Error envelope contract
-
-All errors follow:
-
-- `ok: false`
-- `error.id: string` (stable backend identifier, `DSAR-BE-xxxx`)
-- `error.code: string` (deterministic boundary code, e.g. `AUTH_ACTOR_CONTEXT_MISSING`, `REQUEST_VALIDATION_FAILED`, `REQUEST_ROUTE_NOT_FOUND`)
-- `error.docsUrl: string` (canonical link to error catalog entry)
-- `error.message: string`
-- `error.status: number`
-- `error.trace?: object` (safe metadata only)
-
-Canonical catalog: `docs/architecture/error-codes.md`
-
-## Base path behavior
-
-- `options.basePath` normalizes trailing slashes.
-- Routes are matched under `basePath`; a trailing slash on the request path is ignored.
-- Requests outside `basePath` return normalized `REQUEST_ROUTE_NOT_FOUND`.
-- Matching requests continue through shared auth/context handling and normalized envelope conversion.
-
-## Contract and docs endpoints (T06)
-
-- Runtime exposes generated OpenAPI at `/spec.json`.
-- Runtime exposes interactive docs at `/docs`.
-- Both endpoints honor `basePath` mounting, e.g. `/api/v1/spec.json` and `/api/v1/docs`.
-- Spec generation is driven from `packages/backend/src/http-api/api.ts` HttpApi contracts.
+- An exact origin or a `https://*.example.com` subdomain match echoes the
+  origin and allows credentials.
+- `*` answers with `Access-Control-Allow-Origin: *` and no credentials, so a
+  browser never sends the host's cookies to DSAR on behalf of an unknown site.

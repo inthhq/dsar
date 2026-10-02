@@ -4,14 +4,18 @@
  * Everything that knows evlog exists lives here. The rest of the package
  * writes to a {@link RequestLog}.
  *
- * ## On by default, quiet by default
+ * ## The host owns evlog's configuration
  *
- * Logging is on out of the box, because a backend that says nothing when a
- * request fails is debugged by guesswork. It does not emit a line per
- * successful request: that is new stdout volume and a bigger bill on a hosted
- * log pipeline, and it is one option away (`level: "info"`).
+ * evlog keeps sampling, drains, plugins, and the service name in one
+ * process-wide state, and `initLogger` replaces all of it. DSAR usually runs
+ * inside an app that already configured evlog, so by default it does not call
+ * `initLogger`: it registers its middleware, grades each event by status, and
+ * force-keeps failed and rejected requests (4xx and 5xx) through whatever
+ * sampling the host chose.
  *
- * So the default is: silence when things work, a line when they do not.
+ * Passing `level` opts in to DSAR setting the sampling rates itself, for a
+ * process where nothing else configures evlog. `level: "warn"` means silence
+ * when things work and a line when they do not.
  *
  * ## How the level is enforced
  *
@@ -42,11 +46,14 @@ import type { RequestLog } from "./log";
  * How much of the request stream reaches the log.
  *
  * - `silent`: nothing. No middleware is registered.
- * - `error`: failed requests only (5xx).
- * - `warn`: failures and rejections (4xx and 5xx). The default.
- * - `info`: every request.
- * - `inherit`: leave evlog's global configuration alone, for a host that
- *   configures evlog itself.
+ * - `error`: failed requests only (5xx). Sets evlog's global sampling.
+ * - `warn`: failures and rejections (4xx and 5xx). Sets evlog's global
+ *   sampling.
+ * - `info`: every request. Sets evlog's global sampling.
+ * - `inherit`: leave evlog's global configuration alone and force-keep server
+ *   failures (5xx) only.
+ *
+ * Unset is like `inherit`, but force-keeps 4xx as well as 5xx.
  */
 export type ObservabilityLevel =
 	| "silent"
@@ -57,16 +64,15 @@ export type ObservabilityLevel =
 
 /** Request logging options for a DSAR instance. */
 export interface ObservabilityOptions {
-	/** Defaults to `"warn"`: failures and rejections, nothing else. */
-	readonly level?: ObservabilityLevel;
 	/**
-	 * Service name on every event.
+	 * How much to log. Unset leaves evlog's global configuration to the host.
 	 *
-	 * Sets global evlog state, as does any `level` other than `"inherit"`:
-	 * evlog resolves sampling and service name from process-level
-	 * configuration. Instances in one process share it and the last one built
-	 * wins. Use `level: "inherit"` to leave it to the host.
+	 * `"error"`, `"warn"`, and `"info"` call evlog's `initLogger`, which
+	 * replaces the process's drains, plugins, and sampling. Use them only where
+	 * nothing else configures evlog.
 	 */
+	readonly level?: ObservabilityLevel;
+	/** Service name on this instance's events. Does not change global state. */
 	readonly service?: string;
 	/** Route globs to log. Unset logs every route. */
 	readonly include?: readonly string[];
@@ -74,7 +80,10 @@ export interface ObservabilityOptions {
 	readonly exclude?: readonly string[];
 	/** PII redaction for email, IPv4, JWT, and bearer tokens. On unless disabled. */
 	readonly redact?: EvlogHonoOptions["redact"];
-	/** Where events go. Console when unset. */
+	/**
+	 * Also sends this instance's events here. evlog's global output, such as
+	 * the console, still receives them.
+	 */
 	readonly drain?: EvlogHonoOptions["drain"];
 	/** Adds fields to every event after emit, before drain. */
 	readonly enrich?: EvlogHonoOptions["enrich"];
@@ -82,9 +91,7 @@ export interface ObservabilityOptions {
 	readonly keep?: EvlogHonoOptions["keep"];
 }
 
-const DEFAULT_LEVEL: ObservabilityLevel = "warn";
-
-/** The lowest status worth keeping, per level. */
+/** The lowest status worth force-keeping through sampling, per level. */
 const keepFrom: Readonly<
 	Record<Exclude<ObservabilityLevel, "silent">, number>
 > = {
@@ -92,8 +99,21 @@ const keepFrom: Readonly<
 	// Every event is kept anyway; the threshold is unreachable rather than
 	// special-cased.
 	info: 0,
-	inherit: Number.POSITIVE_INFINITY,
+	inherit: 500,
 	warn: 400,
+};
+
+/** Force-keep threshold when the caller sets no level. */
+const UNSET_KEEP_FROM = 400;
+
+const keepThreshold = (level: ObservabilityLevel | undefined): number => {
+	if (level === undefined) {
+		return UNSET_KEEP_FROM;
+	}
+	if (level === "silent") {
+		return Number.POSITIVE_INFINITY;
+	}
+	return keepFrom[level];
 };
 
 /**
@@ -132,9 +152,7 @@ const ratesFor = (
 export const resolveOptions = (
 	options: ObservabilityOptions
 ): EvlogHonoOptions => {
-	const level = options.level ?? DEFAULT_LEVEL;
-	const threshold =
-		level === "silent" ? Number.POSITIVE_INFINITY : keepFrom[level];
+	const threshold = keepThreshold(options.level);
 	const caller = options.keep;
 
 	return {
@@ -181,25 +199,23 @@ export const gradeLevel: MiddlewareHandler = async (c, runNext) => {
  * The evlog middleware, or `undefined` when logging is off, so
  * `level: "silent"` costs nothing per request.
  *
- * @param options - DSAR observability options; defaults to `level: "warn"`.
+ * Only an explicit `"error"`, `"warn"`, or `"info"` level calls
+ * `initLogger`; otherwise the host's evlog configuration is left as it is.
+ *
+ * @param options - DSAR observability options.
  * @returns Middleware to register first on the app, or `undefined`.
  */
 export const observabilityMiddleware = (
 	options: ObservabilityOptions | undefined
 ): MiddlewareHandler | undefined => {
-	const level = options?.level ?? DEFAULT_LEVEL;
+	const level = options?.level;
 	if (level === "silent") {
 		return undefined;
 	}
 
-	const rates = ratesFor(level);
-	if (rates !== undefined || options?.service !== undefined) {
-		initLogger({
-			...(options?.service === undefined
-				? {}
-				: { env: { service: options.service } }),
-			...(rates === undefined ? {} : { sampling: { rates } }),
-		});
+	const rates = level === undefined ? undefined : ratesFor(level);
+	if (rates !== undefined) {
+		initLogger({ sampling: { rates } });
 	}
 
 	return evlog(resolveOptions(options ?? {}));

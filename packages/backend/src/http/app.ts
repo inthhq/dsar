@@ -10,6 +10,7 @@
 import { Hono } from "hono";
 import type { Context } from "hono";
 
+import { makeRequestId } from "../middleware/auth-context";
 import {
 	gradeLevel,
 	observabilityMiddleware,
@@ -39,12 +40,58 @@ const CORS_ALLOW_HEADERS = [
 	"x-request-id",
 ].join(", ");
 
+const matchesNamedOrigin = (origin: string, trusted: string): boolean => {
+	if (trusted === origin) {
+		return true;
+	}
+	const wildcard = /^(https?):\/\/\*\.(.+)$/u.exec(trusted);
+	const scheme = wildcard?.[1];
+	const domain = wildcard?.[2];
+	return Boolean(
+		scheme &&
+		domain &&
+		origin.startsWith(`${scheme}://`) &&
+		origin.endsWith(`.${domain}`) &&
+		origin.length > `${scheme}://.${domain}`.length
+	);
+};
+
+/** How to answer a cross-origin request. */
+interface CorsGrant {
+	/** Value for `Access-Control-Allow-Origin`. */
+	readonly allowOrigin: string;
+	/** Whether the browser may send cookies and read the response with them. */
+	readonly credentials: boolean;
+}
+
+/**
+ * Decides the CORS grant for an origin.
+ *
+ * A named match (exact or wildcard subdomain) echoes the origin and allows
+ * credentials. A match only through `*` answers with a literal `*` and no
+ * credentials: echoing any origin with credentials would let every website a
+ * signed-in operator visits read DSAR data through the host's cookies.
+ */
+const corsGrant = (
+	origin: string,
+	trustedOrigins: readonly string[]
+): CorsGrant | undefined => {
+	if (trustedOrigins.some((trusted) => matchesNamedOrigin(origin, trusted))) {
+		return { allowOrigin: origin, credentials: true };
+	}
+	if (trustedOrigins.includes("*")) {
+		return { allowOrigin: "*", credentials: false };
+	}
+	return undefined;
+};
+
 /**
  * Whether `origin` matches one of the trusted origins.
  *
  * Entries are exact origins (`https://app.example.com`), a leading wildcard
  * subdomain (`https://*.example.com`), or `*` for any origin. A wildcard
  * matches subdomains only, never the bare domain, and never across schemes.
+ * Only exact and subdomain matches allow credentials; see `trustedOrigins`.
  *
  * @param origin - The request's `Origin` header.
  * @param trustedOrigins - Configured trusted origins.
@@ -53,26 +100,7 @@ const CORS_ALLOW_HEADERS = [
 export const isOriginTrusted = (
 	origin: string,
 	trustedOrigins: readonly string[]
-): boolean => {
-	for (const trusted of trustedOrigins) {
-		if (trusted === "*" || trusted === origin) {
-			return true;
-		}
-		const wildcard = /^(https?):\/\/\*\.(.+)$/u.exec(trusted);
-		const scheme = wildcard?.[1];
-		const domain = wildcard?.[2];
-		if (
-			scheme &&
-			domain &&
-			origin.startsWith(`${scheme}://`) &&
-			origin.endsWith(`.${domain}`) &&
-			origin.length > `${scheme}://.${domain}`.length
-		) {
-			return true;
-		}
-	}
-	return false;
-};
+): boolean => corsGrant(origin, trustedOrigins) !== undefined;
 
 /** One matched route, handed to the runtime to authenticate and run. */
 export interface RouteDispatchInput {
@@ -84,6 +112,8 @@ export interface RouteDispatchInput {
 	readonly params: Readonly<Record<string, string>>;
 	/** This request's wide event. */
 	readonly log: RequestLog;
+	/** Correlation id, also on the wide event as `dsar.requestId`. */
+	readonly requestId: string;
 }
 
 /** Everything the app needs from the runtime that owns it. */
@@ -122,6 +152,8 @@ const requestLog = (c: Context): RequestLog =>
  */
 export const createApp = (options: CreateAppOptions): Hono => {
 	const app = new Hono({ strict: false });
+	// Keyed by the raw request so no Hono context variable types are needed.
+	const requestIds = new WeakMap<Request, string>();
 	const scoped = options.basePath ? app.basePath(options.basePath) : app;
 
 	// First, so the wide event also covers CORS preflights and 404s.
@@ -132,20 +164,38 @@ export const createApp = (options: CreateAppOptions): Hono => {
 		app.use("*", gradeLevel);
 	}
 
+	// Before routing, so unmatched requests and errors carry the same fields.
+	const { service } = options.observability ?? {};
+	app.use("*", async (c, runNext) => {
+		const requestId = makeRequestId();
+		requestIds.set(c.req.raw, requestId);
+		requestLog(c).set({
+			dsar: { requestId },
+			...(service === undefined ? {} : { service }),
+		});
+		await runNext();
+	});
+
 	const trustedOrigins = options.trustedOrigins ?? [];
 	app.use("*", async (c, runNext) => {
 		const origin = c.req.header("Origin");
-		const allowed =
-			origin !== undefined && isOriginTrusted(origin, trustedOrigins);
-
-		if (allowed) {
-			c.header("Access-Control-Allow-Origin", origin);
-			c.header("Access-Control-Allow-Credentials", "true");
-			c.header("Vary", "Origin");
-		}
+		const grant =
+			origin === undefined ? undefined : corsGrant(origin, trustedOrigins);
+		const applyCors = (): void => {
+			if (trustedOrigins.length > 0) {
+				c.header("Vary", "Origin", { append: true });
+			}
+			if (grant) {
+				c.header("Access-Control-Allow-Origin", grant.allowOrigin);
+				if (grant.credentials) {
+					c.header("Access-Control-Allow-Credentials", "true");
+				}
+			}
+		};
 
 		if (c.req.method === "OPTIONS") {
-			if (allowed) {
+			applyCors();
+			if (grant) {
 				c.header(
 					"Access-Control-Allow-Methods",
 					"GET, POST, PUT, PATCH, DELETE, OPTIONS"
@@ -159,6 +209,9 @@ export const createApp = (options: CreateAppOptions): Hono => {
 		}
 
 		await runNext();
+		// After the route: handlers return their own Response, so headers set
+		// before it would be dropped.
+		applyCors();
 	});
 
 	scoped.get("/spec.json", (c) => c.json(options.spec));
@@ -172,6 +225,7 @@ export const createApp = (options: CreateAppOptions): Hono => {
 				log,
 				params: c.req.param(),
 				request: c.req.raw,
+				requestId: requestIds.get(c.req.raw) ?? makeRequestId(),
 				route,
 			});
 		});

@@ -38,10 +38,7 @@ import {
 	makeAdapterModule,
 	makeCoreModule,
 } from "./layers";
-import {
-	makeRequestId,
-	resolveRequestContext,
-} from "./middleware/auth-context";
+import { resolveRequestContext } from "./middleware/auth-context";
 import { normalizeBasePath } from "./middleware/base-path";
 import { toErrorResponse } from "./middleware/errors";
 import { enforceIntakeIpRateLimit } from "./rate-limit";
@@ -209,11 +206,9 @@ export const dsarInstance = (options: DsarInstanceOptions): DsarInstance => {
 		log,
 		params,
 		request,
+		requestId,
 		route,
 	}: RouteDispatchInput): Promise<Response> => {
-		const requestId = makeRequestId();
-		log.set({ dsar: { requestId } });
-
 		if (route.publicIntake === true) {
 			const limited = await enforceIntakeIpRateLimit({
 				config,
@@ -291,9 +286,9 @@ export const dsarInstance = (options: DsarInstanceOptions): DsarInstance => {
 	const worker =
 		options.runWebhookRetryWorker === true
 			? runtime.runFork(
-					runWebhookRetryWorker().pipe(
-						Effect.provideService(RuntimeServicesTag, backgroundServices)
-					)
+					runWebhookRetryWorker(
+						tenantId === undefined ? {} : { tenantId }
+					).pipe(Effect.provideService(RuntimeServicesTag, backgroundServices))
 				)
 			: undefined;
 

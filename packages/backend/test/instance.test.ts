@@ -1,8 +1,17 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import { withTenant } from "@dsar/persistence";
+import type { PersistenceService } from "@dsar/persistence";
 import { describe, expect, it, vi } from "@effect/vitest";
 import * as Effect from "effect/Effect";
+import { initLogger } from "evlog";
 
+import { makeSqlitePersistenceService } from "../../persistence-sqlite/src";
 import type {
 	ErrorEnvelope,
+	InboundAdapterContract,
 	NotificationAdapterContract,
 	StorageAdapterContract,
 } from "../src";
@@ -193,11 +202,11 @@ describe("tenant-bound instance", () => {
 });
 
 describe("request logging", () => {
-	it("emits nothing for a successful request at the default level", async () => {
+	it("emits nothing for a successful request at the warn level", async () => {
 		const recorder = recordEvents();
 		const instance = dsarInstance({
 			...TEST_RUNTIME_AUTH,
-			observability: { drain: recorder.drain },
+			observability: { drain: recorder.drain, level: "warn" },
 			repos: { persistence: makeMemoryPersistence() },
 		});
 
@@ -215,6 +224,48 @@ describe("request logging", () => {
 			error: { code: "AUTH_ACTOR_CONTEXT_MISSING", status: 401 },
 			level: "warn",
 			status: 401,
+		});
+	});
+
+	it("leaves the host's evlog configuration in place by default", async () => {
+		const host = recordEvents();
+		// The host drops every info event and drains to its own pipeline.
+		initLogger({ drain: host.drain, sampling: { rates: { info: 0 } } });
+		try {
+			const instance = dsarInstance({
+				...TEST_RUNTIME_AUTH,
+				observability: { service: "dsar" },
+				repos: { persistence: makeMemoryPersistence() },
+			});
+
+			await instance.handler(new Request("https://example.test/status"));
+			await instance.handler(new Request("https://example.test/requests"));
+
+			await vi.waitFor(() => expect(host.events).toHaveLength(1));
+			expect(host.events[0]).toMatchObject({ service: "dsar", status: 401 });
+		} finally {
+			initLogger();
+		}
+	});
+
+	it("puts the request id on events for unmatched routes", async () => {
+		const recorder = recordEvents();
+		const instance = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			basePath: "/api/dsar",
+			observability: { drain: recorder.drain, level: "warn" },
+			repos: { persistence: makeMemoryPersistence() },
+		});
+
+		const response = await instance.handler(
+			new Request("https://example.test/elsewhere")
+		);
+
+		expect(response.status).toBe(404);
+		await vi.waitFor(() => expect(recorder.events).toHaveLength(1));
+		expect(recorder.events[0]).toMatchObject({
+			dsar: { requestId: expect.any(String) },
+			error: { code: "REQUEST_ROUTE_NOT_FOUND" },
 		});
 	});
 
@@ -270,6 +321,44 @@ describe("cross-origin requests", () => {
 			);
 		}
 	);
+
+	it.each([
+		["a successful route", "/status", 200],
+		["a rejected request", "/requests", 401],
+		["an unmatched route", "/elsewhere", 404],
+	])("adds CORS headers to %s", async (_label, path, status) => {
+		const response = await instance.handler(
+			new Request(`https://example.test${path}`, {
+				headers: { origin: "https://app.example.com" },
+			})
+		);
+
+		expect(response.status).toBe(status);
+		expect(response.headers.get("access-control-allow-origin")).toBe(
+			"https://app.example.com"
+		);
+		expect(response.headers.get("access-control-allow-credentials")).toBe(
+			"true"
+		);
+	});
+
+	it("answers any origin with a literal * and no credentials", async () => {
+		const open = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			observability: { level: "silent" },
+			repos: { persistence: makeMemoryPersistence() },
+			trustedOrigins: ["*"],
+		});
+
+		const response = await open.handler(
+			new Request("https://example.test/status", {
+				headers: { origin: "https://evil.example.com" },
+			})
+		);
+
+		expect(response.headers.get("access-control-allow-origin")).toBe("*");
+		expect(response.headers.get("access-control-allow-credentials")).toBeNull();
+	});
 
 	it("matches a wildcard against subdomains only", () => {
 		expect(
@@ -399,5 +488,175 @@ describe("webhook retries without a worker", () => {
 		);
 		expect(job.status).toBe("delivered");
 		await instance.dispose();
+	});
+});
+
+describe("tenant-bound background work", () => {
+	const seedDueAttempt = (
+		persistence: PersistenceService,
+		tenantId: string
+	): Promise<void> =>
+		Effect.runPromise(
+			Effect.gen(function* seedDueAttemptProgram() {
+				yield* persistence.requests.create({
+					appeals: [],
+					authority: {},
+					capture: {
+						intakeSource: {
+							channel: "portal",
+							receivedAt: "1970-01-01T00:00:00.000Z",
+							type: "portal",
+						},
+						subject: { subjectId: `subject-${tenantId}` },
+					},
+					clockMode: "policy_controlled",
+					dueAt: "1970-02-01T00:00:00.000Z",
+					id: `req-${tenantId}`,
+					receivedAt: "1970-01-01T00:00:00.000Z",
+					requestor: { email: "subject@example.com", type: "subject" },
+					status: "in_progress",
+				});
+				yield* persistence.notificationEvents.append({
+					correlationId: `corr-${tenantId}`,
+					createdAt: "1970-01-01T00:00:00.000Z",
+					eventType: "request_captured",
+					id: `ne-${tenantId}`,
+					idempotencyKey: `idem-${tenantId}`,
+					locale: "en-GB",
+					payload: {},
+					policyVersion: "policy-v1",
+					requestId: `req-${tenantId}`,
+				});
+				yield* persistence.notificationDeliveryAttempts.append({
+					attempt: 1,
+					channel: "webhook",
+					createdAt: "1970-01-01T00:00:00.000Z",
+					destination: "https://tenant.example/webhook",
+					id: `nda-${tenantId}`,
+					nextAttemptAt: "1970-01-01T00:00:00.000Z",
+					notificationEventId: `ne-${tenantId}`,
+					requestId: `req-${tenantId}`,
+					status: "pending",
+				});
+			}).pipe(withTenant(tenantId))
+		);
+
+	const attemptStatus = (
+		persistence: PersistenceService,
+		tenantId: string
+	): Promise<string> =>
+		Effect.runPromise(
+			persistence.notificationDeliveryAttempts.getById(`nda-${tenantId}`).pipe(
+				Effect.map((attempt) => attempt.status),
+				withTenant(tenantId)
+			)
+		);
+
+	it("only drains its own tenant's retries in the background worker", async () => {
+		const root = await mkdtemp(join(tmpdir(), "dsar-worker-tenant-"));
+		const persistence = await makeSqlitePersistenceService({
+			create: true,
+			filename: join(root, "dsar.sqlite"),
+		});
+		await seedDueAttempt(persistence, "tenant-a");
+		await seedDueAttempt(persistence, "tenant-b");
+		const destinations: string[] = [];
+		const notifications: NotificationAdapterContract = {
+			capability: "notifications",
+			channels: ["webhook"],
+			diagnostics: () =>
+				Effect.succeed({ capability: "notifications", key: "test" }),
+			healthCheck: () => Effect.succeed({ ok: true, status: "healthy" }),
+			init: () => Effect.void,
+			key: "test",
+			send: (input) =>
+				Effect.sync(() => {
+					destinations.push(input.requestId);
+					return { responseCode: 202, status: "delivered" as const };
+				}),
+			validateConfig: () => Effect.void,
+		};
+		const instance = dsarInstance({
+			adapters: { notifications },
+			config: {
+				notificationWebhook: {
+					retryDelayMs: 1,
+					retryMaxAttempts: 3,
+					signingSecret: "secret",
+					tenantScoped: true,
+					timeoutMs: 1000,
+					url: "https://tenant-a.example/webhook",
+				},
+			},
+			observability: { level: "silent" },
+			repos: { persistence },
+			runWebhookRetryWorker: true,
+			tenantId: "tenant-a",
+		});
+
+		try {
+			// The worker picked up this tenant's job...
+			await vi.waitFor(async () =>
+				expect(await attemptStatus(persistence, "tenant-a")).not.toBe("pending")
+			);
+			// ...and never touched the other tenant's.
+			expect(await attemptStatus(persistence, "tenant-b")).toBe("pending");
+			expect(destinations).not.toContain("req-tenant-b");
+		} finally {
+			await instance.dispose();
+			await rm(root, { force: true, recursive: true });
+		}
+	});
+
+	it("refuses an inbound capture routed to another tenant", async () => {
+		const persistence = makeMemoryPersistence();
+		const inbound: InboundAdapterContract = {
+			capability: "inbound",
+			diagnostics: () =>
+				Effect.succeed({ capability: "inbound", key: "resend" }),
+			healthCheck: () => Effect.succeed({ ok: true, status: "healthy" }),
+			init: () => Effect.void,
+			key: "resend",
+			receive: () =>
+				Effect.succeed({
+					payload: {
+						fromEmail: "jane@example.com",
+						intent: { isDsar: true, reason: "matched token" },
+						route: { jurisdiction: "uk", tenantId: "tenant-default" },
+						subject: "Subject access request",
+					},
+					receivedAt: "2026-01-01T00:00:00.000Z",
+					sourceId: "resend-cross-tenant",
+				}),
+			validateConfig: () => Effect.void,
+		};
+		const instance = dsarInstance({
+			adapters: { inbound },
+			observability: { level: "silent" },
+			repos: { persistence },
+			tenantId: "tenant-other",
+		});
+
+		const response = await instance.handler(
+			new Request("https://example.test/webhooks/inbound/resend", {
+				body: JSON.stringify({ type: "email.received" }),
+				headers: {
+					"content-type": "application/json",
+					"svix-id": "svix-id-1",
+					"svix-signature": "svix-signature-1",
+					"svix-timestamp": "123",
+				},
+				method: "POST",
+			})
+		);
+		const body = (await response.json()) as ErrorEnvelope;
+
+		expect([response.status, body.error.code]).toStrictEqual([
+			403,
+			"AUTH_REQUEST_ACCESS_FORBIDDEN",
+		]);
+		expect(await Effect.runPromise(persistence.requests.list())).toHaveLength(
+			0
+		);
 	});
 });
