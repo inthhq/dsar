@@ -2,7 +2,7 @@
 	"name": "dsar",
 	"version": "0.0.5",
 	"private": false,
-	"description": "Data Subject Access Request framework — umbrella package with subpath exports.",
+	"description": "Data Subject Access Request engine: backend, Node SDK, CLI, React widgets, and adapters in one package.",
 	"license": "Apache-2.0",
 	"bin": {
 		"dsar": "./dist/bin.mjs"
@@ -107,6 +107,11 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
+		"@effect/platform-node": "catalog:effect",
+		"defu": "6.1.7",
+		"dotenv": "17.4.2"
+	},
+	"devDependencies": {
 		"@dsar/auth-unkey": "workspace:*",
 		"@dsar/backend": "workspace:*",
 		"@dsar/cli": "workspace:*",
@@ -122,18 +127,72 @@
 		"@dsar/storage-filesystem": "workspace:*",
 		"@dsar/storage-s3": "workspace:*",
 		"@dsar/storage-vercel-blob": "workspace:*",
-		"@dsar/upstash": "workspace:*",
-		"@effect/platform-node": "catalog:effect",
-		"dotenv": "17.4.2"
-	},
-	"devDependencies": {
 		"@dsar/typescript-config": "workspace:*",
+		"@dsar/upstash": "workspace:*",
 		"@types/node": "catalog:types",
 		"tsdown": "catalog:utils",
 		"typescript": "catalog:utils"
 	},
 	"peerDependencies": {
-		"effect": "catalog:effect"
+		"@aws-sdk/client-s3": "^3.1093.0",
+		"@chat-adapter/slack": "^4.34.0",
+		"@effect/sql-pg": "catalog:effect",
+		"@effect/sql-sqlite-bun": "catalog:effect",
+		"@effect/sql-sqlite-node": "catalog:effect",
+		"@resend/chat-sdk-adapter": "^0.2.2",
+		"@unkey/api": "^2.5.0",
+		"@vercel/blob": "^2.6.1",
+		"chat": "^4.34.0",
+		"effect": "catalog:effect",
+		"express": "^4.0.0 || ^5.0.0",
+		"hono": "^1.0.0 || ^2.0.0 || ^3.0.0 || ^4.0.0",
+		"next": "^13.4.0 || ^14.0.0 || ^15.0.0 || ^16.0.0",
+		"react": "^19.0.0",
+		"resend": "^6.18.0"
+	},
+	"peerDependenciesMeta": {
+		"@aws-sdk/client-s3": {
+			"optional": true
+		},
+		"@chat-adapter/slack": {
+			"optional": true
+		},
+		"@effect/sql-pg": {
+			"optional": true
+		},
+		"@effect/sql-sqlite-bun": {
+			"optional": true
+		},
+		"@effect/sql-sqlite-node": {
+			"optional": true
+		},
+		"@resend/chat-sdk-adapter": {
+			"optional": true
+		},
+		"@unkey/api": {
+			"optional": true
+		},
+		"@vercel/blob": {
+			"optional": true
+		},
+		"chat": {
+			"optional": true
+		},
+		"express": {
+			"optional": true
+		},
+		"hono": {
+			"optional": true
+		},
+		"next": {
+			"optional": true
+		},
+		"react": {
+			"optional": true
+		},
+		"resend": {
+			"optional": true
+		}
 	},
 	"engines": {
 		"node": ">=24 <25"

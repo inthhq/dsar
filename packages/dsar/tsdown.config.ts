@@ -1,14 +1,34 @@
+import { readFileSync } from "node:fs";
+
 import { defineConfig } from "tsdown";
+
+interface PackageManifest {
+	readonly dependencies?: Readonly<Record<string, string>>;
+	readonly peerDependencies?: Readonly<Record<string, string>>;
+}
+
+const manifest = JSON.parse(
+	readFileSync(new URL("package.json", import.meta.url), "utf8")
+) as PackageManifest;
+
+// `dsar` is the only published package. The `@dsar/*` workspaces are private
+// source folders, so their code and declarations are bundled in. Everything
+// else must be a declared dependency or peer, or the published tarball would
+// import a package its consumers never installed.
+const runtimeImports = Object.keys({
+	...manifest.dependencies,
+	...manifest.peerDependencies,
+});
 
 export default defineConfig({
 	attw: { enabled: "ci-only", profile: "esm-only" },
 	clean: true,
 	deps: {
-		alwaysBundle: ["@dsar/cli"],
-		dts: {
-			neverBundle: [/^@dsar\//],
-		},
-		neverBundle: [/^@effect\//, "dotenv", "effect", "react", "react-dom"],
+		alwaysBundle: [/^@dsar\//],
+		// Workspace sources resolve to local files, so nothing from node_modules
+		// may be bundled.
+		onlyBundle: [],
+		onlyImport: runtimeImports,
 	},
 	dts: {
 		generator: "tsgo",
@@ -40,8 +60,11 @@ export default defineConfig({
 	failOnWarn: "ci-only",
 	fixedExtension: true,
 	format: "esm",
+	platform: "node",
 	publint: "ci-only",
 	suppressWarnings: [
 		"TypeScript 7.0 does not yet have a stable API and is experimental. Some options will be unavailable.",
 	],
+	// Covers the bundled workspace sources so tsgo emits their declarations.
+	tsconfig: "../tsconfig.dsar-build.json",
 });

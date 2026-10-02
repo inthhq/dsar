@@ -37,3 +37,6 @@ examples/dashboard/.dsar-dashboard.db
 examples/dashboard/.dsar-dashboard.db-shm
 examples/dashboard/.dsar-dashboard.db-wal
 examples/dashboard/.dsar-dashboard-artifacts
+
+# Packed release tarballs
+*.tgz
