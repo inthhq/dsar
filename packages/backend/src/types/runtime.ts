@@ -314,8 +314,14 @@ export interface DsarInstanceOptions {
 	 */
 	readonly trustedOrigins?: readonly string[];
 	/**
-	 * Request logging through evlog: one wide event per request. Defaults to
-	 * logging failures (4xx and 5xx) only, with PII redaction on.
+	 * Request logging through evlog: one wide event per request, with PII
+	 * redaction on for drains.
+	 *
+	 * Without `level`, DSAR leaves evlog's process-wide configuration to the
+	 * host and force-keeps 4xx and 5xx events through its sampling. If nothing
+	 * in the process configures evlog, successful requests are logged too. Set
+	 * `level: "warn"` to have DSAR configure evlog to log failures only; that
+	 * replaces any evlog configuration the host already set.
 	 */
 	readonly observability?: ObservabilityOptions;
 }
