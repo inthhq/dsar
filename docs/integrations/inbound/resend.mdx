@@ -1,21 +1,21 @@
 ---
 title: "Inbound Resend"
-description: "@dsar/inbound-resend accepts Resend email.received webhook events and maps them into canonical DSAR request capture input. Emails sent to configured addresses are automatically verified, routed, and captured as DSAR requests."
+description: "dsar/inbound-resend accepts Resend email.received webhook events and maps them into canonical DSAR request capture input. Emails sent to configured addresses are automatically verified, routed, and captured as DSAR requests."
 group: integrations-inbound
 ---
 
 <include src="../../_shared/alpha-warning.mdx" />
 
-`@dsar/inbound-resend` accepts Resend `email.received` webhook events and maps them into canonical DSAR request capture input. Emails sent to configured addresses are automatically verified, routed, and captured as DSAR requests.
+`dsar/inbound-resend` accepts Resend `email.received` webhook events and maps them into canonical DSAR request capture input. Emails sent to configured addresses are automatically verified, routed, and captured as DSAR requests.
 
 ## Installation
 
 | Package manager | Command                            |
 | :-------------- | :--------------------------------- |
-| npm             | `npm install @dsar/inbound-resend` |
-| pnpm            | `pnpm add @dsar/inbound-resend`    |
-| yarn            | `yarn add @dsar/inbound-resend`    |
-| bun             | `bun add @dsar/inbound-resend`     |
+| npm             | `npm install dsar effect resend @resend/chat-sdk-adapter chat` |
+| pnpm            | `pnpm add dsar effect resend @resend/chat-sdk-adapter chat`    |
+| yarn            | `yarn add dsar effect resend @resend/chat-sdk-adapter chat`    |
+| bun             | `bun add dsar effect resend @resend/chat-sdk-adapter chat`     |
 
 ## Setup
 
@@ -24,7 +24,7 @@ group: integrations-inbound
 2. **Create the adapter:**
 
 ```ts
-import { makeResendInboundAdapter } from "@dsar/inbound-resend";
+import { makeResendInboundAdapter } from "dsar/inbound-resend";
 
 const inbound = makeResendInboundAdapter({
 	webhookSecret: process.env.RESEND_WEBHOOK_SECRET!,
@@ -46,7 +46,7 @@ const inbound = makeResendInboundAdapter({
 3. **Register with the backend:**
 
 ```ts
-import { dsarInstance } from "@dsar/backend";
+import { dsarInstance } from "dsar/backend";
 
 const runtime = dsarInstance({
 	adapters: {

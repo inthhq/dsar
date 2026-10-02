@@ -30,7 +30,7 @@ Yes, but only when failure is transient. Persistent failures require code fix.
 ## Minimal Trigger Example
 
 ```ts
-import { resolveOutboundResendErrorCatalogEntry } from "@dsar/outbound-resend";
+import { resolveOutboundResendErrorCatalogEntry } from "dsar/outbound-resend";
 
 const entry = resolveOutboundResendErrorCatalogEntry("UNKNOWN_CODE_XYZ");
 console.log(entry.code); // "OUTBOUND_RESEND_UNCATALOGED_ERROR" (DSAR-OUT-1599)

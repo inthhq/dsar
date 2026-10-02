@@ -1,17 +1,17 @@
 ---
 title: "React SDK"
-description: "Embed a subject portal or operator queue with @dsar/react. Local self-host via kitchen-sink. Production backends live on inth.com."
+description: "Embed a subject portal or operator queue with dsar/react. Local self-host via kitchen-sink. Production backends live on inth.com."
 group: guides
 ---
 
 <include src="../_shared/alpha-warning.mdx" />
 
-`@dsar/react` is the UI kit. It does not own login. That matches the [auth model](../architecture/auth-model.md): the host authenticates, DSAR sees a projected identity.
+`dsar/react` is the UI kit. It does not own login. That matches the [auth model](../architecture/auth-model.md): the host authenticates, DSAR sees a projected identity.
 
 ## Hosted (inth.com)
 
 ```tsx
-import { DsarProvider, SubjectPortal, hosted } from "@dsar/react";
+import { DsarProvider, SubjectPortal, hosted } from "dsar/react";
 
 <DsarProvider mode={hosted({ url: "https://acme-prod.inth.app" })}>
 	<SubjectPortal />
@@ -25,7 +25,7 @@ Pass `https://org-project.inth.app`. `/dsar` is added when the path is empty. We
 Run kitchen-sink as the DSAR HTTP server. The Next examples are UI only.
 
 ```tsx
-import { DsarProvider, SubjectPortal, selfHosted } from "@dsar/react";
+import { DsarProvider, SubjectPortal, selfHosted } from "dsar/react";
 
 <DsarProvider
 	mode={selfHosted({ url: "http://kitchen-sink.localhost:1355/api/v1" })}

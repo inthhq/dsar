@@ -1,12 +1,12 @@
 ---
 title: "Upstash Integration"
-description: "Use @dsar/upstash for Upstash-backed DSAR runtime integrations."
+description: "Use dsar/upstash for Upstash-backed DSAR runtime integrations."
 group: integrations-rate-limit
 ---
 
 <include src="../../_shared/alpha-warning.mdx" />
 
-`@dsar/upstash` provides Upstash-backed DSAR runtime integrations. It currently
+`dsar/upstash` provides Upstash-backed DSAR runtime integrations. It currently
 exports an Upstash Redis-backed `RateLimitStore` for public intake endpoints.
 Use it for serverless or edge-friendly deployments where a fetch-based Redis
 client is preferred.
@@ -14,7 +14,7 @@ client is preferred.
 ## Install
 
 ```sh
-bun add @dsar/upstash @upstash/redis
+bun add dsar effect @upstash/redis
 ```
 
 `@upstash/redis` is a peer dependency so host applications control the client
@@ -24,8 +24,8 @@ version and environment variable setup.
 
 ```ts
 // @noErrors
-import { dsarInstance } from "@dsar/backend";
-import { makeUpstashRateLimitStore } from "@dsar/upstash";
+import { dsarInstance } from "dsar/backend";
+import { makeUpstashRateLimitStore } from "dsar/upstash";
 import { Redis } from "@upstash/redis";
 
 const redis = Redis.fromEnv();
@@ -69,7 +69,7 @@ const runtime = dsarInstance({
 ## Production Notes
 
 - Use this package for serverless and fetch-oriented deployments.
-- Use `@dsar/redis` for long-running Node/server deployments with
+- Use `dsar/redis` for long-running Node/server deployments with
   `ioredis`.
 - Keep `config.rateLimit.onLimitExceeded` wired to your metrics pipeline when
   you need visibility into abusive or misconfigured public intake sources.

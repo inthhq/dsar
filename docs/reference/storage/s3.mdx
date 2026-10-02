@@ -1,27 +1,27 @@
 ---
 title: "S3 Storage"
-description: "@dsar/storage-s3 connects DSAR to any S3-compatible object store — AWS S3, MinIO, Cloudflare R2, DigitalOcean Spaces, and more."
+description: "dsar/storage-s3 connects DSAR to any S3-compatible object store — AWS S3, MinIO, Cloudflare R2, DigitalOcean Spaces, and more."
 group: reference-storage
 ---
 
 <include src="../../_shared/alpha-warning.mdx" />
 
-`@dsar/storage-s3` connects DSAR to any S3-compatible object store — AWS S3, MinIO, Cloudflare R2, DigitalOcean Spaces, and more.
+`dsar/storage-s3` connects DSAR to any S3-compatible object store — AWS S3, MinIO, Cloudflare R2, DigitalOcean Spaces, and more.
 
 ## Installation
 
 | Package manager | Command                        |
 | :-------------- | :----------------------------- |
-| npm             | `npm install @dsar/storage-s3` |
-| pnpm            | `pnpm add @dsar/storage-s3`    |
-| yarn            | `yarn add @dsar/storage-s3`    |
-| bun             | `bun add @dsar/storage-s3`     |
+| npm             | `npm install dsar effect @aws-sdk/client-s3` |
+| pnpm            | `pnpm add dsar effect @aws-sdk/client-s3`    |
+| yarn            | `yarn add dsar effect @aws-sdk/client-s3`    |
+| bun             | `bun add dsar effect @aws-sdk/client-s3`     |
 
 ## Setup
 
 ```ts
-import { dsarInstance } from "@dsar/backend";
-import { makeS3StorageAdapter } from "@dsar/storage-s3";
+import { dsarInstance } from "dsar/backend";
+import { makeS3StorageAdapter } from "dsar/storage-s3";
 
 const runtime = dsarInstance({
 	adapters: {

@@ -1,12 +1,12 @@
 ---
 title: "Redis Integration"
-description: "Use @dsar/redis for Redis-backed DSAR runtime integrations."
+description: "Use dsar/redis for Redis-backed DSAR runtime integrations."
 group: integrations-rate-limit
 ---
 
 <include src="../../_shared/alpha-warning.mdx" />
 
-`@dsar/redis` provides Redis-backed DSAR runtime integrations. It currently
+`dsar/redis` provides Redis-backed DSAR runtime integrations. It currently
 exports a Redis-backed `RateLimitStore` for public intake endpoints. Use it when
 a runtime has multiple Node/server instances and the default in-memory store
 would not share counters.
@@ -14,7 +14,7 @@ would not share counters.
 ## Install
 
 ```sh
-bun add @dsar/redis ioredis
+bun add dsar effect ioredis
 ```
 
 `ioredis` is a peer dependency so host applications control the Redis client
@@ -24,8 +24,8 @@ version and connection setup.
 
 ```ts
 // @noErrors
-import { dsarInstance } from "@dsar/backend";
-import { makeRedisRateLimitStore } from "@dsar/redis";
+import { dsarInstance } from "dsar/backend";
+import { makeRedisRateLimitStore } from "dsar/redis";
 import Redis from "ioredis";
 
 const redis = new Redis(process.env.REDIS_URL!);
@@ -69,6 +69,6 @@ const runtime = dsarInstance({
 ## Production Notes
 
 - Use this package for Node/server deployments.
-- Use `@dsar/upstash` for fetch/edge-oriented deployments.
+- Use `dsar/upstash` for fetch/edge-oriented deployments.
 - Keep `config.rateLimit.onLimitExceeded` wired to your metrics pipeline when
   you need visibility into abusive or misconfigured public intake sources.

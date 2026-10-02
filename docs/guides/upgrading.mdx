@@ -84,8 +84,8 @@ to run `0003` before serving Chat SDK traffic.
 5. Search the host for `adapter-c15t` and `dsar/adapter-c15t`. Remove those
    imports. Wire inbound through `dsar/inbound-resend` or `dsar/inbound-slack`,
    or omit inbound adapters until you have a supported channel.
-6. If you persist Chat SDK state with `@dsar/persistence-sqlite` or
-   `@dsar/persistence-pg`, boot the runtime once so migration `0003` applies, or
+6. If you persist Chat SDK state with `dsar/persistence-sqlite` or
+   `dsar/persistence-pg`, boot the runtime once so migration `0003` applies, or
    run your usual migrator through the ordered registry.
 7. If you use `makeUnkeyBearerResolver`, thrown `verifyKey` failures now return
    no identity and DSAR answers `401`. Attach `onVerifyError` when you need to
