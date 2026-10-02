@@ -1,8 +1,9 @@
 ---
-"dsar": major
+packages:
+  dsar: major
 ---
 
-# Remove unsupported `dsar/adapter-c15t` export
+### Remove unsupported `dsar/adapter-c15t` export
 
 Remove the unsupported `dsar/adapter-c15t` export from the umbrella package.
 

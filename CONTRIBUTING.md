@@ -63,13 +63,22 @@ package and the root workspace scripts in `package.json`.
 - Update documentation when public APIs, commands, or user workflows change.
 - Run the relevant checks before requesting review.
 
-If a change affects a published package, include a changeset:
+If a change affects the published `dsar` package, add a release note under
+`.tegami/`:
 
-```sh
-bun run changeset
+```md
+---
+packages:
+  dsar: patch
+---
+
+### Describe the change in one line
+
+What changed for users, and anything they need to do.
 ```
 
-Choose the smallest accurate release type and describe the user-visible change.
+Choose the smallest accurate release type. See `.tegami/README.md` for
+details.
 
 ## Code Standards
 

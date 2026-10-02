@@ -1,6 +1,9 @@
 ---
-"dsar": major
+packages:
+  dsar: major
 ---
+
+### Require Node.js 24, TypeScript 7, and Effect 4
 
 Require Node.js 24 and update the runtime to TypeScript 7, Effect 4.0.0,
 and the latest supported integration dependencies.
