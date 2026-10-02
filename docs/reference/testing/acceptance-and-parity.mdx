@@ -20,12 +20,27 @@ for the current DSAR repo state.
 
 ## Current evidence in repo
 
-- API lifecycle E2E coverage exists in `packages/backend/test/e2e/full-flow.api.e2e.test.ts`.
+- Fast HTTP lifecycle coverage against in-memory persistence and stub adapters lives in `packages/backend/test/e2e/full-flow.api.e2e.test.ts`. Keep that path for route and clock checks.
+- Real-adapter lifecycle coverage is `packages/backend/test/e2e/real-adapters.lifecycle.e2e.test.ts`. It runs capture, verification, filesystem evidence upload, and fulfilment against a SQLite file plus `@dsar/storage-filesystem`. When `DSAR_TEST_DATABASE_URL` or `DSAR_TEST_PG_URL` is set, the same flow also runs on Postgres. Unset postgres env skips that case the same way `packages/persistence-pg` already does.
 - Route-level lifecycle coverage exists in `packages/backend/test/routes/requests-lifecycle.test.ts`.
 - Notification retry and built-in email behavior are covered in `packages/backend/test/services/notifications.service.test.ts`.
 - CLI/backend parity is guarded by `packages/cli/test/parity.test.ts` and `packages/cli/test/e2e/parity-guard.e2e.test.ts`.
 - Optional p95 benches for clock recompute, subject lookup, and policy-pack
   diff live behind `bun run bench`. See [Performance Benches](perf-benches.md).
+
+## How to run real-adapter e2e
+
+```sh
+bun run --cwd packages/backend test:e2e
+```
+
+SQLite plus filesystem always runs. To include Postgres:
+
+```sh
+DSAR_TEST_PG_URL=postgres://postgres:postgres@localhost:5432/dsar bun run --cwd packages/backend test:e2e
+```
+
+`DSAR_TEST_DATABASE_URL` is accepted as an alias for that Postgres URL. The test does not use S3 or send email.
 
 ## Gaps to keep tracking
 
