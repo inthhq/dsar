@@ -1,6 +1,6 @@
 {
 	"name": "dsar",
-	"version": "0.0.5",
+	"version": "1.0.0",
 	"private": false,
 	"description": "Data Subject Access Request engine: backend, Node SDK, CLI, React widgets, and adapters in one package.",
 	"license": "Apache-2.0",

@@ -1,0 +1,97 @@
+core:changelogs:
+  - content:
+      "---\npackages:\n  dsar:\n    type: minor\n---\n\n### Webhook receiver middleware exports\n\nAdd webhook receiver APIs for the Node SDK, including HMAC verification, typed dispatch, initial handler maps, `sdk.webhooks.receiver()`, and Express, Hono, and Next.js middleware exports.\n"
+    filename: 2026-05-07-webhook-receiver-middleware.md
+    v: 0.0.0
+  - content:
+      "---\npackages:\n  dsar:\n    type: minor\n---\n\n### List and replay outbound webhook dispatches\n\nAdd outbound webhook dispatch recovery: typed Node SDK methods and `GET /webhooks/dispatches` listing with filters, single and bulk replay endpoints with idempotent audit-logged replays, and `dsar webhooks list`, `dsar webhooks replay`, `dsar webhooks replay-all`, and `dsar webhooks tail` CLI commands.\n"
+    filename: 2026-07-08-webhook-dispatch-replay.md
+    v: 0.0.0
+  - content:
+      "---\npackages:\n  dsar:\n    type: minor\n---\n\n### Retry outbound webhooks on a durable schedule\n\nOutbound webhook delivery writes a pending attempt before send, retries on a durable 1m/5m/30m/2h/6h/24h schedule after the request returns, marks exhausted jobs `dead`, and appends a request timeline event for each attempt. Pass `runWebhookRetryWorker: true` to `dsarInstance` (kitchen-sink does) so due jobs keep draining after the HTTP request returns.\n"
+    filename: 2026-10-02-webhook-retry-worker.md
+    v: 0.0.0
+  - content:
+      "---\npackages:\n  dsar:\n    type: patch\n---\n\n### Overturn refused requests on appeal\n\nAdd refused request appeal overturn handling and backend E2E coverage for the full appeal-to-fulfilment lifecycle.\n"
+    filename: 2026-04-22-appeal-lifecycle-e2e.md
+    v: 0.0.0
+  - content:
+      "---\npackages:\n  dsar:\n    type: patch\n---\n\n### Keep Node SDK failures on their catalog codes\n\nKeep Node SDK HTTP and envelope failures on their catalog codes. The fetcher previously treated thrown `DsarSdkError` instances as transport failures because `isSdkError` only accepted plain objects.\n"
+    filename: 2026-10-02-sdk-fetcher-error-identity.md
+    v: 0.0.0
+  - content:
+      "---\npackages:\n  dsar:\n    type: patch\n---\n\n### Fix error `docsUrl` links\n\nPoint error `docsUrl` links at `https://dsar-sdk.dev/docs/reference/errors/<slug>`, where the error reference pages are published. The previous `https://dsar-sdk.dev/errors` base returned 404 for every error.\n"
+    filename: 2026-10-02-fix-error-docs-base-url.md
+    v: 0.0.0
+  - content:
+      "---\npackages:\n  dsar:\n    type: patch\n---\n\n### Add `dsar/react` portal widgets\n\nAdd `dsar/react` with a subject portal, an operator queue, a hosted inth.app transport, and local SQLite portal examples. The widgets are alpha.\n"
+    filename: 2026-10-02-react-hosted-portals.md
+    v: 0.0.0
+  - content:
+      "---\npackages:\n  dsar:\n    type: minor\n---\n\n### Alert on dead webhooks and add DLQ commands\n\nAdd a tenant-scoped `onDeadWebhook` alert when outbound webhook jobs exhaust retries, and operator DLQ commands `dsar webhooks dlq list` and `dsar webhooks dlq replay` over dead `notification_delivery_attempts` rows. Bulk replay now accepts `status=dead`.\n"
+    filename: 2026-10-02-webhook-dlq-alert.md
+    v: 0.0.0
+  - content:
+      "---\npackages:\n  dsar:\n    type: major\n---\n\n### Install `dsar` from npm without unpublished dependencies\n\n`dsar@0.0.5` depended on `@dsar/*` workspace packages that were never\npublished, so `npm install dsar` failed. `dsar` now bundles that code and is\nthe only package you install.\n\nLibraries an adapter needs are optional peer dependencies. Install the ones\nfor the subpaths you import, for example `@effect/sql-pg` for\n`dsar/persistence-pg`, `@aws-sdk/client-s3` for `dsar/storage-s3`, or `react`\nfor `dsar/react`. `effect` is a required peer.\n\nThe Chat SDK state adapter, `makePersistenceStateAdapter`, moves from the root\n`dsar` entry to `dsar/chat`, so the root entry typechecks without `chat`\ninstalled.\n"
+    filename: 2026-10-02-single-package.md
+    v: 0.0.0
+  - content:
+      "---\npackages:\n  dsar:\n    type: minor\n---\n\n### Fail closed when Unkey verification throws\n\nFail closed in the Unkey bearer resolver when key verification throws, treating provider errors and unreachable Unkey hosts as unauthenticated instead of surfacing provider exceptions, and add an optional `onVerifyError` hook so hosts can log or emit metrics for thrown verification failures.\n"
+    filename: 2026-07-08-auth-unkey-fail-closed.md
+    v: 0.0.0
+  - content:
+      "---\npackages:\n  dsar:\n    type: major\n---\n\n### Remove unsupported `dsar/adapter-c15t` export\n\nRemove the unsupported `dsar/adapter-c15t` export from the umbrella package.\n\nThe repo no longer ships the private `@dsar/adapter-c15t` workspace package, and\nthe example runtime config now uses the inbound stub until a supported inbound\nintegration is configured.\n"
+    filename: 2026-04-15-remove-c15t-adapter.md
+    v: 0.0.0
+  - content:
+      "---\npackages:\n  dsar:\n    type: minor\n---\n\n### Add `dsar doctor` and `GET /status/diagnostics`\n\nAdd a `dsar doctor` diagnostics command with config, runtime reachability, auth, migration freshness, and adapter health checks backed by a new operator-scoped `GET /status/diagnostics` endpoint and `client.diagnostics()` Node SDK method, plus command help snapshots and grouped `--help` output.\n"
+    filename: 2026-07-08-cli-doctor-diagnostics.md
+    v: 0.0.0
+  - content:
+      "---\npackages:\n  dsar:\n    type: minor\n---\n\n### Host DSAR inline: tenant binding, serverless retries, and evlog\n\n`dsarInstance` now routes requests with Hono and accepts options for hosts\nthat serve DSAR inside an existing app or gateway:\n\n- `tenantId` binds an instance to one tenant. Credentials scoped to another\n  tenant get a `403`, credentials without a tenant act for it, and inbound\n  adapters cannot capture into another tenant. `requireTenantId` refuses to\n  build an instance without one.\n- `runWebhookRetries()` delivers the webhook retries that are due and returns,\n  so serverless hosts can drain retries from a scheduled job. `dispose()`\n  stops the `runWebhookRetryWorker` loop and releases the instance. On a\n  tenant-bound instance, both drain only that tenant's retries.\n- `trustedOrigins` adds CORS headers to preflights and responses. Named\n  origins get credentials; `*` gets a literal `*` without credentials.\n- `observability` logs one evlog wide event per request, with PII redaction\n  on. By default it leaves the host's evlog configuration alone and keeps\n  failed and rejected requests through its sampling; `level` opts in to DSAR\n  configuring evlog. Events carry no request bodies, and 4xx events carry no\n  error messages or stacks. Errors no longer print a JSON line with\n  `console.error`.\n\nDownloaded artifacts now arrive byte for byte. Before, the response was\ndecoded as text, which corrupted binary files such as PDFs and archives.\n"
+    filename: 2026-10-02-hono-runtime.md
+    v: 0.0.0
+  - content:
+      "---\npackages:\n  dsar:\n    type: patch\n---\n\n### Return 400s for malformed intake bodies\n\nValidate create and capture request bodies with IntakePayloadSchema so malformed JSON and schema failures return catalog 400s instead of 500s. Tenant and actor identity still come from request context.\n"
+    filename: 2026-10-02-intake-payload-schema.md
+    v: 0.0.0
+  - content:
+      "---\npackages:\n  dsar:\n    type: patch\n---\n\n### Complete policy upgrades over HTTP\n\nDeclare the policy-upgrade propose body (`fromVersion`, `tenantId`, `toVersion`) in OpenAPI, and keep propose/approve/apply state for the life of a backend runtime instance so HTTP upgrades can complete.\n"
+    filename: 2026-10-02-policy-upgrade-http.md
+    v: 0.0.0
+  - content:
+      "---\npackages:\n  dsar:\n    type: minor\n---\n\n### Add `dsar/persistence` and `dsar/react/styles.css`\n\n`dsar/persistence` exports the persistence contract the driver layers need,\nincluding `Persistence`, `withTenant`, and `TenantContext`, so Effect\napplications can compose `makePgPersistenceLayer` and\n`makeSqlitePersistenceLayer` without a private package.\n\n`dsar/react/styles.css` ships the stylesheet for the React widgets, and\n`dsar/react` keeps its `\"use client\"` directive so Next.js server components\ncan render the widgets.\n"
+    filename: 2026-10-02-react-styles-persistence.md
+    v: 0.0.0
+  - content:
+      "---\npackages:\n  dsar:\n    type: major\n---\n\n### Require Node.js 24, TypeScript 7, and Effect 4\n\nRequire Node.js 24 and update the runtime to TypeScript 7, Effect 4.0.0,\nand the latest supported integration dependencies.\n\nExpand the persistence-backed Chat SDK state adapter with durable transcript\nlists, message queues, and force-unlock support required by Chat SDK 4.34.\n\nMigration steps for 0.0.5 to 1.0.0 live in docs/guides/upgrading.mdx.\n"
+    filename: 2026-07-24-modern-runtime-foundation.md
+    v: 0.0.0
+core:packages:
+  - changelogIds:
+      - 2026-05-07-webhook-receiver-middleware.md
+      - 2026-07-08-webhook-dispatch-replay.md
+      - 2026-10-02-webhook-retry-worker.md
+      - 2026-04-22-appeal-lifecycle-e2e.md
+      - 2026-10-02-sdk-fetcher-error-identity.md
+      - 2026-10-02-fix-error-docs-base-url.md
+      - 2026-10-02-react-hosted-portals.md
+      - 2026-10-02-webhook-dlq-alert.md
+      - 2026-10-02-single-package.md
+      - 2026-07-08-auth-unkey-fail-closed.md
+      - 2026-04-15-remove-c15t-adapter.md
+      - 2026-07-08-cli-doctor-diagnostics.md
+      - 2026-10-02-hono-runtime.md
+      - 2026-10-02-intake-payload-schema.md
+      - 2026-10-02-policy-upgrade-http.md
+      - 2026-10-02-react-styles-persistence.md
+      - 2026-07-24-modern-runtime-foundation.md
+    id: npm:dsar
+    updated: true
+dsar:release:
+  - branch: main
+    id: npm:dsar
+    version: 1.0.0
+npm:packages:
+  - distTag: latest
+    id: npm:dsar

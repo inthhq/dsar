@@ -172,7 +172,7 @@
     },
     "packages/dsar": {
       "name": "dsar",
-      "version": "0.0.5",
+      "version": "1.0.0",
       "bin": {
         "dsar": "./dist/bin.mjs",
       },
