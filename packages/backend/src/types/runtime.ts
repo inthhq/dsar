@@ -96,6 +96,31 @@ export interface RuntimeAuthConfig {
 }
 
 /**
+ * Operator alert fired when a tenant-scoped outbound webhook job is marked
+ * `dead` after retries are exhausted.
+ */
+export interface DeadWebhookAlert {
+	/** One-based attempt number that exhausted retries. */
+	readonly attempt: number;
+	/** Delivery-attempt id. This is also the dispatch identity. */
+	readonly attemptId: string;
+	/** Destination URL that failed. */
+	readonly destination: string;
+	/** Last delivery error when the job was marked dead. */
+	readonly error?: string;
+	/** Notification event associated with the job. */
+	readonly notificationEventId: string;
+	/** ISO timestamp when the job became dead. */
+	readonly occurredAt: string;
+	/** Request the notification belongs to. */
+	readonly requestId: string;
+	/** Provider response code when available. */
+	readonly responseCode?: number;
+	/** Tenant that owns the job. Comes from runtime tenant context. */
+	readonly tenantId: string;
+}
+
+/**
  * Runtime-level feature/config toggles shared by all route handlers.
  */
 export interface RuntimeConfig {
@@ -137,6 +162,12 @@ export interface RuntimeConfig {
 	readonly onAdapterEvent?: (
 		event: AdapterOperationalEvent
 	) => Promise<void> | void;
+	/**
+	 * Optional operator alert when an outbound webhook job becomes `dead`.
+	 * The payload is tenant-scoped. Hook failures are swallowed so paging
+	 * outages cannot stall the retry worker.
+	 */
+	readonly onDeadWebhook?: (event: DeadWebhookAlert) => Promise<void> | void;
 	/** Auth and identity resolution used by protected endpoints. */
 	readonly auth?: RuntimeAuthConfig;
 	/** Rate limiting for public intake endpoints. */

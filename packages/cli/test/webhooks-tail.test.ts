@@ -251,6 +251,9 @@ describe("webhook command flag help", () => {
 			"webhooks_dispatches_replay_bulk",
 			["--idempotency-key", "--status", "--limit"],
 		],
+		["webhooks_dlq_list", ["--endpoint-id", "--limit"]],
+		["webhooks_dlq_replay", ["--idempotency-key"]],
+		["webhooks_dlq_replay_bulk", ["--idempotency-key", "--limit"]],
 		["webhooks_tail", ["--status", "--interval", "--once"]],
 	] as const)(
 		"declares command flag help for %s",

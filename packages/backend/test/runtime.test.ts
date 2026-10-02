@@ -199,11 +199,15 @@ const seedWebhookDispatch = async (
 			channel: input.channel ?? "webhook",
 			createdAt: input.createdAt ?? "2026-02-20T00:01:00.000Z",
 			destination: input.destination ?? "https://tenant.example/webhook",
-			error: input.status === "failed" ? "500 Internal Server Error" : "",
+			error:
+				input.status === "failed" || input.status === "dead"
+					? "500 Internal Server Error"
+					: "",
 			id: input.id,
 			notificationEventId: input.eventId,
 			requestId,
-			responseCode: input.status === "failed" ? 500 : 200,
+			responseCode:
+				input.status === "failed" || input.status === "dead" ? 500 : 200,
 			status: input.status ?? "failed",
 		})
 	);
@@ -696,6 +700,129 @@ describe(dsarInstance, () => {
 		expect(idempotentReplay.status).toBe(202);
 		expect(idempotentReplayBody.data.status).toBe("already_replayed");
 		expect(sent).toHaveLength(1);
+	});
+
+	it("lists and replays dead outbound webhook dispatches", async () => {
+		const persistence = makeMemoryPersistence();
+		await seedWebhookDispatch(persistence, {
+			eventId: "evt-webhook-dead",
+			id: "dispatch-dead-1",
+			requestId: "req-webhook-dead",
+			status: "dead",
+		});
+		await seedWebhookDispatch(persistence, {
+			eventId: "evt-webhook-dead-2",
+			id: "dispatch-dead-2",
+			requestId: "req-webhook-dead-2",
+			status: "dead",
+		});
+		await seedWebhookDispatch(persistence, {
+			eventId: "evt-webhook-failed",
+			id: "dispatch-failed-listed",
+			requestId: "req-webhook-failed",
+			status: "failed",
+		});
+		const sent: unknown[] = [];
+		const runtime = dsarInstance({
+			adapters: {
+				notifications: makeNotificationAdapter({
+					send: (input) => {
+						sent.push(input);
+						return Effect.succeed({
+							responseCode: 200,
+							status: "delivered" as const,
+						});
+					},
+				}),
+			},
+			config: {
+				...TEST_RUNTIME_AUTH.config,
+				notificationWebhook: {
+					endpointId: "default",
+					retryDelayMs: 1,
+					retryMaxAttempts: 1,
+					signingSecret: "secret",
+					tenantScoped: true,
+					timeoutMs: 1000,
+					url: "https://tenant.example/webhook",
+				},
+			},
+			repos: { persistence },
+		});
+
+		const listResponse = await runtime.handler(
+			new Request("https://example.test/webhooks/dispatches?status=dead", {
+				headers: adminHeaders,
+			})
+		);
+		const listBody = (await listResponse.json()) as {
+			readonly data: {
+				readonly items: readonly {
+					readonly dispatchId: string;
+					readonly replayable: boolean;
+					readonly status: string;
+				}[];
+				readonly total: number;
+			};
+		};
+		expect(listResponse.status).toBe(200);
+		expect(listBody.data.total).toBe(2);
+		expect(
+			listBody.data.items.map((item) => item.dispatchId).toSorted()
+		).toStrictEqual(["dispatch-dead-1", "dispatch-dead-2"]);
+		expect(listBody.data.items[0]).toMatchObject({
+			replayable: true,
+			status: "dead",
+		});
+
+		const replayResponse = await runtime.handler(
+			new Request(
+				"https://example.test/webhooks/dispatches/dispatch-dead-1/replay",
+				{
+					headers: {
+						...adminHeaders,
+						"x-idempotency-key": "replay-dead",
+					},
+					method: "POST",
+				}
+			)
+		);
+		const replayBody = (await replayResponse.json()) as {
+			readonly data: { readonly status: string };
+		};
+		expect(replayResponse.status).toBe(202);
+		expect(replayBody.data.status).toBe("replayed");
+		expect(sent).toHaveLength(1);
+
+		const bulkResponse = await runtime.handler(
+			new Request("https://example.test/webhooks/dispatches/replay", {
+				body: JSON.stringify({ status: "dead" }),
+				headers: {
+					...adminHeaders,
+					"content-type": "application/json",
+					"x-idempotency-key": "replay-dead-bulk",
+				},
+				method: "POST",
+			})
+		);
+		const bulkBody = (await bulkResponse.json()) as {
+			readonly data: {
+				readonly alreadyReplayed: number;
+				readonly replayed: number;
+				readonly results: readonly { readonly dispatchId: string }[];
+				readonly total: number;
+			};
+		};
+		expect(bulkResponse.status).toBe(202);
+		expect(bulkBody.data).toMatchObject({
+			alreadyReplayed: 0,
+			replayed: 1,
+			total: 1,
+		});
+		expect(bulkBody.data.results).toStrictEqual([
+			expect.objectContaining({ dispatchId: "dispatch-dead-2" }),
+		]);
+		expect(sent).toHaveLength(2);
 	});
 
 	it("validates and paginates outbound webhook dispatch listing", async () => {

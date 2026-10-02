@@ -83,7 +83,7 @@ dsar doctor --api-url http://localhost:4086 --token "$DSAR_API_TOKEN"
 - `policies list` -> `GET /policies`
 - `policies custom register|activate|deactivate` -> custom policy endpoints
 - `webhooks inbound resend` -> `POST /webhooks/inbound/resend`
-- `webhooks list|replay|replay-all|tail ...` -> outbound webhook dispatch inspection, replay, and polling
+- `webhooks list|replay|replay-all|tail|dlq ...` -> outbound webhook dispatch inspection, replay, polling, and dead-letter recovery
 - `requests create|capture` -> `POST /requests`, `POST /requests/capture`
 - `requests clock explain <id>` -> `GET /requests/{id}/clock/explain`
 - `requests verification ...` -> verification endpoints
@@ -127,11 +127,19 @@ Outbound webhook dispatch replay is available through:
 - `dsar webhooks replay <dispatch-id> --idempotency-key replay-1`
 - `dsar webhooks replay-all --status failed --endpoint-id default --limit 100 --idempotency-key replay-all-1`
 - `dsar webhooks tail --status failed --endpoint-id default --interval 2000`
+- `dsar webhooks dlq list`
+- `dsar webhooks dlq replay <dispatch-id> --idempotency-key replay-dead-1`
+- `dsar webhooks dlq replay --idempotency-key replay-dead-all-1`
 
-`replay` targets one failed webhook dispatch. `replay-all` maps to
+`replay` targets one failed or dead webhook dispatch. `replay-all` maps to
 `POST /webhooks/dispatches/replay` and builds the bulk replay body from
 `--status`, `--endpoint-id`, `--created-after`, `--created-before`, and
-`--limit`. `--idempotency-key` is required for both replay commands.
+`--limit`. `--status` may be `failed` or `dead`. `--idempotency-key` is
+required for both replay commands.
+
+`dlq list` calls `GET /webhooks/dispatches?status=dead`. `dlq replay` without
+an id sends `{ "status": "dead" }` to bulk replay. `dlq replay <id>` uses the
+single-dispatch replay route.
 
 `tail` polls `GET /webhooks/dispatches` and streams newly observed dispatches.
 It accepts `--status`, `--endpoint-id`, `--interval`, `--limit`, and `--once`.

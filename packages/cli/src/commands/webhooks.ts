@@ -13,6 +13,9 @@ export const webhooksCommands = [
 		"webhooks_dispatches_list",
 		"webhooks_dispatches_replay",
 		"webhooks_dispatches_replay_bulk",
+		"webhooks_dlq_list",
+		"webhooks_dlq_replay",
+		"webhooks_dlq_replay_bulk",
 	] as const),
 	webhooksTailCommand,
 ] as const;

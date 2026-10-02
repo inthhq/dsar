@@ -67,7 +67,7 @@ const WebhookDispatchBulkReplayPayloadSchema = Schema.Struct({
 	created_before: Schema.optional(Schema.String),
 	endpoint_id: Schema.optional(Schema.String),
 	limit: Schema.optional(Schema.Number),
-	status: Schema.optional(Schema.Literal("failed")),
+	status: Schema.optional(Schema.Literals(["failed", "dead"])),
 });
 
 const WebhookDispatchBulkReplayResultSchema = Schema.Struct({
@@ -168,7 +168,7 @@ export const webhooksGroup = HttpApiGroup.make("webhooks", { topLevel: true })
 					).pipe(s202),
 				}
 			),
-			"Replay failed outbound webhook dispatches"
+			"Replay failed or dead outbound webhook dispatches"
 		)
 	)
 	.add(
