@@ -1,4 +1,4 @@
-import { asRecord, isRecord } from "@dsar/guards";
+import { asRecord } from "@dsar/guards";
 
 import type { SdkError, SdkErrorCategory } from "./types";
 import {
@@ -107,17 +107,15 @@ export const createSdkError = (input: {
 };
 
 /**
- * Type guard that checks whether a value has the shape of a {@link SdkError}
- * (verifies `name` and `type` fields match `DsarSdkError`).
+ * Type guard that checks whether a value is a {@link SdkError} produced by
+ * this package (`DsarSdkError`). Plain objects are not treated as SDK errors.
  *
  * @param value - Arbitrary value to test.
- * @returns `true` when `value` matches the normalized SDK error shape; `false`
+ * @returns `true` when `value` is a `DsarSdkError` instance; `false`
  *   otherwise.
  */
 export const isSdkError = (value: unknown): value is SdkError =>
-	isRecord(value) &&
-	value.name === "DsarSdkError" &&
-	value.type === "dsar.sdk.error";
+	value instanceof DsarSdkError;
 
 /**
  * Normalizes a transport-layer failure (network outage, abort, or timeout)
