@@ -1,5 +1,5 @@
-import * as HttpApi from "effect/unstable/httpapi/HttpApi";
-import * as OpenApi from "effect/unstable/httpapi/OpenApi";
+import * as HttpApi from "effect/http-api/HttpApi";
+import * as OpenApi from "effect/http-api/OpenApi";
 
 import { auditGroup } from "./groups/audit";
 import { initGroup } from "./groups/init";

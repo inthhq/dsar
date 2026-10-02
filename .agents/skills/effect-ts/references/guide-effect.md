@@ -364,7 +364,7 @@ When Effect already provides a domain module for a capability, prefer that modul
 
 Important example:
 
-- prefer Effect SQL modules from `effect/unstable/sql/*` over embedding a native SQL driver directly in domain services
+- prefer Effect SQL modules from `effect/sql/*` over embedding a native SQL driver directly in domain services
 
 Why:
 

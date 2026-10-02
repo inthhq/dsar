@@ -3,12 +3,12 @@ import * as Effect from "effect/Effect";
 import { pipe } from "effect/Function";
 import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
-import * as SqlClient from "effect/unstable/sql/SqlClient";
-import { SqlError } from "effect/unstable/sql/SqlError";
+import * as SqlClient from "effect/sql/SqlClient";
+import { SqlError } from "effect/sql/SqlError";
 import type {
 	Fragment as SqlFragment,
 	Statement as SqlStatement,
-} from "effect/unstable/sql/Statement";
+} from "effect/sql/Statement";
 
 import type { PersistenceDriver } from "../sql/driver";
 import { TenantContext, requireTenantId } from "../tenant/context";

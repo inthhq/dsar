@@ -13,7 +13,7 @@ import type * as PgClient from "@effect/sql-pg/PgClient";
 import type { Layer } from "effect";
 import * as Effect from "effect/Effect";
 import * as Redacted from "effect/Redacted";
-import type { SqlClient } from "effect/unstable/sql/SqlClient";
+import type { SqlClient } from "effect/sql/SqlClient";
 
 import { pgDriver } from "./driver";
 

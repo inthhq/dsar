@@ -4,7 +4,7 @@ import { unlink } from "node:fs/promises";
 
 import { sqliteDriver } from "@dsar/persistence-sqlite";
 import * as Effect from "effect/Effect";
-import * as SqlClient from "effect/unstable/sql/SqlClient";
+import * as SqlClient from "effect/sql/SqlClient";
 
 import type { Sql } from "../../internals/persistence/src/services/persistence/shared";
 import type { MigrationTestContext } from "../../internals/persistence/test/migration-conformance";

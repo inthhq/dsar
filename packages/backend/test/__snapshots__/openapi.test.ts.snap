@@ -202,29 +202,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "sequence": {
                                 "anyOf": [
                                   {
-                                    "anyOf": [
-                                      {
-                                        "type": "number",
-                                      },
-                                      {
-                                        "enum": [
-                                          "NaN",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "Infinity",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "-Infinity",
-                                        ],
-                                        "type": "string",
-                                      },
-                                    ],
+                                    "type": "number",
                                   },
                                   {
                                     "enum": [
@@ -257,29 +235,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             "limit": {
                               "anyOf": [
                                 {
-                                  "anyOf": [
-                                    {
-                                      "type": "number",
-                                    },
-                                    {
-                                      "enum": [
-                                        "NaN",
-                                      ],
-                                      "type": "string",
-                                    },
-                                    {
-                                      "enum": [
-                                        "Infinity",
-                                      ],
-                                      "type": "string",
-                                    },
-                                    {
-                                      "enum": [
-                                        "-Infinity",
-                                      ],
-                                      "type": "string",
-                                    },
-                                  ],
+                                  "type": "number",
                                 },
                                 {
                                   "enum": [
@@ -413,29 +369,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "eventCount": {
                           "anyOf": [
                             {
-                              "anyOf": [
-                                {
-                                  "type": "number",
-                                },
-                                {
-                                  "enum": [
-                                    "NaN",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "-Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                              ],
+                              "type": "number",
                             },
                             {
                               "enum": [
@@ -488,29 +422,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "sequence": {
                                 "anyOf": [
                                   {
-                                    "anyOf": [
-                                      {
-                                        "type": "number",
-                                      },
-                                      {
-                                        "enum": [
-                                          "NaN",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "Infinity",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "-Infinity",
-                                        ],
-                                        "type": "string",
-                                      },
-                                    ],
+                                    "type": "number",
                                   },
                                   {
                                     "enum": [
@@ -1552,11 +1464,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                   "verifiedAt": {
                                     "anyOf": [
                                       {
-                                        "allOf": [
-                                          {
-                                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                          },
-                                        ],
+                                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                         "type": "string",
                                       },
                                       {
@@ -1679,29 +1587,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "limit": {
                           "anyOf": [
                             {
-                              "anyOf": [
-                                {
-                                  "type": "number",
-                                },
-                                {
-                                  "enum": [
-                                    "NaN",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "-Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                              ],
+                              "type": "number",
                             },
                             {
                               "enum": [
@@ -1716,29 +1602,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "offset": {
                           "anyOf": [
                             {
-                              "anyOf": [
-                                {
-                                  "type": "number",
-                                },
-                                {
-                                  "enum": [
-                                    "NaN",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "-Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                              ],
+                              "type": "number",
                             },
                             {
                               "enum": [
@@ -1768,29 +1632,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "total": {
                           "anyOf": [
                             {
-                              "anyOf": [
-                                {
-                                  "type": "number",
-                                },
-                                {
-                                  "enum": [
-                                    "NaN",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "-Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                              ],
+                              "type": "number",
                             },
                             {
                               "enum": [
@@ -1883,11 +1725,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "verifiedAt": {
                             "anyOf": [
                               {
-                                "allOf": [
-                                  {
-                                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                  },
-                                ],
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                 "type": "string",
                               },
                               {
@@ -1916,11 +1754,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             "additionalProperties": false,
                             "properties": {
                               "actorId": {
-                                "allOf": [
-                                  {
-                                    "minLength": 1,
-                                  },
-                                ],
+                                "minLength": 1,
                                 "type": "string",
                               },
                               "actorType": {
@@ -1972,11 +1806,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "type": "string",
                       },
                       "receivedAt": {
-                        "allOf": [
-                          {
-                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                          },
-                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                         "type": "string",
                       },
                       "sourceEvidence": {
@@ -2269,11 +2099,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "verifiedAt": {
                             "anyOf": [
                               {
-                                "allOf": [
-                                  {
-                                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                  },
-                                ],
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                 "type": "string",
                               },
                               {
@@ -2302,11 +2128,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             "additionalProperties": false,
                             "properties": {
                               "actorId": {
-                                "allOf": [
-                                  {
-                                    "minLength": 1,
-                                  },
-                                ],
+                                "minLength": 1,
                                 "type": "string",
                               },
                               "actorType": {
@@ -2358,11 +2180,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "type": "string",
                       },
                       "receivedAt": {
-                        "allOf": [
-                          {
-                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                          },
-                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                         "type": "string",
                       },
                       "sourceEvidence": {
@@ -2654,21 +2472,13 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             "additionalProperties": false,
                             "properties": {
                               "createdAt": {
-                                "allOf": [
-                                  {
-                                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                  },
-                                ],
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                 "type": "string",
                               },
                               "decidedAt": {
                                 "anyOf": [
                                   {
-                                    "allOf": [
-                                      {
-                                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                      },
-                                    ],
+                                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                     "type": "string",
                                   },
                                   {
@@ -2694,11 +2504,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "dueAt": {
                                 "anyOf": [
                                   {
-                                    "allOf": [
-                                      {
-                                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                      },
-                                    ],
+                                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                     "type": "string",
                                   },
                                   {
@@ -2755,11 +2561,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "submittedAt": {
                                 "anyOf": [
                                   {
-                                    "allOf": [
-                                      {
-                                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                      },
-                                    ],
+                                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                     "type": "string",
                                   },
                                   {
@@ -2799,11 +2601,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             "verifiedAt": {
                               "anyOf": [
                                 {
-                                  "allOf": [
-                                    {
-                                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                    },
-                                  ],
+                                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                   "type": "string",
                                 },
                                 {
@@ -2829,11 +2627,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                       "additionalProperties": false,
                                       "properties": {
                                         "actorId": {
-                                          "allOf": [
-                                            {
-                                              "minLength": 1,
-                                            },
-                                          ],
+                                          "minLength": 1,
                                           "type": "string",
                                         },
                                         "actorType": {
@@ -2875,11 +2669,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                   "type": "string",
                                 },
                                 "receivedAt": {
-                                  "allOf": [
-                                    {
-                                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                    },
-                                  ],
+                                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                   "type": "string",
                                 },
                                 "sourceEvidence": {
@@ -2935,11 +2725,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                       "additionalProperties": false,
                                       "properties": {
                                         "actorId": {
-                                          "allOf": [
-                                            {
-                                              "minLength": 1,
-                                            },
-                                          ],
+                                          "minLength": 1,
                                           "type": "string",
                                         },
                                         "actorType": {
@@ -2981,11 +2767,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                   "type": "string",
                                 },
                                 "receivedAt": {
-                                  "allOf": [
-                                    {
-                                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                    },
-                                  ],
+                                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                   "type": "string",
                                 },
                                 "sourceEvidence": {
@@ -3234,21 +3016,13 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "additionalProperties": false,
                         "properties": {
                           "createdAt": {
-                            "allOf": [
-                              {
-                                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                              },
-                            ],
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                             "type": "string",
                           },
                           "decidedAt": {
                             "anyOf": [
                               {
-                                "allOf": [
-                                  {
-                                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                  },
-                                ],
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                 "type": "string",
                               },
                               {
@@ -3274,11 +3048,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "dueAt": {
                             "anyOf": [
                               {
-                                "allOf": [
-                                  {
-                                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                  },
-                                ],
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                 "type": "string",
                               },
                               {
@@ -3335,11 +3105,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "submittedAt": {
                             "anyOf": [
                               {
-                                "allOf": [
-                                  {
-                                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                  },
-                                ],
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                 "type": "string",
                               },
                               {
@@ -3415,21 +3181,13 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                 "additionalProperties": false,
                 "properties": {
                   "createdAt": {
-                    "allOf": [
-                      {
-                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                      },
-                    ],
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                     "type": "string",
                   },
                   "decidedAt": {
                     "anyOf": [
                       {
-                        "allOf": [
-                          {
-                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                          },
-                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                         "type": "string",
                       },
                       {
@@ -3455,11 +3213,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                   "dueAt": {
                     "anyOf": [
                       {
-                        "allOf": [
-                          {
-                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                          },
-                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                         "type": "string",
                       },
                       {
@@ -3516,11 +3270,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                   "submittedAt": {
                     "anyOf": [
                       {
-                        "allOf": [
-                          {
-                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                          },
-                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                         "type": "string",
                       },
                       {
@@ -3780,11 +3530,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "type": "string",
                         },
                         "expiresAt": {
-                          "allOf": [
-                            {
-                              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                            },
-                          ],
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                           "type": "string",
                         },
                         "token": {
@@ -3889,11 +3635,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                     "additionalProperties": false,
                                     "properties": {
                                       "actorId": {
-                                        "allOf": [
-                                          {
-                                            "minLength": 1,
-                                          },
-                                        ],
+                                        "minLength": 1,
                                         "type": "string",
                                       },
                                       "actorType": {
@@ -3944,11 +3686,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                 ],
                               },
                               "occurredAt": {
-                                "allOf": [
-                                  {
-                                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                  },
-                                ],
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                 "type": "string",
                               },
                               "prevHash": {
@@ -3967,29 +3705,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "sequence": {
                                 "anyOf": [
                                   {
-                                    "anyOf": [
-                                      {
-                                        "type": "number",
-                                      },
-                                      {
-                                        "enum": [
-                                          "NaN",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "Infinity",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "-Infinity",
-                                        ],
-                                        "type": "string",
-                                      },
-                                    ],
+                                    "type": "number",
                                   },
                                   {
                                     "enum": [
@@ -4117,29 +3833,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                   "sequence": {
                     "anyOf": [
                       {
-                        "anyOf": [
-                          {
-                            "type": "number",
-                          },
-                          {
-                            "enum": [
-                              "NaN",
-                            ],
-                            "type": "string",
-                          },
-                          {
-                            "enum": [
-                              "Infinity",
-                            ],
-                            "type": "string",
-                          },
-                          {
-                            "enum": [
-                              "-Infinity",
-                            ],
-                            "type": "string",
-                          },
-                        ],
+                        "type": "number",
                       },
                       {
                         "enum": [
@@ -4459,11 +4153,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                   "verifiedAt": {
                     "anyOf": [
                       {
-                        "allOf": [
-                          {
-                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                          },
-                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                         "type": "string",
                       },
                       {
@@ -4761,11 +4451,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "type": "string",
                             },
                             "dueAt": {
-                              "allOf": [
-                                {
-                                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                },
-                              ],
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                               "type": "string",
                             },
                             "extension": {
@@ -4774,21 +4460,13 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                   "additionalProperties": false,
                                   "properties": {
                                     "additionalDays": {
-                                      "allOf": [
-                                        {
-                                          "minimum": 0,
-                                        },
-                                      ],
+                                      "minimum": 0,
                                       "type": "integer",
                                     },
                                     "notifiedAt": {
                                       "anyOf": [
                                         {
-                                          "allOf": [
-                                            {
-                                              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                            },
-                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                           "type": "string",
                                         },
                                         {
@@ -4818,11 +4496,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                     "additionalProperties": false,
                                     "properties": {
                                       "sentAt": {
-                                        "allOf": [
-                                          {
-                                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                          },
-                                        ],
+                                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                         "type": "string",
                                       },
                                       "type": {
@@ -4848,11 +4522,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               ],
                             },
                             "receivedAt": {
-                              "allOf": [
-                                {
-                                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                },
-                              ],
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                               "type": "string",
                             },
                             "segments": {
@@ -4865,11 +4535,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                         "additionalProperties": false,
                                         "properties": {
                                           "actorId": {
-                                            "allOf": [
-                                              {
-                                                "minLength": 1,
-                                              },
-                                            ],
+                                            "minLength": 1,
                                             "type": "string",
                                           },
                                           "actorType": {
@@ -4898,19 +4564,11 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                     "type": "boolean",
                                   },
                                   "from": {
-                                    "allOf": [
-                                      {
-                                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                      },
-                                    ],
+                                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                     "type": "string",
                                   },
                                   "policyVersion": {
-                                    "allOf": [
-                                      {
-                                        "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[\\da-zA-Z-]+(?:\\.[\\da-zA-Z-]+)*)?(?:\\+[\\da-zA-Z-]+(?:\\.[\\da-zA-Z-]+)*)?$",
-                                      },
-                                    ],
+                                    "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[\\da-zA-Z-]+(?:\\.[\\da-zA-Z-]+)*)?(?:\\+[\\da-zA-Z-]+(?:\\.[\\da-zA-Z-]+)*)?$",
                                     "type": "string",
                                   },
                                   "reason": {
@@ -4919,11 +4577,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                   "to": {
                                     "anyOf": [
                                       {
-                                        "allOf": [
-                                          {
-                                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                          },
-                                        ],
+                                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                         "type": "string",
                                       },
                                       {
@@ -4958,29 +4612,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "additionalDays": {
                                 "anyOf": [
                                   {
-                                    "anyOf": [
-                                      {
-                                        "type": "number",
-                                      },
-                                      {
-                                        "enum": [
-                                          "NaN",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "Infinity",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "-Infinity",
-                                        ],
-                                        "type": "string",
-                                      },
-                                    ],
+                                    "type": "number",
                                   },
                                   {
                                     "enum": [
@@ -5042,11 +4674,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                     "additionalProperties": false,
                                     "properties": {
                                       "actorId": {
-                                        "allOf": [
-                                          {
-                                            "minLength": 1,
-                                          },
-                                        ],
+                                        "minLength": 1,
                                         "type": "string",
                                       },
                                       "actorType": {
@@ -5075,19 +4703,11 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                 "type": "boolean",
                               },
                               "from": {
-                                "allOf": [
-                                  {
-                                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                  },
-                                ],
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                 "type": "string",
                               },
                               "policyVersion": {
-                                "allOf": [
-                                  {
-                                    "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[\\da-zA-Z-]+(?:\\.[\\da-zA-Z-]+)*)?(?:\\+[\\da-zA-Z-]+(?:\\.[\\da-zA-Z-]+)*)?$",
-                                  },
-                                ],
+                                "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[\\da-zA-Z-]+(?:\\.[\\da-zA-Z-]+)*)?(?:\\+[\\da-zA-Z-]+(?:\\.[\\da-zA-Z-]+)*)?$",
                                 "type": "string",
                               },
                               "reason": {
@@ -5096,11 +4716,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "to": {
                                 "anyOf": [
                                   {
-                                    "allOf": [
-                                      {
-                                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                      },
-                                    ],
+                                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                                     "type": "string",
                                   },
                                   {
@@ -5285,11 +4901,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "type": "boolean",
                   },
                   "verifiedAt": {
-                    "allOf": [
-                      {
-                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                      },
-                    ],
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                     "type": "string",
                   },
                 },
@@ -5415,11 +5027,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             "type": "string",
                           },
                           "occurredAt": {
-                            "allOf": [
-                              {
-                                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                              },
-                            ],
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                             "type": "string",
                           },
                           "requestId": {
@@ -5544,29 +5152,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                       {
                         "anyOf": [
                           {
-                            "anyOf": [
-                              {
-                                "type": "number",
-                              },
-                              {
-                                "enum": [
-                                  "NaN",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "Infinity",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "-Infinity",
-                                ],
-                                "type": "string",
-                              },
-                            ],
+                            "type": "number",
                           },
                           {
                             "enum": [
@@ -5699,11 +5285,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "type": "string",
                   },
                   "issuedAt": {
-                    "allOf": [
-                      {
-                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                      },
-                    ],
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                     "type": "string",
                   },
                   "requestId": {
@@ -5817,11 +5399,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     "type": "string",
                   },
                   "completedAt": {
-                    "allOf": [
-                      {
-                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                      },
-                    ],
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                     "type": "string",
                   },
                   "success": {
@@ -6129,29 +5707,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             "sizeBytes": {
                               "anyOf": [
                                 {
-                                  "anyOf": [
-                                    {
-                                      "type": "number",
-                                    },
-                                    {
-                                      "enum": [
-                                        "NaN",
-                                      ],
-                                      "type": "string",
-                                    },
-                                    {
-                                      "enum": [
-                                        "Infinity",
-                                      ],
-                                      "type": "string",
-                                    },
-                                    {
-                                      "enum": [
-                                        "-Infinity",
-                                      ],
-                                      "type": "string",
-                                    },
-                                  ],
+                                  "type": "number",
                                 },
                                 {
                                   "enum": [
@@ -6350,29 +5906,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "sizeBytes": {
                                 "anyOf": [
                                   {
-                                    "anyOf": [
-                                      {
-                                        "type": "number",
-                                      },
-                                      {
-                                        "enum": [
-                                          "NaN",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "Infinity",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "-Infinity",
-                                        ],
-                                        "type": "string",
-                                      },
-                                    ],
+                                    "type": "number",
                                   },
                                   {
                                     "enum": [
@@ -6852,29 +6386,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "sizeBytes": {
                           "anyOf": [
                             {
-                              "anyOf": [
-                                {
-                                  "type": "number",
-                                },
-                                {
-                                  "enum": [
-                                    "NaN",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "-Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                              ],
+                              "type": "number",
                             },
                             {
                               "enum": [
@@ -7053,29 +6565,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                     "attempt": {
                                       "anyOf": [
                                         {
-                                          "anyOf": [
-                                            {
-                                              "type": "number",
-                                            },
-                                            {
-                                              "enum": [
-                                                "NaN",
-                                              ],
-                                              "type": "string",
-                                            },
-                                            {
-                                              "enum": [
-                                                "Infinity",
-                                              ],
-                                              "type": "string",
-                                            },
-                                            {
-                                              "enum": [
-                                                "-Infinity",
-                                              ],
-                                              "type": "string",
-                                            },
-                                          ],
+                                          "type": "number",
                                         },
                                         {
                                           "enum": [
@@ -7111,29 +6601,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                         {
                                           "anyOf": [
                                             {
-                                              "anyOf": [
-                                                {
-                                                  "type": "number",
-                                                },
-                                                {
-                                                  "enum": [
-                                                    "NaN",
-                                                  ],
-                                                  "type": "string",
-                                                },
-                                                {
-                                                  "enum": [
-                                                    "Infinity",
-                                                  ],
-                                                  "type": "string",
-                                                },
-                                                {
-                                                  "enum": [
-                                                    "-Infinity",
-                                                  ],
-                                                  "type": "string",
-                                                },
-                                              ],
+                                              "type": "number",
                                             },
                                             {
                                               "enum": [
@@ -7795,21 +7263,13 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           ],
                         },
                         "requestedAt": {
-                          "allOf": [
-                            {
-                              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                            },
-                          ],
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                           "type": "string",
                         },
                         "resolvedAt": {
                           "anyOf": [
                             {
-                              "allOf": [
-                                {
-                                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                },
-                              ],
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                               "type": "string",
                             },
                             {
@@ -7820,11 +7280,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "retentionExpiresAt": {
                           "anyOf": [
                             {
-                              "allOf": [
-                                {
-                                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                                },
-                              ],
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                               "type": "string",
                             },
                             {
@@ -8064,21 +7520,13 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     ],
                   },
                   "requestedAt": {
-                    "allOf": [
-                      {
-                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                      },
-                    ],
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                     "type": "string",
                   },
                   "resolvedAt": {
                     "anyOf": [
                       {
-                        "allOf": [
-                          {
-                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                          },
-                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                         "type": "string",
                       },
                       {
@@ -8089,11 +7537,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                   "retentionExpiresAt": {
                     "anyOf": [
                       {
-                        "allOf": [
-                          {
-                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
-                          },
-                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
                         "type": "string",
                       },
                       {
@@ -8666,29 +8110,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                   "id": {
                                     "anyOf": [
                                       {
-                                        "anyOf": [
-                                          {
-                                            "type": "number",
-                                          },
-                                          {
-                                            "enum": [
-                                              "NaN",
-                                            ],
-                                            "type": "string",
-                                          },
-                                          {
-                                            "enum": [
-                                              "Infinity",
-                                            ],
-                                            "type": "string",
-                                          },
-                                          {
-                                            "enum": [
-                                              "-Infinity",
-                                            ],
-                                            "type": "string",
-                                          },
-                                        ],
+                                        "type": "number",
                                       },
                                       {
                                         "enum": [
@@ -8722,29 +8144,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                   "id": {
                                     "anyOf": [
                                       {
-                                        "anyOf": [
-                                          {
-                                            "type": "number",
-                                          },
-                                          {
-                                            "enum": [
-                                              "NaN",
-                                            ],
-                                            "type": "string",
-                                          },
-                                          {
-                                            "enum": [
-                                              "Infinity",
-                                            ],
-                                            "type": "string",
-                                          },
-                                          {
-                                            "enum": [
-                                              "-Infinity",
-                                            ],
-                                            "type": "string",
-                                          },
-                                        ],
+                                        "type": "number",
                                       },
                                       {
                                         "enum": [
@@ -8964,29 +8364,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             "limit": {
                               "anyOf": [
                                 {
-                                  "anyOf": [
-                                    {
-                                      "type": "number",
-                                    },
-                                    {
-                                      "enum": [
-                                        "NaN",
-                                      ],
-                                      "type": "string",
-                                    },
-                                    {
-                                      "enum": [
-                                        "Infinity",
-                                      ],
-                                      "type": "string",
-                                    },
-                                    {
-                                      "enum": [
-                                        "-Infinity",
-                                      ],
-                                      "type": "string",
-                                    },
-                                  ],
+                                  "type": "number",
                                 },
                                 {
                                   "enum": [
@@ -9134,11 +8512,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           "maxDays": {
                             "anyOf": [
                               {
-                                "allOf": [
-                                  {
-                                    "minimum": 0,
-                                  },
-                                ],
+                                "minimum": 0,
                                 "type": "integer",
                               },
                               {
@@ -9147,11 +8521,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                             ],
                           },
                           "minDays": {
-                            "allOf": [
-                              {
-                                "minimum": 0,
-                              },
-                            ],
+                            "minimum": 0,
                             "type": "integer",
                           },
                           "purgeEnabled": {
@@ -9241,11 +8611,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                   "maxDays": {
                     "anyOf": [
                       {
-                        "allOf": [
-                          {
-                            "minimum": 0,
-                          },
-                        ],
+                        "minimum": 0,
                         "type": "integer",
                       },
                       {
@@ -9254,11 +8620,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                     ],
                   },
                   "minDays": {
-                    "allOf": [
-                      {
-                        "minimum": 0,
-                      },
-                    ],
+                    "minimum": 0,
                     "type": "integer",
                   },
                   "purgeEnabled": {
@@ -9304,11 +8666,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "maxDays": {
                           "anyOf": [
                             {
-                              "allOf": [
-                                {
-                                  "minimum": 0,
-                                },
-                              ],
+                              "minimum": 0,
                               "type": "integer",
                             },
                             {
@@ -9317,11 +8675,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                           ],
                         },
                         "minDays": {
-                          "allOf": [
-                            {
-                              "minimum": 0,
-                            },
-                          ],
+                          "minimum": 0,
                           "type": "integer",
                         },
                         "purgeEnabled": {
@@ -9487,29 +8841,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                               "attempt": {
                                 "anyOf": [
                                   {
-                                    "anyOf": [
-                                      {
-                                        "type": "number",
-                                      },
-                                      {
-                                        "enum": [
-                                          "NaN",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "Infinity",
-                                        ],
-                                        "type": "string",
-                                      },
-                                      {
-                                        "enum": [
-                                          "-Infinity",
-                                        ],
-                                        "type": "string",
-                                      },
-                                    ],
+                                    "type": "number",
                                   },
                                   {
                                     "enum": [
@@ -9574,29 +8906,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                                   {
                                     "anyOf": [
                                       {
-                                        "anyOf": [
-                                          {
-                                            "type": "number",
-                                          },
-                                          {
-                                            "enum": [
-                                              "NaN",
-                                            ],
-                                            "type": "string",
-                                          },
-                                          {
-                                            "enum": [
-                                              "Infinity",
-                                            ],
-                                            "type": "string",
-                                          },
-                                          {
-                                            "enum": [
-                                              "-Infinity",
-                                            ],
-                                            "type": "string",
-                                          },
-                                        ],
+                                        "type": "number",
                                       },
                                       {
                                         "enum": [
@@ -9641,29 +8951,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "limit": {
                           "anyOf": [
                             {
-                              "anyOf": [
-                                {
-                                  "type": "number",
-                                },
-                                {
-                                  "enum": [
-                                    "NaN",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "-Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                              ],
+                              "type": "number",
                             },
                             {
                               "enum": [
@@ -9678,29 +8966,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "offset": {
                           "anyOf": [
                             {
-                              "anyOf": [
-                                {
-                                  "type": "number",
-                                },
-                                {
-                                  "enum": [
-                                    "NaN",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "-Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                              ],
+                              "type": "number",
                             },
                             {
                               "enum": [
@@ -9715,29 +8981,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "total": {
                           "anyOf": [
                             {
-                              "anyOf": [
-                                {
-                                  "type": "number",
-                                },
-                                {
-                                  "enum": [
-                                    "NaN",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "-Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                              ],
+                              "type": "number",
                             },
                             {
                               "enum": [
@@ -9851,29 +9095,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                       {
                         "anyOf": [
                           {
-                            "anyOf": [
-                              {
-                                "type": "number",
-                              },
-                              {
-                                "enum": [
-                                  "NaN",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "Infinity",
-                                ],
-                                "type": "string",
-                              },
-                              {
-                                "enum": [
-                                  "-Infinity",
-                                ],
-                                "type": "string",
-                              },
-                            ],
+                            "type": "number",
                           },
                           {
                             "enum": [
@@ -9924,29 +9146,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "alreadyReplayed": {
                           "anyOf": [
                             {
-                              "anyOf": [
-                                {
-                                  "type": "number",
-                                },
-                                {
-                                  "enum": [
-                                    "NaN",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "-Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                              ],
+                              "type": "number",
                             },
                             {
                               "enum": [
@@ -9961,29 +9161,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "replayed": {
                           "anyOf": [
                             {
-                              "anyOf": [
-                                {
-                                  "type": "number",
-                                },
-                                {
-                                  "enum": [
-                                    "NaN",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "-Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                              ],
+                              "type": "number",
                             },
                             {
                               "enum": [
@@ -10036,29 +9214,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                         "total": {
                           "anyOf": [
                             {
-                              "anyOf": [
-                                {
-                                  "type": "number",
-                                },
-                                {
-                                  "enum": [
-                                    "NaN",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                                {
-                                  "enum": [
-                                    "-Infinity",
-                                  ],
-                                  "type": "string",
-                                },
-                              ],
+                              "type": "number",
                             },
                             {
                               "enum": [
@@ -10242,11 +9398,7 @@ exports[`openAPI and docs surface > keeps generated spec stable 1`] = `
                   "gracePeriodDays": {
                     "anyOf": [
                       {
-                        "allOf": [
-                          {
-                            "minimum": 0,
-                          },
-                        ],
+                        "minimum": 0,
                         "type": "integer",
                       },
                       {

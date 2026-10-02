@@ -17,11 +17,11 @@ When a project uses Effect, prefer the Effect SQL modules over directly coupling
 
 Prefer:
 
-- `effect/unstable/sql/SqlClient`
-- `effect/unstable/sql/Migrator`
-- `effect/unstable/sql/SqlResolver`
-- `effect/unstable/sql/SqlSchema`
-- `effect/unstable/sql/SqlModel`
+- `effect/sql/SqlClient`
+- `effect/sql/Migrator`
+- `effect/sql/SqlResolver`
+- `effect/sql/SqlSchema`
+- `effect/sql/SqlModel`
 
 Over:
 
@@ -201,7 +201,7 @@ Good pattern:
 ```ts
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
-import * as SqlClient from "effect/unstable/sql/SqlClient"
+import * as SqlClient from "effect/sql/SqlClient"
 
 class TodoRepo extends Context.Service<TodoRepo>()("TodoRepo", {
   make: Effect.succeed({

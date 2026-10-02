@@ -58,9 +58,10 @@ bun run prepare:effect
 
 This clones or updates `Effect-TS/effect` on `main` into `.repos/effect`. Use
 that checkout as the API and migration source of truth when installed package
-types are not enough. At the July 2026 refresh, Effect 4 is still published as
-`4.0.0-beta.101`, not a GA `4.0.0`; verify npm metadata and upstream `main`
-before changing that statement or the catalog.
+types are not enough. The catalog is on the Effect `4.0.0` GA line, released
+on 2026-10-01. Unstable modules from the beta (`effect/unstable/sql`,
+`effect/unstable/http`, `effect/unstable/httpapi`, `effect/unstable/cli`) now
+live at `effect/sql`, `effect/http`, `effect/http-api`, and `effect/cli`.
 
 ## Workspace map
 
