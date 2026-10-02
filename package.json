@@ -31,6 +31,7 @@
 	},
 	"type": "module",
 	"scripts": {
+		"bench": "PERF=1 turbo run bench",
 		"build": "turbo run build",
 		"changeset": "changeset",
 		"check": "ultracite check && bun run check:docs-alpha-warning && bun run check:docs-lint && bun run check:error-docs && bun run check:tsdoc",

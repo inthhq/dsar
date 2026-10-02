@@ -14,7 +14,8 @@
 	"scripts": {
 		"format": "oxfmt --check src test package.json tsconfig.json tsdown.config.ts README.md",
 		"lint": "oxlint .",
-		"test": "vitest run",
+		"test": "vitest run --exclude '**/*.bench.test.ts'",
+		"bench": "PERF=1 vitest run test/policy-diff.bench.test.ts",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {

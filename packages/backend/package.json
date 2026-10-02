@@ -30,8 +30,9 @@
 		"dev": "bun -e \"import { dsarInstance } from './src/index.ts'; const basePath = Bun.env.BASE_PATH ?? '/api/v1'; const runtime = dsarInstance({ basePath }); const server = Bun.serve({ port: Number.parseInt(Bun.env.PORT ?? Bun.env.BUN_PORT ?? Bun.env.NODE_PORT ?? '3000', 10), fetch: runtime.handler }); console.log('DSAR runtime:', server.url); console.log('Status:', `${server.url}${basePath === '/' ? '' : basePath}/status`); console.log('OpenAPI:', `${server.url}${basePath === '/' ? '' : basePath}/spec.json`); console.log('Docs:', `${server.url}${basePath === '/' ? '' : basePath}/docs`);\"",
 		"format": "oxfmt --check src package.json tsconfig.json README.md",
 		"lint": "oxlint .",
-		"test": "vitest run --passWithNoTests",
+		"test": "vitest run --passWithNoTests --exclude '**/*.bench.test.ts'",
 		"test:e2e": "vitest run test/e2e/*.test.ts",
+		"bench": "PERF=1 vitest run test/legal-clock/clock.bench.test.ts",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {

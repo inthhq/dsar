@@ -4,5 +4,5 @@
 		"sidebar": "section",
 		"label": "Testing"
 	},
-	"pages": ["acceptance-and-parity"]
+	"pages": ["acceptance-and-parity", "perf-benches"]
 }

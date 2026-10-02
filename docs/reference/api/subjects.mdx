@@ -10,6 +10,9 @@ group: reference-api
 
 Look up a subject profile by matching requests.
 
+Indexed `listBySubject` p95 at 1,000 in-memory SQLite rows is gated by
+`bun run bench`. See [Performance Benches](../testing/perf-benches.md).
+
 The endpoint searches all requests for matching subject identifiers across:
 
 - `capture.subject.subjectId`
