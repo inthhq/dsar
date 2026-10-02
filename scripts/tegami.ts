@@ -257,19 +257,19 @@ export const createRelease = ({
 			{
 				applyCliDraft() {
 					syncBunLockVersions(this.cwd, this.graph.getPackages());
-					execFileSync(
-						"bun",
-						[
-							"x",
-							"oxfmt",
-							"package.json",
-							".tegami",
-							...this.graph
-								.getPackages()
-								.map((pkg) => `${relative(this.cwd, pkg.path)}/package.json`),
-						],
-						{ cwd: this.cwd, stdio: "inherit" }
-					);
+					// Tegami also rewrites private workspace manifests, which are not in
+					// the graph, with two-space indentation. Format every manifest.
+					const manifests = execFileSync(
+						"git",
+						["ls-files", "--", "package.json", "**/package.json"],
+						{ cwd: this.cwd, encoding: "utf8" }
+					)
+						.split("\n")
+						.filter(Boolean);
+					execFileSync("bun", ["x", "oxfmt", ".tegami", ...manifests], {
+						cwd: this.cwd,
+						stdio: "inherit",
+					});
 				},
 				name: "dsar-format-release",
 			},
