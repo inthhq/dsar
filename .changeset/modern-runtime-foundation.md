@@ -7,3 +7,5 @@ and the latest supported integration dependencies.
 
 Expand the persistence-backed Chat SDK state adapter with durable transcript
 lists, message queues, and force-unlock support required by Chat SDK 4.34.
+
+Migration steps for 0.0.5 to 1.0.0 live in docs/guides/upgrading.mdx.

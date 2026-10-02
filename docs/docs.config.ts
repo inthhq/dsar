@@ -4,7 +4,7 @@ export default defineDocsConfig({
 	groups: [
 		{
 			description:
-				"Onboarding, lifecycle walkthroughs, deployments, and build metrics.",
+				"Onboarding, upgrades, lifecycle walkthroughs, deployments, and build metrics.",
 			slug: "guides",
 			title: "Guides",
 		},
@@ -109,10 +109,11 @@ export default defineDocsConfig({
 		{
 			base: "guides",
 			description:
-				"Onboarding, lifecycle walkthroughs, deployments, and build metrics.",
+				"Onboarding, upgrades, lifecycle walkthroughs, deployments, and build metrics.",
 			pages: [
 				"index",
 				"getting-started",
+				"upgrading",
 				"request-lifecycle",
 				"examples-and-deployment",
 				"package-build-metrics",

@@ -6,6 +6,7 @@
 	},
 	"pages": [
 		"getting-started",
+		"upgrading",
 		"request-lifecycle",
 		"examples-and-deployment",
 		"package-build-metrics"
