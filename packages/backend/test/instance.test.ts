@@ -325,6 +325,31 @@ describe("request logging", () => {
 		}
 	});
 
+	it("puts route and tenant on events for the spec and docs routes", async () => {
+		const recorder = recordEvents();
+		const instance = dsarInstance({
+			...TEST_RUNTIME_AUTH,
+			observability: { drain: recorder.drain, level: "info" },
+			repos: { persistence: makeMemoryPersistence() },
+			tenantId: "tenant-default",
+		});
+
+		await instance.handler(new Request("https://example.test/spec.json"));
+		await instance.handler(new Request("https://example.test/docs"));
+
+		await vi.waitFor(() => expect(recorder.events).toHaveLength(2));
+		expect(recorder.events.map((event) => event.dsar)).toStrictEqual([
+			expect.objectContaining({
+				route: "GET /spec.json",
+				tenantId: "tenant-default",
+			}),
+			expect.objectContaining({
+				route: "GET /docs",
+				tenantId: "tenant-default",
+			}),
+		]);
+	});
+
 	it("does not put the bearer token on the event", async () => {
 		const recorder = recordEvents();
 		const instance = dsarInstance({

@@ -130,6 +130,8 @@ export interface CreateAppOptions {
 	readonly observability?: ObservabilityOptions;
 	/** Origins allowed to call the backend from a browser. */
 	readonly trustedOrigins?: readonly string[];
+	/** Tenant the instance is bound to, recorded on every event. */
+	readonly tenantId?: string;
 	/** Runs a matched route. */
 	readonly dispatch: (input: RouteDispatchInput) => Promise<Response>;
 	/** Turns any thrown error into a catalog error envelope. */
@@ -170,7 +172,12 @@ export const createApp = (options: CreateAppOptions): Hono => {
 		const requestId = makeRequestId();
 		requestIds.set(c.req.raw, requestId);
 		requestLog(c).set({
-			dsar: { requestId },
+			dsar: {
+				requestId,
+				...(options.tenantId === undefined
+					? {}
+					: { tenantId: options.tenantId }),
+			},
 			...(service === undefined ? {} : { service }),
 		});
 		await runNext();
@@ -214,8 +221,14 @@ export const createApp = (options: CreateAppOptions): Hono => {
 		applyCors();
 	});
 
-	scoped.get("/spec.json", (c) => c.json(options.spec));
-	scoped.get("/docs", (c) => c.html(options.docsHtml));
+	scoped.get("/spec.json", (c) => {
+		requestLog(c).set({ dsar: { route: "GET /spec.json" } });
+		return c.json(options.spec);
+	});
+	scoped.get("/docs", (c) => {
+		requestLog(c).set({ dsar: { route: "GET /docs" } });
+		return c.html(options.docsHtml);
+	});
 
 	for (const route of options.routes) {
 		scoped.on(route.method, route.path, async (c) => {

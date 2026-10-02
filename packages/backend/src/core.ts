@@ -211,7 +211,6 @@ export const dsarInstance = (options: DsarInstanceOptions): DsarInstance => {
 		requestId,
 		route,
 	}: RouteDispatchInput): Promise<Response> => {
-		log.set({ dsar: { tenantId } });
 		if (route.publicIntake === true) {
 			const limited = await enforceIntakeIpRateLimit({
 				config,
@@ -294,6 +293,7 @@ export const dsarInstance = (options: DsarInstanceOptions): DsarInstance => {
 		renderError: (error, request, log) => toErrorResponse(error, request, log),
 		routes: coreRoutes,
 		spec,
+		tenantId,
 		trustedOrigins: options.trustedOrigins,
 	});
 
